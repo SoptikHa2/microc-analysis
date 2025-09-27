@@ -1,0 +1,60 @@
+name:                apr-semestral
+version:             0.1.0.0
+github:              "soptikha2/apr-semestral"
+license:             BSD-3-Clause
+author:              "Petr Stastny"
+maintainer:          "petr.stastny@fit.cvut.cz"
+copyright:           "Petr Stastny"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            afp
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/soptikha2/apr-semestral#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- parsec >= 3.1 && < 4
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+library:
+  source-dirs: src
+
+executables:
+  apr-semestral-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - apr-semestral
+
+tests:
+  apr-semestral-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - apr-semestral

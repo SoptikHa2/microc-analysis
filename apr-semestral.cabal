@@ -1,0 +1,72 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           apr-semestral
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/soptikha2/apr-semestral#readme>
+homepage:       https://github.com/soptikha2/apr-semestral#readme
+bug-reports:    https://github.com/soptikha2/apr-semestral/issues
+author:         Petr Stastny
+maintainer:     petr.stastny@fit.cvut.cz
+copyright:      Petr Stastny
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/soptikha2/apr-semestral
+
+library
+  exposed-modules:
+      Lex.Lexer
+      Lex.Tokens
+      Lib
+  other-modules:
+      Paths_apr_semestral
+  autogen-modules:
+      Paths_apr_semestral
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , parsec >=3.1 && <4
+  default-language: Haskell2010
+
+executable apr-semestral-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_apr_semestral
+  autogen-modules:
+      Paths_apr_semestral
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      apr-semestral
+    , base >=4.7 && <5
+    , parsec >=3.1 && <4
+  default-language: Haskell2010
+
+test-suite apr-semestral-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_apr_semestral
+  autogen-modules:
+      Paths_apr_semestral
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      apr-semestral
+    , base >=4.7 && <5
+    , parsec >=3.1 && <4
+  default-language: Haskell2010
