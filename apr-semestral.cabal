@@ -29,7 +29,9 @@ library
       Lex.Tokens
       Lib
       Parse.AST
+      Parse.DeclParser
       Parse.ExprParser
+      Parse.StmtParser
   other-modules:
       Paths_apr_semestral
   autogen-modules:

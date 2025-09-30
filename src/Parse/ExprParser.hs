@@ -6,7 +6,6 @@ import Parse.AST
 import Text.Parsec
 import qualified Text.Parsec.Expr as E
 import Text.Parsec.String (Parser)
-import qualified Lex.Lexer as L
 
 
 expression :: Parser Expr
@@ -38,7 +37,7 @@ primaryExpr :: Parser Expr
 primaryExpr = try number <|> try identifier <|> try record <|> try paren
 
 identifier :: Parser Expr
-identifier = EIdentifier <$> L.identifierStr
+identifier = EIdentifier <$> Lexer.identifierStr
 
 record :: Parser Expr
 record = do
