@@ -28,6 +28,7 @@ library
       Lex.Lexer
       Lex.Tokens
       Lib
+      Parse.AST
   other-modules:
       Paths_apr_semestral
   autogen-modules:
