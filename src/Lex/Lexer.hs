@@ -1,7 +1,7 @@
 module Lex.Lexer where
 
-import Text.Parsec 
-import Lex.Tokens (Token(..), strToKw)
+import Text.Parsec
+import Lex.Tokens (Token(..), strToKw, Keyword, kwToStr)
 import Data.Maybe
 
 
@@ -22,17 +22,17 @@ identifier :: Parsec String () Token
 identifier = Identifier <$> identifierStr
 
 bracketOpen :: Parsec String () Token
-bracketOpen = spaces >> char '}' >> return CBracketOpen
+bracketOpen = spaces >> char '{' >> return CBracketOpen
 
 bracketClose :: Parsec String () Token
-bracketClose = spaces >> char '{' >> return CBracketClose
+bracketClose = spaces >> char '}' >> return CBracketClose
 
-keyword :: Parsec String () Token
-keyword = try $ do
+keyword :: Keyword -> Parsec String () Token
+keyword kw = try $ do
     spaces
-    let valid = fst <$> strToKw
-    kw <- choice $ string <$> valid
-    pure $ Keyword <$> fromJust $ lookup kw strToKw
+    let valid = kwToStr kw
+    _ <- choice (try . string <$> valid)
+    pure $ Keyword kw
 
 semicolon :: Parsec String () Token
 semicolon = spaces >> char ';' >> return Semicolon
@@ -62,7 +62,7 @@ dot :: Parsec String () Token
 dot = spaces >> char '.' >> return And
 
 colon :: Parsec String () Token
-colon = spaces >> char ',' >> return And
+colon = spaces >> char ':' >> return And
 
 gt :: Parsec String () Token
 gt = spaces >> char '>' >> return And

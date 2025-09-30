@@ -1,4 +1,4 @@
-module Lex.Tokens (Token(..), Keyword(..), strToKw) where
+module Lex.Tokens (Token(..), Keyword(..), strToKw, kwToStr) where
 
 data Token
     = ParenOpen
@@ -20,6 +20,7 @@ data Token
     | Number Int
     | Gt
     | Eq
+    deriving (Show)
 
 data Keyword
     = Var
@@ -31,6 +32,7 @@ data Keyword
     | Input
     | Alloc
     | Null
+    deriving (Show, Eq)
 
 strToKw :: [(String, Keyword)]
 strToKw = [
@@ -54,3 +56,6 @@ strToKw = [
     ("null", Null),
     ("nic", Null)
     ]
+
+kwToStr :: Keyword -> [String]
+kwToStr kw = fst <$> filter (\(_, k) -> k == kw) strToKw
