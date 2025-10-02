@@ -58,3 +58,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - apr-semestral
+    - hspec >= 2.11 && < 3

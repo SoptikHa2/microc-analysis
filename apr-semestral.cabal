@@ -63,6 +63,9 @@ test-suite apr-semestral-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      DeclParserSpec
+      ExprParserSpec
+      StmtParserSpec
       Paths_apr_semestral
   autogen-modules:
       Paths_apr_semestral
@@ -72,5 +75,6 @@ test-suite apr-semestral-test
   build-depends:
       apr-semestral
     , base >=4.7 && <5
+    , hspec >=2.11 && <3
     , parsec >=3.1 && <4
   default-language: Haskell2010
