@@ -19,18 +19,25 @@ postfixExpr :: Parser Expr
 postfixExpr = do
     -- It certainly has a primary expression first
     e <- primaryExpr
-    -- Afterwards, there may be field access OR call OR nothing.
-    try (fieldAccessRest e) <|> try (callRest e) <|> pure e
-    where
-        fieldAccessRest :: Expr -> Parser Expr
-        fieldAccessRest expr = Lexer.dot >> FieldAccess expr <$> Lexer.identifierStr
+    -- Afterwards, there may be 0 or more times {field access OR call}.
+    ops <- many (try fieldAccessRest <|> try callRest)
 
-        callRest :: Expr -> Parser Expr
-        callRest expr = do
+    pure $ recApply e ops
+    where
+        fieldAccessRest :: Parser (Expr -> Expr)
+        fieldAccessRest = Lexer.dot >> flip FieldAccess <$> Lexer.identifierStr
+
+        callRest :: Parser (Expr -> Expr)
+        callRest = do
             _ <- Lexer.parenOpen
             ex <- many (expression <* spaces <* optional (char ',') <* spaces)
             _ <- Lexer.parenClose
-            pure $ Call expr ex
+            pure $ flip Call ex
+
+        -- This function has to exist
+        recApply :: a -> [a -> a] -> a
+        recApply a [] = a
+        recApply a (x:xs) = recApply (x a) xs
 
 
 primaryExpr :: Parser Expr
@@ -58,7 +65,7 @@ paren = between Lexer.parenOpen Lexer.parenClose expression
 
 number :: Parser Expr
 number = do
-    L.Number num <- Lexer.numLiteral 
+    L.Number num <- Lexer.numLiteral
     pure $ Number num
 
 input :: Parser Expr
@@ -78,27 +85,27 @@ arithmTerm = try exprWithoutArithmetics <|> try arithmParens
 
 arithmTable = [
         [
-            E.Prefix (UnOp Deref <$ Lexer.star)
+            E.Prefix (try $ UnOp Deref <$ Lexer.star)
         ],
         [
-            E.Prefix (UnOp Ref <$ Lexer.and) -- &
+            E.Prefix (try $ UnOp Ref <$ Lexer.and) -- &
         ],
         [
-            E.Prefix (UnOp Alloc <$ Lexer.keyword L.Alloc)
+            E.Prefix (try $ UnOp Alloc <$ Lexer.keyword L.Alloc)
         ],
         [
-            E.Infix (BiOp Mul <$ Lexer.star) E.AssocLeft,
-            E.Infix (BiOp Div <$ Lexer.division) E.AssocLeft
+            E.Infix (try $ BiOp Mul <$ Lexer.star) E.AssocLeft,
+            E.Infix (try $ BiOp Div <$ Lexer.division) E.AssocLeft
         ],
         [
-            E.Infix (BiOp Plus <$ Lexer.plus) E.AssocLeft,
-            E.Infix (BiOp Minus <$ Lexer.minus) E.AssocLeft
+            E.Infix (try $ BiOp Plus <$ Lexer.plus) E.AssocLeft,
+            E.Infix (try $ BiOp Minus <$ Lexer.minus) E.AssocLeft
         ],
         [
-            E.Infix (BiOp Gt <$ Lexer.gt) E.AssocLeft
+            E.Infix (try $ BiOp Gt <$ Lexer.gt) E.AssocLeft
         ],
         [
-            E.Infix (BiOp Eq <$ Lexer.eq) E.AssocLeft
+            E.Infix (try $ BiOp Eq <$ Lexer.eq) E.AssocLeft
         ]
     ]
 

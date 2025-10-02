@@ -9,7 +9,7 @@ data FunDecl = FunDecl {
         args :: [Identifier],
         body :: FunBlock
     }
-    deriving (Show)
+    deriving (Show, Eq)
 
 type Identifier = String
 
@@ -18,7 +18,7 @@ data FunBlock = FunBlock {
         body :: [Stmt],
         return :: Expr
     }
-    deriving (Show)
+    deriving (Show, Eq)
 
 data Stmt
     = OutputStmt Expr
@@ -33,13 +33,13 @@ data Stmt
     }
     | Block [Stmt]
     | AssignmentStmt Expr Expr
-    deriving (Show)
+    deriving (Show, Eq)
 
 data UnOp
     = Deref
     | Ref
     | Alloc
-    deriving (Show)
+    deriving (Show, Eq)
 
 data BiOp
     = Eq
@@ -48,7 +48,7 @@ data BiOp
     | Minus
     | Mul
     | Div
-    deriving (Show)
+    deriving (Show, Eq)
 
 data Expr
     = BiOp BiOp Expr Expr
@@ -65,4 +65,4 @@ data Expr
     }
     | Number Int
     | EIdentifier Identifier
-    deriving (Show)
+    deriving (Show, Eq)

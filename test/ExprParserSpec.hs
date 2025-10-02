@@ -82,13 +82,13 @@ spec = do
 
   describe "Records" $ do
     it "parses empty record" $
-      parseExpr "[]" `shouldBe` Right (Record { fields = [] })
+      parseExpr "{}" `shouldBe` Right (Record { fields = [] })
 
     it "parses record with one field" $
-      parseExpr "[x: 42]" `shouldBe` Right (Record { fields = [("x", Number 42)] })
+      parseExpr "{x: 42}" `shouldBe` Right (Record { fields = [("x", Number 42)] })
 
     it "parses record with multiple fields" $
-      parseExpr "[x: 1, y: 2]" `shouldBe` Right (Record { fields = [("x", Number 1), ("y", Number 2)] })
+      parseExpr "{x: 1, y: 2}" `shouldBe` Right (Record { fields = [("x", Number 1), ("y", Number 2)] })
 
   describe "Special expressions" $ do
     it "parses input" $

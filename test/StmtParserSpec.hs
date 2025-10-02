@@ -62,10 +62,10 @@ spec = do
 
   describe "Complex statements" $ do
     it "parses while with complex block" $
-      parseStmt "while (i < 10) { output i; i = i + 1; }" `shouldBe`
+      parseStmt "while (i > 10) { output i; i = i - 1; }" `shouldBe`
         Right (WhileStmt
           (BiOp Gt (EIdentifier "i") (Number 10))
-          (Block [OutputStmt (EIdentifier "i"), AssignmentStmt (EIdentifier "i") (BiOp Plus (EIdentifier "i") (Number 1))]))
+          (Block [OutputStmt (EIdentifier "i"), AssignmentStmt (EIdentifier "i") (BiOp Minus (EIdentifier "i") (Number 1))]))
 
     it "parses if-else with blocks" $
       parseStmt "if (x > 0) { output 1; } else { output 0; }" `shouldBe`

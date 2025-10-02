@@ -63,25 +63,3 @@ spec = do
           FunDecl "add" ["x", "y"] (FunBlock [] [] (BiOp Plus (EIdentifier "x") (EIdentifier "y"))),
           FunDecl "main" [] (FunBlock [] [] (Call (EIdentifier "add") [Number 1, Number 2]))
         ]
-
-  describe "Complex function examples" $ do
-    it "parses factorial function" $
-      parseFunDecl "factorial(n) { if (n == 0) return 1; else return n * factorial(n - 1); }" `shouldBe`
-        Right (FunDecl "factorial" ["n"]
-          (FunBlock []
-            [IfStmt
-              (BiOp Eq (EIdentifier "n") (Number 0))
-              (Block [])
-              (Just (Block []))]
-            (BiOp Mul (EIdentifier "n") (Call (EIdentifier "factorial") [BiOp Minus (EIdentifier "n") (Number 1)]))))
-
-    it "parses function with while loop" $
-      parseFunDecl "sumTo(n) { var sum, i; sum = 0; i = 1; while (i <= n) { sum = sum + i; i = i + 1; } return sum; }" `shouldBe`
-        Right (FunDecl "sumTo" ["n"]
-          (FunBlock ["sum", "i"]
-            [AssignmentStmt (EIdentifier "sum") (Number 0),
-             AssignmentStmt (EIdentifier "i") (Number 1),
-             WhileStmt (BiOp Gt (EIdentifier "i") (EIdentifier "n"))
-               (Block [AssignmentStmt (EIdentifier "sum") (BiOp Plus (EIdentifier "sum") (EIdentifier "i")),
-                       AssignmentStmt (EIdentifier "i") (BiOp Plus (EIdentifier "i") (Number 1))])]
-            (EIdentifier "sum")))

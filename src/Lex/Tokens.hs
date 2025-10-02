@@ -20,7 +20,7 @@ data Token
     | Number Int
     | Gt
     | Eq
-    deriving (Show)
+    deriving (Show, Eq)
 
 data Keyword
     = Var
