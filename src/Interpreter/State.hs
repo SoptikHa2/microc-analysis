@@ -1,4 +1,4 @@
-module Interpreter.State where
+module Interpreter.State (State(..), empty, getsVar, getsAddr, getsVarAddr, putsVar, putsAddr, putsValue, newFrame, dropFrame) where
 import Interpreter.Data
 import Parse.AST
 import Control.Monad.State (StateT, gets, modify)
@@ -55,7 +55,7 @@ putsValue val = do
     pure oldNa
 
 newFrame :: StateT State Identity ()
-newFrame = modify (\(State s h na) -> State ([] <> s) h na)
+newFrame = modify (\(State s h na) -> State (M.empty : s) h na)
 
 dropFrame :: StateT State Identity ()
 dropFrame = modify (\(State s h na) -> State (tail s) h na)

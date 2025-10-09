@@ -72,6 +72,7 @@ test-suite apr-semestral-test
   other-modules:
       DeclParserSpec
       ExprParserSpec
+      StateSpec
       StmtParserSpec
       Paths_apr_semestral
   autogen-modules:
