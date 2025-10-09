@@ -51,7 +51,7 @@ record = do
     _ <- Lexer.bracketOpen
     fx <- many (field <* spaces <* optional (char ',') <* spaces)
     _ <- Lexer.bracketClose
-    pure $ Record { fields = fx }
+    pure $ Record $ Fields fx
     where
         field :: Parser (Identifier, Expr)
         field = do

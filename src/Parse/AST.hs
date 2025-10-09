@@ -60,9 +60,10 @@ data Expr
         target :: Expr,
         args   :: [Expr]
     }
-    | Record {
-        fields :: [(Identifier, Expr)]
-    }
+    | Record Record
     | Number Int
     | EIdentifier Identifier
+    deriving (Show, Eq)
+
+newtype Record = Fields [(Identifier, Expr)]
     deriving (Show, Eq)

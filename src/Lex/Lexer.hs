@@ -59,16 +59,16 @@ and :: Parsec String () Token
 and = spaces >> char '&' >> return And
 
 dot :: Parsec String () Token
-dot = spaces >> char '.' >> return And
+dot = spaces >> char '.' >> return Dot
 
 colon :: Parsec String () Token
-colon = spaces >> char ':' >> return And
+colon = spaces >> char ':' >> return Colon
 
 gt :: Parsec String () Token
-gt = spaces >> char '>' >> return And
+gt = spaces >> char '>' >> return Gt
 
 eq :: Parsec String () Token
-eq = spaces >> string "==" >> return And
+eq = spaces >> string "==" >> return Eq
 
 numLiteral :: Parsec String () Token
 numLiteral = do
