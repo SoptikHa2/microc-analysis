@@ -3,7 +3,7 @@ stages:
   - test
 
 default:
-  image: haskell:9.6
+  image: ${CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX}/haskell:9.6
 
 build:
   stage: build
