@@ -1,4 +1,4 @@
-module Interpreter.Interpret (evalExpr, applyBiOp, evalStmt, evalExprForWrite) where
+module Interpreter.Interpret (evalExpr, applyBiOp, evalStmt, evalExprForWrite, evalFun) where
 
 import Prelude hiding (id)
 import qualified Prelude
@@ -95,12 +95,15 @@ evalExpr (Call fun params) = do
         funBody x = error $ "Not a function: " <> show x
 
 evalFun :: FunDecl -> [Value] -> StateT State IO Value
-evalFun (FunDecl _name args (FunBlock _decl body ret)) params = do
+evalFun (FunDecl _name args (FunBlock decl body ret)) params = do
     -- create new stack frame
     runId newFrame
 
     -- insert params
     forM_ (zip args params) (\(a,p) -> runId (putsVar a p))
+
+    -- initialize declared variables to 0
+    forM_ decl (\varName -> runId (putsVar varName (VNumber 0)))
 
     -- run the body
     forM_ body evalStmt

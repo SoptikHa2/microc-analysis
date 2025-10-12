@@ -46,10 +46,11 @@ library
       base >=4.7 && <5
     , containers
     , mtl
+    , optparse-applicative
     , parsec >=3.1 && <4
   default-language: Haskell2010
 
-executable apr-semestral-exe
+executable microc
   main-is: Main.hs
   other-modules:
       Paths_apr_semestral
@@ -63,6 +64,7 @@ executable apr-semestral-exe
     , base >=4.7 && <5
     , containers
     , mtl
+    , optparse-applicative
     , parsec >=3.1 && <4
   default-language: Haskell2010
 
@@ -88,5 +90,6 @@ test-suite apr-semestral-test
     , containers
     , hspec >=2.11 && <3
     , mtl
+    , optparse-applicative
     , parsec >=3.1 && <4
   default-language: Haskell2010

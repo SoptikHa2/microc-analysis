@@ -24,6 +24,7 @@ dependencies:
 - parsec >= 3.1 && < 4
 - mtl
 - containers
+- optparse-applicative
 
 ghc-options:
 - -Wall
@@ -40,7 +41,7 @@ library:
   source-dirs: src
 
 executables:
-  apr-semestral-exe:
+  microc:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
