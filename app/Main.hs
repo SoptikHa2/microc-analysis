@@ -93,7 +93,7 @@ initializeState prog = do
   -- Start with empty state and add all functions to global scope
   let addFunctionsAction :: StateT IS.State IO ()
       addFunctionsAction = forM_ prog $ \f@(FunDecl fname _ _) ->
-        liftIdentityToIO $ IS.putsVar fname (Function f)
+        liftIdentityToIO $ IS.putsGlobal fname (Function f)
   execStateT addFunctionsAction IS.empty
   where
     liftIdentityToIO :: StateT IS.State Identity a -> StateT IS.State IO a

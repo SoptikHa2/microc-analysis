@@ -1,20 +1,23 @@
-module Interpreter.State (State(..), empty, getsVar, getsAddr, getsVarAddr, putsVar, putsAddr, putsValue, newFrame, dropFrame) where
+module Interpreter.State (State(..), empty, getsVar, getsAddr, getsVarAddr, putsVar, putsAddr, putsValue, putsGlobal, newFrame, dropFrame) where
 import Interpreter.Data
 import Parse.AST
 import Control.Monad.State (StateT, gets, modify)
 import Control.Monad.Identity (Identity)
 import Control.Monad
 import qualified Data.Map as M
+import Control.Applicative ((<|>))
 
 data State = State {
     stack :: [Stack],
+    globals :: Stack,
     heap :: M.Map Address Value,
     _nextAddr :: Address
 }
+    deriving (Show)
 
 empty :: State
 -- Start with address = 1, so we have nullptr = 0
-empty = State { stack = [M.empty], heap = M.empty, _nextAddr = 1 }
+empty = State { stack = [M.empty], globals = M.empty, heap = M.empty, _nextAddr = 1 }
 
 -- heh, everything is on heap, so we can do pointers easily
 type Stack = M.Map Identifier Address
@@ -29,11 +32,23 @@ getsVar id = do
 getsVarAddr :: Identifier -> StateT State Identity (Maybe Address)
 getsVarAddr id = do
     s <- gets $ head . stack
-    pure $ M.lookup id s
+    g <- gets globals
+    pure $ M.lookup id s <|> M.lookup id g
 
 -- Dereference address into heap, and read
 getsAddr :: Address -> StateT State Identity (Maybe Value)
 getsAddr addr = gets (M.lookup addr . heap)
+
+-- Write a global. This is intended for initial function init.
+putsGlobal :: Identifier -> Value -> StateT State Identity ()
+putsGlobal id val = do
+    -- Insert into heap
+    addr <- putsValue val
+    -- Insert into globals
+    g <- gets globals
+    let ng = M.insert id addr g
+
+    modify (\(State s _ h na) -> State { stack = s, globals = ng, heap = h, _nextAddr = na })
 
 -- Create or update variable in current stack top
 putsVar :: Identifier -> Value -> StateT State Identity ()
@@ -53,11 +68,11 @@ putsVar id val = do
             let newHead = M.insert id addr (head st)
             let newStack = newHead : tail st
 
-            modify (\(State _ h na) -> State { stack = newStack, heap = h, _nextAddr = na })
+            modify (\(State _ g h na) -> State { stack = newStack, globals = g, heap = h, _nextAddr = na })
 
 -- Dereference address into heap, and write
 putsAddr :: Address -> Value -> StateT State Identity ()
-putsAddr addr val = modify (\(State s h na) -> State s (M.insert addr val h) na)
+putsAddr addr val = modify (\(State s g h na) -> State s g (M.insert addr val h) na)
 
 -- Allocate space for new value, save it there, and return the new address.
 putsValue :: Value -> StateT State Identity Address
@@ -67,15 +82,15 @@ putsValue val = do
     let newNa = oldNa + 1
     let newH = M.insert oldNa val h
 
-    modify (\(State s _ _) -> State s newH newNa)
+    modify (\(State s g _ _) -> State  s  g newH newNa)
     pure oldNa
 
 -- Create new stack frame
 newFrame :: StateT State Identity ()
-newFrame = modify (\(State s h na) -> State (M.empty : s) h na)
+newFrame = modify (\(State s g h na) -> State (M.empty : s) g h na)
 
 -- Drop top stack frame
 dropFrame :: StateT State Identity ()
 -- TODO: Cleanup memory
 -- pointers will be dangling, and it's okay
-dropFrame = modify (\(State s h na) -> State (tail s) h na)
+dropFrame = modify (\(State s g h na) -> State (tail s) g h na)

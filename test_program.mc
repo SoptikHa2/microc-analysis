@@ -1,6 +1,7 @@
-main(a, b) {
-    var sum;
-    sum = a + b;
-    output sum;
-    return sum;
+f() {
+    return 0;
+}
+
+main() {
+    return f();
 }
