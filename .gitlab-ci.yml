@@ -39,7 +39,7 @@ build-docker:
       --cache-to=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache,mode=max
       -t "$IMAGE_SHA"
       -t "$IMAGE_LATEST"
-      -f .devcontainer/Dockerfile
+      -f Dockerfile
       .
 
 build:
