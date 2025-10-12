@@ -26,8 +26,7 @@ source-repository head
 library
   exposed-modules:
       Interpreter.Data
-      Interpreter.InterpretExpr
-      Interpreter.InterpretStmt
+      Interpreter.Interpret
       Interpreter.State
       Lex.Lexer
       Lex.Tokens

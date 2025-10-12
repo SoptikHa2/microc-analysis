@@ -9,3 +9,9 @@ data Value
     | Function FunDecl
     | Record [(Identifier, Address)]
     deriving (Show, Eq)
+
+truthy :: Value -> Bool
+truthy (VNumber i) = i /= 0
+truthy (Pointer a) = a /= 0
+truthy (Function _) = True
+truthy (Record _) = True 

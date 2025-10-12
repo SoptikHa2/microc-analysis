@@ -7,8 +7,8 @@ import Interpreter.State
 import Interpreter.Data
 import Control.Monad.Identity (Identity(runIdentity))
 import Control.Monad.State (StateT, mapStateT, MonadTrans (lift))
-import Control.Monad (forM, forM_)
-import Interpreter.InterpretStmt (interpretStmt)
+import Control.Monad (forM, forM_, when)
+import Data.Foldable (traverse_)
 
 runId :: StateT State Identity a -> StateT State IO a
 runId = mapStateT (pure . runIdentity)
@@ -101,9 +101,65 @@ evalFun (FunDecl _name args (FunBlock _decl body ret)) params = do
 
     -- insert params
     forM_ (zip args params) (\(a,p) -> runId (putsVar a p))
-    
+
     -- run the body
-    forM_ body interpretStmt
+    forM_ body evalStmt
 
     -- evalue and return the result
     evalExpr ret
+
+-- -----------------
+
+evalStmt :: Stmt -> StateT State IO ()
+
+evalStmt (OutputStmt e) = do
+    v <- evalExpr e
+    lift $ print v
+    pure ()
+
+evalStmt this@(WhileStmt cond body) = do
+    c <- evalExpr cond
+    when (truthy c) $ do
+        evalStmt body
+        evalStmt this
+
+evalStmt (IfStmt cond tru fals) = do
+    c <- evalExpr cond
+    if truthy c
+        then evalStmt tru
+        else traverse_ evalStmt fals
+
+evalStmt (Block stmx) = do
+    traverse_ evalStmt stmx
+
+evalStmt (AssignmentStmt etarget eval) = do
+    target <- evalExprForWrite etarget
+    value <- evalExpr eval
+
+    case target of
+        Pointer addr -> do
+            runId $ putsAddr addr value
+        _ -> error $ "Cannot assign to read-only value " ++ show target
+
+
+-- Eval expression which is target for writing. This works only for identifiers, record field access and *.
+-- This returns a pointer, not the value.
+evalExprForWrite :: Expr -> StateT State IO Value
+
+evalExprForWrite (UnOp Deref e1) = do
+    addr <- evalExpr e1
+    case addr of 
+        Pointer _ -> pure addr
+        _ -> error $ "Deref encountered a non-pointer: " ++ show addr
+
+evalExprForWrite (FieldAccess field id) = do
+    fieldStruct <- evalExpr field
+    case fieldStruct of
+        Interpreter.Data.Record mapping ->
+            maybe (error $ "Nonexistent field " ++ show id) (pure . Pointer) (lookup id mapping)
+        _ -> error $ "Attempted to access field of " ++ show field
+
+evalExprForWrite (EIdentifier id) =
+    runId (getsVarAddr id) >>= maybe (error $ "Variable not found: " ++ id) (pure . Pointer)
+
+evalExprForWrite e = error $ "Target to write is read-only: " ++ show e
