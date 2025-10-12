@@ -27,6 +27,7 @@ library
   exposed-modules:
       Interpreter.Data
       Interpreter.InterpretExpr
+      Interpreter.InterpretStmt
       Interpreter.State
       Lex.Lexer
       Lex.Tokens

@@ -1,14 +1,20 @@
 module Interpreter.InterpretExpr (evalExpr) where
 
 import Prelude hiding (id)
+import qualified Prelude
 import Parse.AST
 import Interpreter.State
 import Interpreter.Data
 import Control.Monad.Identity (Identity(runIdentity))
 import Control.Monad.State (StateT, mapStateT, MonadTrans (lift))
+import Control.Monad (forM, forM_)
+import Interpreter.InterpretStmt (interpretStmt)
 
 runId :: StateT State Identity a -> StateT State IO a
 runId = mapStateT (pure . runIdentity)
+
+id' :: a -> a
+id' = Prelude.id
 
 applyBiOp :: BiOp -> Value -> Value -> Value
 applyBiOp Eq v1 v2 = VNumber $ if v1 == v2 then 1 else 0
@@ -60,14 +66,44 @@ evalExpr Null = pure $ Pointer 0
 evalExpr (FieldAccess e id) = do
     fieldStruct <- evalExpr e
     case fieldStruct of
-        Interpreter.Data.Record mapping -> 
-            case lookup id mapping of
-                Just addr -> do
-                    val <- runId $ getsAddr addr
-                    case val of
-                        Just v -> pure v
-                        Nothing -> error $ "Invalid field " ++ id ++ " of a struct"
-                Nothing -> error $ "Attempted to access nonexistent field " ++ show id
+        Interpreter.Data.Record mapping -> do
+            let addr = maybe (error $ "Nonexistent field " ++ show id) id' (lookup id mapping)
+            runId (getsAddr addr) >>= maybe (error $ "Invalid field " ++ show id) pure
         _ -> error $ "Attempted to access field of " ++ show e
 
-evalExpr _ = undefined
+evalExpr (Parse.AST.Record (Fields fx)) = do
+    -- Evaluate all the fields
+    rr <- forM fx (\(n, value) -> (,) n <$> evalExpr value)
+    -- Save them into memory
+    ar <- forM rr (\(n, value) -> (,) n <$> runId (putsValue value))
+    pure $ Interpreter.Data.Record ar
+
+evalExpr (Number i) = pure $ VNumber i
+
+evalExpr (EIdentifier id) = do
+    val <- runId $ getsVar id
+    case val of
+        Just v -> pure v
+        Nothing -> error $ "Unknown variable " ++ id
+
+evalExpr (Call fun params) = do
+    f <- funBody <$> evalExpr fun
+    evalParams <- forM params evalExpr
+    evalFun f evalParams
+    where
+        funBody (Function fb) = fb
+        funBody x = error $ "Not a function: " <> show x
+
+evalFun :: FunDecl -> [Value] -> StateT State IO Value
+evalFun (FunDecl _name args (FunBlock _decl body ret)) params = do
+    -- create new stack frame
+    runId newFrame
+
+    -- insert params
+    forM_ (zip args params) (\(a,p) -> runId (putsVar a p))
+    
+    -- run the body
+    forM_ body interpretStmt
+
+    -- evalue and return the result
+    evalExpr ret
