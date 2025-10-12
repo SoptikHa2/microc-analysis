@@ -1,0 +1,3 @@
+[submodule "tests"]
+	path = tests
+	url = git@gitlab.fit.cvut.cz:NI-APR/B251/tests.git
