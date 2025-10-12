@@ -3,10 +3,6 @@ variables:
   IMAGE_LATEST: $CI_REGISTRY_IMAGE:latest
   DOCKER_BUILDKIT: "1"
 
-workflow:
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
 stages:
   - build-docker
   - build
@@ -66,3 +62,5 @@ test:
     - git clone --depth 1 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.fit.cvut.cz/NI-APR/B251/tests.git /tests
     - chmod +x /tests/test.sh
     - /tests/test.sh --microc "build/microc" --suite "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
