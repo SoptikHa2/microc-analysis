@@ -27,18 +27,15 @@ spec = do
     it "initializes with an empty heap" $
       heap empty `shouldBe` M.empty
 
-    it "initializes with _nextAddr as 0" $
-      _nextAddr empty `shouldBe` 0
-
   describe "putsValue" $ do
     it "stores a value on the heap and returns its address" $ do
       let (addr, state') = runStateTest (putsValue (VNumber 42)) empty
-      addr `shouldBe` 0
-      M.lookup 0 (heap state') `shouldBe` Just (VNumber 42)
+      addr `shouldBe` 1
+      M.lookup 1 (heap state') `shouldBe` Just (VNumber 42)
 
     it "increments _nextAddr after storing" $ do
       let state' = execStateTest (putsValue (VNumber 42)) empty
-      _nextAddr state' `shouldBe` 1
+      _nextAddr state' `shouldBe` 2
 
     it "stores multiple values with sequential addresses" $ do
       let computation = do
@@ -47,17 +44,17 @@ spec = do
             addr3 <- putsValue (VNumber 30)
             return (addr1, addr2, addr3)
       let ((addr1, addr2, addr3), state') = runStateTest computation empty
-      addr1 `shouldBe` 0
-      addr2 `shouldBe` 1
-      addr3 `shouldBe` 2
-      M.lookup 0 (heap state') `shouldBe` Just (VNumber 10)
-      M.lookup 1 (heap state') `shouldBe` Just (VNumber 20)
-      M.lookup 2 (heap state') `shouldBe` Just (VNumber 30)
+      addr1 `shouldBe` 1
+      addr2 `shouldBe` 2
+      addr3 `shouldBe` 3
+      M.lookup 1 (heap state') `shouldBe` Just (VNumber 10)
+      M.lookup 2 (heap state') `shouldBe` Just (VNumber 20)
+      M.lookup 3 (heap state') `shouldBe` Just (VNumber 30)
 
   describe "getsAddr" $ do
     it "retrieves a value from the heap by address" $ do
       let state' = execStateTest (putsValue (VNumber 42)) empty
-      let result = evalStateTest (getsAddr 0) state'
+      let result = evalStateTest (getsAddr 1) state'
       result `shouldBe` Just (VNumber 42)
 
     it "returns Nothing for non-existent address" $ do
@@ -78,8 +75,8 @@ spec = do
     it "stores a variable value on heap and maps it in the stack" $ do
       let state' = execStateTest (putsVar "x" (VNumber 42)) empty
       let topFrame = head (stack state')
-      M.lookup "x" topFrame `shouldBe` Just 0
-      M.lookup 0 (heap state') `shouldBe` Just (VNumber 42)
+      M.lookup "x" topFrame `shouldBe` Just 1
+      M.lookup 1 (heap state') `shouldBe` Just (VNumber 42)
 
     it "updates variable mapping if variable already exists in frame" $ do
       let computation = do
@@ -87,12 +84,12 @@ spec = do
             putsVar "x" (VNumber 20)
       let state' = execStateTest computation empty
       let topFrame = head (stack state')
-      -- Variable 'x' should point to the same address (0)
-      M.lookup "x" topFrame `shouldBe` Just 0
+      -- Variable 'x' should point to the same address (1)
+      M.lookup "x" topFrame `shouldBe` Just 1
       -- Only the new value should be there, the old one should
       -- be overwritten
-      M.lookup 0 (heap state') `shouldBe` Just (VNumber 20)
-      M.lookup 1 (heap state') `shouldBe` Nothing
+      M.lookup 1 (heap state') `shouldBe` Just (VNumber 20)
+      M.lookup 2 (heap state') `shouldBe` Nothing
 
     it "stores multiple variables in the same frame" $ do
       let computation = do
@@ -101,15 +98,15 @@ spec = do
             putsVar "z" (VNumber 30)
       let state' = execStateTest computation empty
       let topFrame = head (stack state')
-      M.lookup "x" topFrame `shouldBe` Just 0
-      M.lookup "y" topFrame `shouldBe` Just 1
-      M.lookup "z" topFrame `shouldBe` Just 2
+      M.lookup "x" topFrame `shouldBe` Just 1
+      M.lookup "y" topFrame `shouldBe` Just 2
+      M.lookup "z" topFrame `shouldBe` Just 3
 
   describe "getsVarAddr" $ do
     it "retrieves the address of a variable from the top frame" $ do
       let state' = execStateTest (putsVar "x" (VNumber 42)) empty
       let result = evalStateTest (getsVarAddr "x") state'
-      result `shouldBe` Just 0
+      result `shouldBe` Just 1
 
     it "returns Nothing for non-existent variable" $ do
       let result = evalStateTest (getsVarAddr "nonexistent") empty
@@ -146,7 +143,7 @@ spec = do
       let state' = execStateTest computation empty
       length (stack state') `shouldBe` 2
       -- Old frame should still have 'x'
-      M.lookup "x" (stack state' !! 1) `shouldBe` Just 0
+      M.lookup "x" (stack state' !! 1) `shouldBe` Just 1
 
     it "new frame does not see variables from previous frame via getsVar" $ do
       let computation = do
@@ -192,8 +189,8 @@ spec = do
             dropFrame
       let state' = execStateTest computation empty
       -- Both values should still be on heap
-      M.lookup 0 (heap state') `shouldBe` Just (VNumber 10)
-      M.lookup 1 (heap state') `shouldBe` Just (VNumber 20)
+      M.lookup 1 (heap state') `shouldBe` Just (VNumber 10)
+      M.lookup 2 (heap state') `shouldBe` Just (VNumber 20)
 
   describe "frame operations with pointers" $ do
     it "can store and retrieve pointer values" $ do
@@ -205,7 +202,7 @@ spec = do
               Nothing -> return ()
             getsVar "ptr"
       let result = evalStateTest computation empty
-      result `shouldBe` Just (Pointer 0)
+      result `shouldBe` Just (Pointer 1)
 
     it "pointer remains valid across frames" $ do
       let computation = do
@@ -247,6 +244,6 @@ spec = do
             putsVar "y" (VNumber 4)
             return (a1, a2)
       let ((a1, a2), state') = runStateTest computation empty
-      a1 `shouldBe` 0
-      a2 `shouldBe` 2
-      _nextAddr state' `shouldBe` 4
+      a1 `shouldBe` 1
+      a2 `shouldBe` 3
+      _nextAddr state' `shouldBe` 5

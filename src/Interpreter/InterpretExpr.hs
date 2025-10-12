@@ -1,4 +1,4 @@
-module Interpreter.InterpretExpr (evalExpr) where
+module Interpreter.InterpretExpr (evalExpr, applyBiOp) where
 
 import Prelude hiding (id)
 import qualified Prelude
@@ -44,9 +44,9 @@ evalExpr (UnOp Deref e1) = do
         _ -> error "Attempted to deref non-pointer"
 
 evalExpr (UnOp Ref (EIdentifier id)) = do
-    v <- runId $ getsVar id
+    v <- runId $ getsVarAddr id
     case v of
-        Just value -> pure value
+        Just value -> pure $ Pointer value
         Nothing -> error $ "Undefined variable " ++ show id
 
 evalExpr (UnOp Ref _) = error "Attempted to take address of non-variable"

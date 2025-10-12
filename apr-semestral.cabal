@@ -73,6 +73,7 @@ test-suite apr-semestral-test
   other-modules:
       DeclParserSpec
       ExprParserSpec
+      InterpretExprSpec
       StateSpec
       StmtParserSpec
       Paths_apr_semestral
