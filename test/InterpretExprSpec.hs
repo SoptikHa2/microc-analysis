@@ -7,7 +7,7 @@ import qualified Data.Map as M
 import Prelude hiding (return)
 import qualified Prelude
 
-import Interpreter.InterpretExpr
+import Interpreter.Interpret
 import Interpreter.State
 import Interpreter.Data (Value(..), Address)
 import Parse.AST

@@ -1,4 +1,4 @@
-module Interpreter.InterpretExpr (evalExpr, applyBiOp) where
+module Interpreter.Interpret (evalExpr, applyBiOp, evalStmt, evalExprForWrite) where
 
 import Prelude hiding (id)
 import qualified Prelude
@@ -105,8 +105,13 @@ evalFun (FunDecl _name args (FunBlock _decl body ret)) params = do
     -- run the body
     forM_ body evalStmt
 
-    -- evalue and return the result
-    evalExpr ret
+    -- evaluate and return the result
+    result <- evalExpr ret
+
+    -- drop the frame before returning
+    runId dropFrame
+
+    pure result
 
 -- -----------------
 

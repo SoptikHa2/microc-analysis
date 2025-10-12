@@ -5,6 +5,7 @@ import DeclParserSpec
 import StmtParserSpec
 import StateSpec
 import InterpretExprSpec
+import InterpretStmtSpec
 
 main :: IO ()
 main = hspec $ do
@@ -13,3 +14,4 @@ main = hspec $ do
   describe "Statement Parser" StmtParserSpec.spec
   describe "Interpreter State" StateSpec.spec
   describe "Expression Evaluation" InterpretExprSpec.spec
+  describe "Statement Evaluation" InterpretStmtSpec.spec
