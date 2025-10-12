@@ -18,6 +18,8 @@ default:
 build-docker:
   stage: build-docker
   image: docker:latest
+  rules:
+    - when: always
   services:
     - docker:dind
   variables:
@@ -47,12 +49,16 @@ build:
   artifacts:
     paths:
       - build/microc
+  rules:
+    - when: always
 
 unittest:
   stage: test
   script:
     - stack test
   allow_failure: true
+  rules:
+    - when: always
 
 test:
   stage: test
