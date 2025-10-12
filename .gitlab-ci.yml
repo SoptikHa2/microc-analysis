@@ -1,9 +1,42 @@
+variables:
+  IMAGE_SHA: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  IMAGE_LATEST: $CI_REGISTRY_IMAGE:latest
+  DOCKER_BUILDKIT: "1"
+
 stages:
+  - build-docker
   - build
   - test
 
 default:
-  image: $CI_REGISTRY_IMAGE:latest # haskell 9.6
+  image: $IMAGE_LATEST
+
+build-docker:
+  stage: build-docker
+  image: docker:latest
+  rules:
+    - when: manual
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker info
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker buildx version || true
+    - docker buildx create --use || docker buildx use default
+  script:
+    - >
+      docker buildx build
+      --push
+      --pull
+      --cache-from=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache
+      --cache-to=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache,mode=max
+      -t "$IMAGE_SHA"
+      -t "$IMAGE_LATEST"
+      -f Dockerfile
+      .
 
 build:
   stage: build
