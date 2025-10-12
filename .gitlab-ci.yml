@@ -16,6 +16,7 @@ build-docker:
   image: docker:latest
   rules:
     - when: manual
+  allow_failure: true
   services:
     - docker:dind
   variables:
