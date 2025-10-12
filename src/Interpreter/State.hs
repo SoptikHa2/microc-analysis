@@ -13,24 +13,29 @@ data State = State {
 }
 
 empty :: State
-empty = State { stack = [M.empty], heap = M.empty, _nextAddr = 0 }
+-- Start with address = 1, so we have nullptr = 0
+empty = State { stack = [M.empty], heap = M.empty, _nextAddr = 1 }
 
 -- heh, everything is on heap, so we can do pointers easily
 type Stack = M.Map Identifier Address
 
+-- Retrieve variable value from stack
 getsVar :: Identifier -> StateT State Identity (Maybe Value)
 getsVar id = do
     addr <- getsVarAddr id
     join <$> traverse getsAddr addr
 
+-- Retrieve address of a variable
 getsVarAddr :: Identifier -> StateT State Identity (Maybe Address)
 getsVarAddr id = do
     s <- gets $ head . stack
     pure $ M.lookup id s
 
+-- Dereference address into heap, and read
 getsAddr :: Address -> StateT State Identity (Maybe Value)
 getsAddr addr = gets (M.lookup addr . heap)
 
+-- Create or update variable in current stack top
 putsVar :: Identifier -> Value -> StateT State Identity ()
 putsVar id val = do
     existingAddr <- getsVarAddr id
@@ -50,9 +55,11 @@ putsVar id val = do
 
             modify (\(State _ h na) -> State { stack = newStack, heap = h, _nextAddr = na })
 
+-- Dereference address into heap, and write
 putsAddr :: Address -> Value -> StateT State Identity ()
 putsAddr addr val = modify (\(State s h na) -> State s (M.insert addr val h) na)
 
+-- Allocate space for new value, save it there, and return the new address.
 putsValue :: Value -> StateT State Identity Address
 putsValue val = do
     h <- gets heap
@@ -63,9 +70,11 @@ putsValue val = do
     modify (\(State s _ _) -> State s newH newNa)
     pure oldNa
 
+-- Create new stack frame
 newFrame :: StateT State Identity ()
 newFrame = modify (\(State s h na) -> State (M.empty : s) h na)
 
+-- Drop top stack frame
 dropFrame :: StateT State Identity ()
 -- TODO: Cleanup memory
 -- pointers will be dangling, and it's okay
