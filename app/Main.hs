@@ -4,7 +4,7 @@ import Options.Applicative hiding (empty)
 import Control.Monad.State (StateT, evalStateT, execStateT, mapStateT)
 import Control.Monad (forM_)
 import Control.Monad.Identity (Identity, runIdentity)
-import System.Exit (exitFailure)
+import System.Exit (exitFailure, exitWith, ExitCode (ExitFailure), exitSuccess)
 import Text.Parsec (parse)
 
 import Parse.DeclParser (program)
@@ -72,8 +72,12 @@ runProgram filepath args = do
               -- Run the main function with provided arguments
               result <- evalStateT (evalFun mainFun (map VNumber args)) initialState
 
-              -- Print the result
-              putStrLn $ "Program returned: " ++ show result
+              -- Exit with the status of main
+              case result of
+                (VNumber exitCode) | exitCode == 0 -> exitSuccess
+                (VNumber exitCode) -> exitWith (ExitFailure exitCode)
+                _ -> putStrLn $ "Unknown return value: " <> show result
+
 
 -- Find a function by name in the program
 findFunction :: Identifier -> Program -> Maybe FunDecl
