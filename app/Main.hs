@@ -12,6 +12,7 @@ import Parse.AST
 import qualified Interpreter.State as IS
 import Interpreter.Interpret (evalFun)
 import Interpreter.Data (Value(..))
+import Analysis.Analysis (runAnalysis)
 
 -- CLI data types
 data Command = Run FilePath [Int]
@@ -50,6 +51,9 @@ runProgram filepath args = do
       putStrLn $ "Parse error: " ++ show err
       exitFailure
     Right prog -> do
+      -- First of all, analyse it
+      _ <- runAnalysis prog
+
       -- Find the main function
       case findFunction "main" prog of
         Nothing -> do

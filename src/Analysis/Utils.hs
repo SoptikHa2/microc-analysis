@@ -2,7 +2,7 @@ module Analysis.Utils where
 import Parse.AST
 import Data.Generics.Uniplate.Data
 import Data.Data
-import Data.List
+import Data.List (group, sort)
 
 getIdentifiersUsed :: FunBlock -> [Identifier]
 getIdentifiersUsed fun = getIds fun.return <> concatMap getIds fun.body

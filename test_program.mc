@@ -1,5 +1,5 @@
-f() {
-    return 0;
+f(x) {
+    return x;
 }
 
 main() {

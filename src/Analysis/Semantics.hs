@@ -1,6 +1,5 @@
 module Analysis.Semantics (SemanticError(..), verify) where
 import Parse.AST
-import Data.List (nub)
 import Analysis.Utils (getIdentifiersUsed, dups)
 
 data SemanticError = UndeclaredIdentifier String
@@ -50,10 +49,10 @@ verifyIdentifiers globals fun = notValidErrors <> dupErrors
                 (DuplicateIdentifier $ i <> " is duplicate.")) <$> dupIds
 
 verifyRefTaking :: FunDecl -> [SemanticError]
-verifyRefTaking fun = undefined
+verifyRefTaking fun = []
 
 verifyAssignments :: FunDecl -> [SemanticError]
-verifyAssignments fun = undefined
+verifyAssignments fun = []
 
 verifyFields :: FunDecl -> [SemanticError]
-verifyFields fun = undefined
+verifyFields fun = []

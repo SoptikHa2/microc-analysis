@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Analysis.Analysis
       Analysis.Error
       Analysis.Semantics
       Analysis.Utils
