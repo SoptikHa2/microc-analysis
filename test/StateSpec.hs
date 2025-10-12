@@ -87,11 +87,12 @@ spec = do
             putsVar "x" (VNumber 20)
       let state' = execStateTest computation empty
       let topFrame = head (stack state')
-      -- Variable 'x' should point to the latest address (1)
-      M.lookup "x" topFrame `shouldBe` Just 1
-      -- Both values should exist on heap
-      M.lookup 0 (heap state') `shouldBe` Just (VNumber 10)
-      M.lookup 1 (heap state') `shouldBe` Just (VNumber 20)
+      -- Variable 'x' should point to the same address (0)
+      M.lookup "x" topFrame `shouldBe` Just 0
+      -- Only the new value should be there, the old one should
+      -- be overwritten
+      M.lookup 0 (heap state') `shouldBe` Just (VNumber 20)
+      M.lookup 1 (heap state') `shouldBe` Nothing
 
     it "stores multiple variables in the same frame" $ do
       let computation = do

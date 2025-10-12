@@ -33,13 +33,22 @@ getsAddr addr = gets (M.lookup addr . heap)
 
 putsVar :: Identifier -> Value -> StateT State Identity ()
 putsVar id val = do
-    -- First, insert onto heap
-    addr <- putsValue val
-    st <- gets stack
-    let newHead = M.insert id addr (head st)
-    let newStack = newHead : tail st
+    existingAddr <- getsVarAddr id
 
-    modify (\(State _ h na) -> State newStack h na)
+    case existingAddr of
+        Just addr -> do
+            -- Update the heap and do nothing with the stack
+            putsAddr addr val
+            pure ()
+        Nothing -> do
+            -- First, insert onto heap
+            addr <- putsValue val
+            -- Now, put the result onto stack
+            st <- gets stack
+            let newHead = M.insert id addr (head st)
+            let newStack = newHead : tail st
+
+            modify (\(State _ h na) -> State { stack = newStack, heap = h, _nextAddr = na })
 
 putsAddr :: Address -> Value -> StateT State Identity ()
 putsAddr addr val = modify (\(State s h na) -> State s (M.insert addr val h) na)
@@ -58,4 +67,6 @@ newFrame :: StateT State Identity ()
 newFrame = modify (\(State s h na) -> State (M.empty : s) h na)
 
 dropFrame :: StateT State Identity ()
+-- TODO: Cleanup memory
+-- pointers will be dangling, and it's okay
 dropFrame = modify (\(State s h na) -> State (tail s) h na)
