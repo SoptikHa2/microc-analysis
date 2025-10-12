@@ -1,0 +1,62 @@
+variables:
+  IMAGE_SHA: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  IMAGE_LATEST: $CI_REGISTRY_IMAGE:latest
+  DOCKER_BUILDKIT: "1"
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+stages:
+  - build-docker
+  - build
+  - test
+
+default:
+  image: $IMAGE_SHA
+
+build-docker:
+  stage: build-docker
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker info
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker buildx version || true
+    - docker buildx create --use || docker buildx use default
+  script:
+    - >
+      docker buildx build
+      --push
+      --pull
+      --cache-from=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache
+      --cache-to=type=registry,ref=$CI_REGISTRY_IMAGE:buildcache,mode=max
+      -t "$IMAGE_SHA"
+      -t "$IMAGE_LATEST"
+      -f .devcontainer/Dockerfile
+      .
+
+build:
+  stage: build
+  script:
+    - stack build --copy-bins --local-bin-path build
+  artifacts:
+    paths:
+      - build/microc
+
+unittest:
+  stage: test
+  script:
+    - stack test
+  allow_failure: true
+
+test:
+  stage: test
+  script:
+    - git clone --depth 1 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.fit.cvut.cz/NI-APR/B251/tests.git /tests
+    - chmod +x /tests/test.sh
+    - /tests/test.sh --microc "build/microc" --suite "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
