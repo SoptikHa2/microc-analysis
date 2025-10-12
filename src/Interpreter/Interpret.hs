@@ -95,7 +95,10 @@ evalExpr (Call fun params) = do
         funBody x = error $ "Not a function: " <> show x
 
 evalFun :: FunDecl -> [Value] -> StateT State IO Value
-evalFun (FunDecl _name args (FunBlock decl body ret)) params = do
+evalFun (FunDecl name args (FunBlock decl body ret)) params = do
+    when (length args /= length params) (error $
+        "Expected " <> show (length args) <> " params for function " <> name)
+
     -- create new stack frame
     runId newFrame
 
@@ -156,7 +159,7 @@ evalExprForWrite :: Expr -> StateT State IO Value
 
 evalExprForWrite (UnOp Deref e1) = do
     addr <- evalExpr e1
-    case addr of 
+    case addr of
         Pointer _ -> pure addr
         _ -> error $ "Deref encountered a non-pointer: " ++ show addr
 
