@@ -25,6 +25,7 @@ dependencies:
 - mtl
 - containers
 - optparse-applicative
+- uniplate
 
 ghc-options:
 - -Wall
@@ -36,6 +37,10 @@ ghc-options:
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
+
+default-extensions:
+  - OverloadedRecordDot
+  - DuplicateRecordFields
 
 library:
   source-dirs: src

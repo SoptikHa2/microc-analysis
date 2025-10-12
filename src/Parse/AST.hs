@@ -1,6 +1,8 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-
+{-# LANGUAGE DeriveDataTypeable #-}
 module Parse.AST where
+import Data.Data
+import Data.Typeable
+import Data.Generics.Uniplate.Data
 
 type Program = [FunDecl]
 
@@ -9,7 +11,7 @@ data FunDecl = FunDecl {
         args :: [Identifier],
         body :: FunBlock
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 type Identifier = String
 
@@ -18,7 +20,7 @@ data FunBlock = FunBlock {
         body :: [Stmt],
         return :: Expr
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data Stmt
     = OutputStmt Expr
@@ -33,13 +35,13 @@ data Stmt
     }
     | Block [Stmt]
     | AssignmentStmt Expr Expr
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data UnOp
     = Deref
     | Ref
     | Alloc
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data BiOp
     = Eq
@@ -48,7 +50,7 @@ data BiOp
     | Minus
     | Mul
     | Div
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data Expr
     = BiOp BiOp Expr Expr
@@ -63,7 +65,7 @@ data Expr
     | Record Record
     | Number Int
     | EIdentifier Identifier
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 newtype Record = Fields [(Identifier, Expr)]
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)

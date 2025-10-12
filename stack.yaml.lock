@@ -137,4 +137,39 @@ packages:
       size: 820
   original:
     hackage: prettyprinter-ansi-terminal-1.1.3@sha256:b00f727b964cf13adff7acf575a71fa7e405f5240aff50b07f10df76ab89f8d3,2574
+- completed:
+    hackage: uniplate-1.6.13@sha256:c8b715570d0b4baa72512e677552dd3f98372a64bf9de000e779bd4162fd7be7,3320
+    pantry-tree:
+      sha256: 7a3065d48fe43c2b7818500d4c571f5226760b5e96d0239b767bfeb573b3c349
+      size: 1936
+  original:
+    hackage: uniplate-1.6.13@sha256:c8b715570d0b4baa72512e677552dd3f98372a64bf9de000e779bd4162fd7be7,3320
+- completed:
+    hackage: hashable-1.5.0.0@sha256:2f23146cbe0325029927b221647695a4c7d6e97548ff731110979e34361f58ef,5914
+    pantry-tree:
+      sha256: 3129079baae1af3e7c9dd4585ae667138b69892cefa7c40c392d2cdaefa757c8
+      size: 1578
+  original:
+    hackage: hashable-1.5.0.0@sha256:2f23146cbe0325029927b221647695a4c7d6e97548ff731110979e34361f58ef,5914
+- completed:
+    hackage: syb-0.7.2.4@sha256:936d5a92084ad9d88c5a9dd2e622deab57ce48ce85be93e6273b3f8eb64c12ca,3872
+    pantry-tree:
+      sha256: 6c15efe240114f1104a5241a2b1f75f825e284cf118b6c66898c7b8fb0084043
+      size: 3400
+  original:
+    hackage: syb-0.7.2.4@sha256:936d5a92084ad9d88c5a9dd2e622deab57ce48ce85be93e6273b3f8eb64c12ca,3872
+- completed:
+    hackage: unordered-containers-0.2.20@sha256:233cbcdda6c2698932bb391ce0935fb44f80c115621ee815a21ed33ac8ede422,3921
+    pantry-tree:
+      sha256: fa7e8ec1f22c5525f1214df2a1f3ee593a31efd7a06592c4da021606cb21505e
+      size: 1647
+  original:
+    hackage: unordered-containers-0.2.20@sha256:233cbcdda6c2698932bb391ce0935fb44f80c115621ee815a21ed33ac8ede422,3921
+- completed:
+    hackage: os-string-2.0.7@sha256:2efc549644dd418bad537d1601fdd437c440d807265016bd993b6996c679ad2f,3298
+    pantry-tree:
+      sha256: 761fefba1881461226ef638051793e3517868f2f4eccb104b7c6ca49763a27d4
+      size: 2295
+  original:
+    hackage: os-string-2.0.7@sha256:2efc549644dd418bad537d1601fdd437c440d807265016bd993b6996c679ad2f,3298
 snapshots: []

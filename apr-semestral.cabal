@@ -25,6 +25,9 @@ source-repository head
 
 library
   exposed-modules:
+      Analysis.Error
+      Analysis.Semantics
+      Analysis.Utils
       Interpreter.Data
       Interpreter.Interpret
       Interpreter.State
@@ -41,6 +44,9 @@ library
       Paths_apr_semestral
   hs-source-dirs:
       src
+  default-extensions:
+      OverloadedRecordDot
+      DuplicateRecordFields
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
@@ -48,6 +54,7 @@ library
     , mtl
     , optparse-applicative
     , parsec >=3.1 && <4
+    , uniplate
   default-language: Haskell2010
 
 executable microc
@@ -58,6 +65,9 @@ executable microc
       Paths_apr_semestral
   hs-source-dirs:
       app
+  default-extensions:
+      OverloadedRecordDot
+      DuplicateRecordFields
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       apr-semestral
@@ -66,6 +76,7 @@ executable microc
     , mtl
     , optparse-applicative
     , parsec >=3.1 && <4
+    , uniplate
   default-language: Haskell2010
 
 test-suite apr-semestral-test
@@ -83,6 +94,9 @@ test-suite apr-semestral-test
       Paths_apr_semestral
   hs-source-dirs:
       test
+  default-extensions:
+      OverloadedRecordDot
+      DuplicateRecordFields
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       apr-semestral
@@ -92,4 +106,5 @@ test-suite apr-semestral-test
     , mtl
     , optparse-applicative
     , parsec >=3.1 && <4
+    , uniplate
   default-language: Haskell2010
