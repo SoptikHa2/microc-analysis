@@ -1,6 +1,8 @@
 module Analysis.Semantics (SemanticError(..), verify) where
 import Parse.AST
 import Analysis.Utils (getIdentifiersUsed, dups)
+import Data.Generics.Uniplate.Data
+import Data.Data
 
 data SemanticError = UndeclaredIdentifier String
                    | DuplicateIdentifier String
@@ -23,7 +25,7 @@ eFromFun fun = prepend ("In " <> fun.name <> ": ")
 verify :: [FunDecl] -> [SemanticError]
 verify funcs = concat (
             (verifyIdentifiers globals <$> funcs) <>
-            (verifyRefTaking <$> funcs) <>
+            (verifyRefTaking globals <$> funcs) <>
             (verifyAssignments <$> funcs) <>
             (verifyFields <$> funcs)
         )
@@ -48,8 +50,16 @@ verifyIdentifiers globals fun = notValidErrors <> dupErrors
             (\i -> eFromFun fun
                 (DuplicateIdentifier $ i <> " is duplicate.")) <$> dupIds
 
-verifyRefTaking :: FunDecl -> [SemanticError]
-verifyRefTaking fun = []
+-- Given a list of globals (functions), verify that one cannot take ref of a function
+verifyRefTaking :: [Identifier] -> FunDecl -> [SemanticError]
+verifyRefTaking globals fun = funRefTakenErrors
+    where
+        idsTaken :: Data a => a -> [Identifier]
+        idsTaken node = [id | UnOp Ref (EIdentifier id) <- universeBi node]
+
+        funRefTakenErrors =
+            (\i -> eFromFun fun
+                (TakingAddrOfFun $ "Taking address of function " <> i)) <$> filter (`elem` globals) (idsTaken fun)
 
 verifyAssignments :: FunDecl -> [SemanticError]
 verifyAssignments fun = []

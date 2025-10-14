@@ -1,7 +1,9 @@
+g() { return 0; }
+
 f(x) {
-    return x;
+    return &g;
 }
 
 main() {
-    return f();
+    return 0;
 }
