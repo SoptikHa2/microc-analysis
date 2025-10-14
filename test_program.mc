@@ -1,9 +1,7 @@
 g() { return 0; }
 
-f(x) {
-    return &g;
-}
-
 main() {
+    var foo;
+    foo.bar = 4;
     return 0;
 }

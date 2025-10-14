@@ -26,7 +26,7 @@ verify :: [FunDecl] -> [SemanticError]
 verify funcs = concat (
             (verifyIdentifiers globals <$> funcs) <>
             (verifyRefTaking globals <$> funcs) <>
-            (verifyAssignments <$> funcs) <>
+            (verifyAssignments globals <$> funcs) <>
             (verifyFields <$> funcs)
         )
     where
@@ -42,10 +42,10 @@ verifyIdentifiers globals fun = notValidErrors <> dupErrors
         notValidIds = [i | i <- usedIds, i `notElem` validIds]
         dupIds = dups validIds
 
-        notValidErrors = 
+        notValidErrors =
             (\i -> eFromFun fun
                 (UndeclaredIdentifier $ i <> " is not declared.")) <$> notValidIds
-        
+
         dupErrors =
             (\i -> eFromFun fun
                 (DuplicateIdentifier $ i <> " is duplicate.")) <$> dupIds
@@ -61,8 +61,30 @@ verifyRefTaking globals fun = funRefTakenErrors
             (\i -> eFromFun fun
                 (TakingAddrOfFun $ "Taking address of function " <> i)) <$> filter (`elem` globals) (idsTaken fun)
 
-verifyAssignments :: FunDecl -> [SemanticError]
-verifyAssignments fun = []
+verifyAssignments :: [Identifier] -> FunDecl -> [SemanticError]
+verifyAssignments globals fun = assignmentErrors
+    where
+        -- figure whether assignments are valid
+        assignmentTargetValid :: Expr -> Bool
+        -- *foo = _ is valid
+        assignmentTargetValid (UnOp Deref _) = True
+        -- non_global_var = _ is valid
+        assignmentTargetValid (EIdentifier id) | id `notElem` globals = True
+        -- foo.bar = _ is valid
+        assignmentTargetValid (FieldAccess _ _) = True
+        -- anything else is invalid
+        assignmentTargetValid _ = False
+
+        assignmentsValid :: Data a => a -> [(Expr, Bool)]
+        assignmentsValid node = [(target, assignmentTargetValid target) | AssignmentStmt target _ <- universeBi node]
+
+        invalidExprs = fst <$> filter (not . snd) (assignmentsValid fun)
+
+        assignmentErrors =
+            (\e -> eFromFun fun
+                (InvalidAssignment $ "Cannot assign into non-lvalue: " <> show e)) <$> invalidExprs
+
+
 
 verifyFields :: FunDecl -> [SemanticError]
 verifyFields fun = []
