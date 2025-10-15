@@ -1,8 +1,8 @@
 module Analysis.Semantics (SemanticError(..), verify) where
 import Parse.AST
-import Analysis.Utils (getIdentifiersUsed, dups)
 import Data.Generics.Uniplate.Data
 import Data.Data
+import Data.List (group, sort)
 
 data SemanticError = UndeclaredIdentifier String
                    | DuplicateIdentifier String
@@ -37,10 +37,10 @@ verifyIdentifiers :: [Identifier] -> FunDecl -> [SemanticError]
 verifyIdentifiers globals fun = notValidErrors <> dupErrors
     where
         validIds = globals <> fun.args <> fun.body.idDecl
-        usedIds = getIdentifiersUsed fun.body
+        usedIds = [i | EIdentifier i <- universeBi fun.body]
 
         notValidIds = [i | i <- usedIds, i `notElem` validIds]
-        dupIds = dups validIds
+        dupIds = head <$> filter ((>1) . length) (group $ sort usedIds)
 
         notValidErrors =
             (\i -> eFromFun fun
@@ -55,7 +55,7 @@ verifyRefTaking :: [Identifier] -> FunDecl -> [SemanticError]
 verifyRefTaking globals fun = funRefTakenErrors
     where
         idsTaken :: Data a => a -> [Identifier]
-        idsTaken node = [id | UnOp Ref (EIdentifier id) <- universeBi node]
+        idsTaken node = [i | UnOp Ref (EIdentifier i) <- universeBi node]
 
         funRefTakenErrors =
             (\i -> eFromFun fun

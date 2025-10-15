@@ -28,7 +28,6 @@ library
       Analysis.Analysis
       Analysis.Error
       Analysis.Semantics
-      Analysis.Utils
       Interpreter.Data
       Interpreter.Interpret
       Interpreter.State
