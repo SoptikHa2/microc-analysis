@@ -3,6 +3,7 @@ import Parse.AST
 import Data.Generics.Uniplate.Data
 import Data.Data
 import Data.List (group, sort)
+import Debug.Trace (trace)
 
 data SemanticError = UndeclaredIdentifier String
                    | DuplicateIdentifier String
@@ -27,7 +28,7 @@ verify funcs = concat (
             (verifyIdentifiers globals <$> funcs) <>
             (verifyRefTaking globals <$> funcs) <>
             (verifyAssignments globals <$> funcs) <>
-            (verifyFields <$> funcs)
+            (verifyFieldDefitions <$> funcs)
         )
     where
         globals = name <$> funcs
@@ -40,7 +41,7 @@ verifyIdentifiers globals fun = notValidErrors <> dupErrors
         usedIds = [i | EIdentifier i <- universeBi fun.body]
 
         notValidIds = [i | i <- usedIds, i `notElem` validIds]
-        dupIds = head <$> filter ((>1) . length) (group $ sort usedIds)
+        dupIds = head <$> filter ((>1) . length) (group $ sort validIds)
 
         notValidErrors =
             (\i -> eFromFun fun
@@ -86,5 +87,23 @@ verifyAssignments globals fun = assignmentErrors
 
 
 
-verifyFields :: FunDecl -> [SemanticError]
-verifyFields fun = []
+-- Record definitions may NOT contain other fields inside them
+verifyFieldDefitions :: FunDecl -> [SemanticError]
+verifyFieldDefitions fun = errors
+    where
+        fieldDefs = [f | Record (Fields f) <- universeBi fun]
+
+        fieldDefsWithRecord =
+            filter
+                ((\e -> case e of Record _ -> True; _ -> False) . snd)
+                (concat fieldDefs)
+        
+        errors =
+            (\e -> eFromFun fun
+                (NestedRecord $ "Field " <> fst e <> " contains nested field."))
+            <$> fieldDefsWithRecord
+
+
+-- When using a record, one may NOT reference a field it was not declared with
+verifyFieldAccess :: FunDecl -> [SemanticError]
+verifyFieldAccess fun = []

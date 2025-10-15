@@ -1,7 +1,6 @@
-g() { return 0; }
-
 main() {
-    var foo;
-    foo.bar = 4;
+    var rec, fun;
+
+    rec = { foo: 3, bar: main };
     return 0;
 }
