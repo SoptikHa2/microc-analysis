@@ -28,7 +28,8 @@ verify funcs = concat (
             (verifyIdentifiers globals <$> funcs) <>
             (verifyRefTaking globals <$> funcs) <>
             (verifyAssignments globals <$> funcs) <>
-            (verifyFieldDefitions <$> funcs)
+            (verifyFieldDefitions <$> funcs) <>
+            (verifyFieldAccess <$> funcs)
         )
     where
         globals = name <$> funcs
@@ -106,4 +107,18 @@ verifyFieldDefitions fun = errors
 
 -- When using a record, one may NOT reference a field it was not declared with
 verifyFieldAccess :: FunDecl -> [SemanticError]
-verifyFieldAccess fun = []
+verifyFieldAccess fun = errors
+    where
+        fieldDefs = [f | Record (Fields f) <- universeBi fun]
+        allFieldNames = fst <$> concat fieldDefs
+
+        fieldAccesses = [i | FieldAccess _ i <- universeBi fun]
+
+        invalidAccess = filter (`notElem` allFieldNames) fieldAccesses
+
+        errors =
+            (\e -> eFromFun fun
+                (InvalidRecordField $ "Accessing unknown record field: " <> e))
+            <$> invalidAccess
+
+
