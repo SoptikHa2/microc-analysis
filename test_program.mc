@@ -1,7 +1,9 @@
 main() {
-    var rec, fun;
+    var rec, ptr;
 
     rec = { foo: 3, bar: main };
-    output rec.baz;
+    ptr = &(rec.bar);
+    *ptr = 5;
+    output rec.bar;
     return 0;
 }

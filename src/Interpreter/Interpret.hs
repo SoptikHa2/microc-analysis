@@ -49,6 +49,14 @@ evalExpr (UnOp Ref (EIdentifier id)) = do
         Just value -> pure $ Pointer value
         Nothing -> error $ "Undefined variable " ++ show id
 
+evalExpr (UnOp Ref (FieldAccess record field)) = do
+    fieldStruct <- evalExpr record
+    case fieldStruct of
+        Interpreter.Data.Record mapping -> do
+            let addr = maybe (error $ "Nonexistent field " ++ show field) id' (lookup field mapping)
+            pure $ Pointer addr
+        _ -> error $ "Attempted to access field of " ++ show record
+
 evalExpr (UnOp Ref _) = error "Attempted to take address of non-variable"
 
 evalExpr (UnOp Alloc e1) = do
@@ -63,13 +71,9 @@ evalExpr Input = do
 
 evalExpr Null = pure $ Pointer 0
 
-evalExpr (FieldAccess e id) = do
-    fieldStruct <- evalExpr e
-    case fieldStruct of
-        Interpreter.Data.Record mapping -> do
-            let addr = maybe (error $ "Nonexistent field " ++ show id) id' (lookup id mapping)
-            runId (getsAddr addr) >>= maybe (error $ "Invalid field " ++ show id) pure
-        _ -> error $ "Attempted to access field of " ++ show e
+evalExpr fa@(FieldAccess _ id) = do
+    Pointer ptr <- evalExpr (UnOp Ref fa)
+    runId (getsAddr ptr) >>= maybe (error $ "Invalid field " ++ show id) pure
 
 evalExpr (Parse.AST.Record (Fields fx)) = do
     -- Evaluate all the fields
