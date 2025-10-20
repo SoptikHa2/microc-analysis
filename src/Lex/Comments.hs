@@ -4,11 +4,11 @@ import Text.Parsec
 
 singleLineComment :: Parser ()
 singleLineComment =
-    string "//" >> manyTill anyChar newline >> return ()
+    string "//" >> manyTill anyChar newline >> spaces >> return ()
 
 blockComment :: Parser ()
 blockComment =
-    string "/*" >> manyTill anyChar (string "*/") >> return ()
+    string "/*" >> manyTill anyChar (string "*/") >> spaces >> return ()
 
 comment :: Parser ()
-comment = spaces >> (try singleLineComment <|> try blockComment) >> spaces >> return ()
+comment = spaces >> many (try singleLineComment <|> try blockComment) >> spaces >> return ()

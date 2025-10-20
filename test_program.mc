@@ -1,14 +1,9 @@
- sum(n) {
-   var x;
-   x = 0;
-   while (n > 0) {
-     x = x + 1;
-     n = n - 1;
-   }
+// foo
+// bar
 
-   return x;
- }
-
- main() {
-   return sum(50000);
- }
+main(x, y) {
+  var z;
+  z = input;
+  output x + y + z;
+  return 0;
+}

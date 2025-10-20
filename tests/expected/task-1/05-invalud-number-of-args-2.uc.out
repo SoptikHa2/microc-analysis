@@ -3,6 +3,6 @@ test: run suites/task-1/05-invalud-number-of-args-2.uc
 ---
 microc: At "suites/task-1/05-invalud-number-of-args-2.uc" (line 6, column 21): Expected 2 params for function f
 CallStack (from HasCallStack):
-  error, called at src/Interpreter/Interpret.hs:22:18 in apr-semestral-0.1.0.0-7AYOm87uI8G3bgmoKhgVM9:Interpreter.Interpret
+  error, called at src/Interpreter/Interpret.hs:22:18 in apr-semestral-0.1.0.0-67TXEg2A5vy1w4Ceq9PLWD:Interpreter.Interpret
 
 exit: 1

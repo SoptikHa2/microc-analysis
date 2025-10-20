@@ -112,3 +112,9 @@ spec = do
   describe "Chained arithmetics" $ do
     it "parses double dereference (**x)" $
       parseExpr "**x" `shouldBe` Right (UnOp testPos Deref (UnOp testPos Deref (EIdentifier testPos "x")))
+  
+  describe "Comments" $ do
+    it "near IDs" $
+      parseExpr "/*foo*/x" `shouldBe` Right (EIdentifier testPos "x")
+    it "whole line near Ids" $
+      parseExpr "// foo \nx // this is x" `shouldBe` Right (EIdentifier testPos "x")

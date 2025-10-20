@@ -81,3 +81,9 @@ spec = do
           , body = Block  testPos [OutputStmt  testPos (Number  testPos 1)]
           , elseBody = Just (Block  testPos [OutputStmt  testPos (Number  testPos 0)])
           })
+  
+  describe "Comments" $ do
+    it "works in blocks" $
+      parseStmt "{ /* inside */ }" `shouldBe` Right (Block testPos [])
+    it "double comments" $
+      parseStmt "{ /*in1*/ /*in2*/ }" `shouldBe` Right (Block testPos [])
