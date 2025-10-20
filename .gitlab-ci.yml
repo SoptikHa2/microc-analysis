@@ -60,8 +60,7 @@ unittest:
 test:
   stage: test
   script:
-    - git clone --depth 1 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.fit.cvut.cz/NI-APR/B251/tests.git /tests
-    - chmod +x /tests/test.sh
-    - /tests/test.sh --microc "build/microc" --suite "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
+    - chmod +x tests/test.sh
+    - tests/test.sh --microc "build/microc" --suite "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
