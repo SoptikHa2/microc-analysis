@@ -91,6 +91,7 @@ test-suite apr-semestral-test
       InterpretStmtSpec
       StateSpec
       StmtParserSpec
+      TestUtils
       Paths_apr_semestral
   autogen-modules:
       Paths_apr_semestral
