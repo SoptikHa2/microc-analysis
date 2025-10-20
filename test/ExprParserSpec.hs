@@ -108,3 +108,7 @@ spec = do
 
     it "parses field access on function result" $
       parseExpr "func().field" `shouldBe` Right (FieldAccess  testPos (Call { d =  testPos, target = EIdentifier  testPos "func", args = [] }) "field")
+    
+  describe "Chained arithmetics" $ do
+    it "parses double dereference (**x)" $
+      parseExpr "**x" `shouldBe` Right (UnOp testPos Deref (UnOp testPos Deref (EIdentifier testPos "x")))
