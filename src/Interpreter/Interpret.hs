@@ -9,6 +9,7 @@ import Control.Monad.Identity (Identity(runIdentity))
 import Control.Monad.State (StateT, mapStateT, MonadTrans (lift))
 import Control.Monad (forM, forM_, when)
 import Data.Foldable (traverse_)
+import Text.Parsec (SourcePos)
 
 runId :: StateT State Identity a -> StateT State IO a
 runId = mapStateT (pure . runIdentity)
@@ -27,13 +28,13 @@ applyBiOp Div (VNumber i1) (VNumber i2) = if i2 == 0
     else VNumber $ i1 `div` i2
 applyBiOp op v1 v2 = error $ "Undefined operation " ++ show op ++ " on " ++ show v1 ++ ", " ++ show v2
 
-evalExpr :: Expr -> StateT State IO Value
-evalExpr (BiOp op e1 e2) = do
+evalExpr :: Expr SourcePos -> StateT State IO Value
+evalExpr (BiOp _ op e1 e2) = do
     ee1 <- evalExpr e1
     ee2 <- evalExpr e2
     pure $ applyBiOp op ee1 ee2
 
-evalExpr (UnOp Deref e1) = do
+evalExpr (UnOp _ Deref e1) = do
     ee1 <- evalExpr e1
     case ee1 of
         Pointer addr -> do
@@ -43,13 +44,13 @@ evalExpr (UnOp Deref e1) = do
                 Nothing -> error $ "Dangling pointer: " ++ show addr
         _ -> error "Attempted to deref non-pointer"
 
-evalExpr (UnOp Ref (EIdentifier id)) = do
+evalExpr (UnOp _ Ref (EIdentifier _ id)) = do
     v <- runId $ getsVarAddr id
     case v of
         Just value -> pure $ Pointer value
         Nothing -> error $ "Undefined variable " ++ show id
 
-evalExpr (UnOp Ref (FieldAccess record field)) = do
+evalExpr (UnOp _ Ref (FieldAccess _ record field)) = do
     fieldStruct <- evalExpr record
     case fieldStruct of
         Interpreter.Data.Record mapping -> do
@@ -57,40 +58,40 @@ evalExpr (UnOp Ref (FieldAccess record field)) = do
             pure $ Pointer addr
         _ -> error $ "Attempted to access field of " ++ show record
 
-evalExpr (UnOp Ref _) = error "Attempted to take address of non-variable"
+evalExpr (UnOp _ Ref _) = error "Attempted to take address of non-variable"
 
-evalExpr (UnOp Alloc e1) = do
+evalExpr (UnOp _ Alloc e1) = do
     valueToStore <- evalExpr e1
     addr <- runId $ putsValue valueToStore
     pure $ Pointer addr
 
-evalExpr Input = do
+evalExpr (Input _) = do
     -- Maybe more datatypes?
     num <- lift (readLn :: IO Int)
     pure $ VNumber num
 
-evalExpr Null = pure $ Pointer 0
+evalExpr (Null _) = pure $ Pointer 0
 
-evalExpr fa@(FieldAccess _ id) = do
-    Pointer ptr <- evalExpr (UnOp Ref fa)
+evalExpr fa@(FieldAccess loc _ id) = do
+    Pointer ptr <- evalExpr (UnOp loc Ref fa)
     runId (getsAddr ptr) >>= maybe (error $ "Invalid field " ++ show id) pure
 
-evalExpr (Parse.AST.Record (Fields fx)) = do
+evalExpr (Parse.AST.Record _ (Fields fx)) = do
     -- Evaluate all the fields
     rr <- forM fx (\(n, value) -> (,) n <$> evalExpr value)
     -- Save them into memory
     ar <- forM rr (\(n, value) -> (,) n <$> runId (putsValue value))
     pure $ Interpreter.Data.Record ar
 
-evalExpr (Number i) = pure $ VNumber i
+evalExpr (Number _ i) = pure $ VNumber i
 
-evalExpr (EIdentifier id) = do
+evalExpr (EIdentifier _ id) = do
     val <- runId $ getsVar id
     case val of
         Just v -> pure v
         Nothing -> error $ "Unknown variable " ++ id
 
-evalExpr (Call fun params) = do
+evalExpr (Call _ fun params) = do
     f <- funBody <$> evalExpr fun
     evalParams <- forM params evalExpr
     evalFun f evalParams
@@ -98,8 +99,8 @@ evalExpr (Call fun params) = do
         funBody (Function fb) = fb
         funBody x = error $ "Not a function: " <> show x
 
-evalFun :: FunDecl -> [Value] -> StateT State IO Value
-evalFun (FunDecl name args (FunBlock decl body ret)) params = do
+evalFun :: FunDecl SourcePos -> [Value] -> StateT State IO Value
+evalFun (FunDecl _ name args (FunBlock _ decl body ret)) params = do
     when (length args /= length params) (error $
         "Expected " <> show (length args) <> " params for function " <> name)
 
@@ -125,29 +126,29 @@ evalFun (FunDecl name args (FunBlock decl body ret)) params = do
 
 -- -----------------
 
-evalStmt :: Stmt -> StateT State IO ()
+evalStmt :: Stmt SourcePos -> StateT State IO ()
 
-evalStmt (OutputStmt e) = do
+evalStmt (OutputStmt _ e) = do
     v <- evalExpr e
     lift $ print v
     pure ()
 
-evalStmt this@(WhileStmt cond body) = do
+evalStmt this@(WhileStmt _ cond body) = do
     c <- evalExpr cond
     when (truthy c) $ do
         evalStmt body
         evalStmt this
 
-evalStmt (IfStmt cond tru fals) = do
+evalStmt (IfStmt _ cond tru fals) = do
     c <- evalExpr cond
     if truthy c
         then evalStmt tru
         else traverse_ evalStmt fals
 
-evalStmt (Block stmx) = do
+evalStmt (Block _ stmx) = do
     traverse_ evalStmt stmx
 
-evalStmt (AssignmentStmt etarget eval) = do
+evalStmt (AssignmentStmt _ etarget eval) = do
     target <- evalExprForWrite etarget
     value <- evalExpr eval
 
@@ -159,22 +160,22 @@ evalStmt (AssignmentStmt etarget eval) = do
 
 -- Eval expression which is target for writing. This works only for identifiers, record field access and *.
 -- This returns a pointer, not the value.
-evalExprForWrite :: Expr -> StateT State IO Value
+evalExprForWrite :: Expr SourcePos -> StateT State IO Value
 
-evalExprForWrite (UnOp Deref e1) = do
+evalExprForWrite (UnOp _ Deref e1) = do
     addr <- evalExpr e1
     case addr of
         Pointer _ -> pure addr
         _ -> error $ "Deref encountered a non-pointer: " ++ show addr
 
-evalExprForWrite (FieldAccess field id) = do
+evalExprForWrite (FieldAccess _ field id) = do
     fieldStruct <- evalExpr field
     case fieldStruct of
         Interpreter.Data.Record mapping ->
             maybe (error $ "Nonexistent field " ++ show id) (pure . Pointer) (lookup id mapping)
         _ -> error $ "Attempted to access field of " ++ show field
 
-evalExprForWrite (EIdentifier id) =
+evalExprForWrite (EIdentifier _ id) =
     runId (getsVarAddr id) >>= maybe (error $ "Variable not found: " ++ id) (pure . Pointer)
 
 evalExprForWrite e = error $ "Target to write is read-only: " ++ show e

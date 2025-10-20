@@ -37,7 +37,9 @@ library
       Parse.AST
       Parse.DeclParser
       Parse.ExprParser
+      Parse.Location
       Parse.StmtParser
+      Utils
   other-modules:
       Paths_apr_semestral
   autogen-modules:

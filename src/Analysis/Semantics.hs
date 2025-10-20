@@ -1,8 +1,10 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Analysis.Semantics (SemanticError(..), verify) where
 import Parse.AST
 import Data.Generics.Uniplate.Data
-import Data.Data
 import Data.List (group, sort)
+import Data.Maybe (catMaybes)
+import Data.Data
 import Debug.Trace (trace)
 
 data SemanticError = UndeclaredIdentifier String
@@ -13,8 +15,10 @@ data SemanticError = UndeclaredIdentifier String
                    | NestedRecord String
     deriving (Show)
 
-eFromFun :: FunDecl -> SemanticError -> SemanticError
-eFromFun fun = prepend ("In " <> fun.name <> ": ")
+eFromFun :: Show a => FunDecl a -> Maybe a -> SemanticError -> SemanticError
+eFromFun fun loc = case loc of
+        Just loc -> prepend ("In " <> fun.name <> ", " <> show loc <> ": ")
+        Nothing -> prepend ("In " <> fun.name <>": ")
     where prepend prefix err = case err of
             UndeclaredIdentifier s -> UndeclaredIdentifier (prefix ++ s)
             DuplicateIdentifier s -> DuplicateIdentifier (prefix ++ s)
@@ -23,7 +27,7 @@ eFromFun fun = prepend ("In " <> fun.name <> ": ")
             InvalidRecordField s -> InvalidRecordField (prefix ++ s)
             NestedRecord s -> NestedRecord (prefix ++ s)
 
-verify :: [FunDecl] -> [SemanticError]
+verify :: (Show a, Data a) => [FunDecl a] -> [SemanticError]
 verify funcs = concat (
             (verifyIdentifiers globals <$> funcs) <>
             (verifyRefTaking globals <$> funcs) <>
@@ -35,90 +39,87 @@ verify funcs = concat (
         globals = name <$> funcs
 
 -- Given list of globals (functions), verify the given function is ok -- no dups and no unknowns
-verifyIdentifiers :: [Identifier] -> FunDecl -> [SemanticError]
+verifyIdentifiers :: (Show a, Data a) => [Identifier] -> FunDecl a -> [SemanticError]
 verifyIdentifiers globals fun = notValidErrors <> dupErrors
     where
         validIds = globals <> fun.args <> fun.body.idDecl
-        usedIds = [i | EIdentifier i <- universeBi fun.body]
+        usedIds = [(i, loc) | EIdentifier loc i <- universeBi fun.body]
 
-        notValidIds = [i | i <- usedIds, i `notElem` validIds]
+        notValidIds = [(i, loc) | (i, loc) <- usedIds, i `notElem` validIds]
         dupIds = head <$> filter ((>1) . length) (group $ sort validIds)
 
         notValidErrors =
-            (\i -> eFromFun fun
+            (\(i, loc) -> eFromFun fun (Just loc)
                 (UndeclaredIdentifier $ i <> " is not declared.")) <$> notValidIds
 
         dupErrors =
-            (\i -> eFromFun fun
+            (\i -> eFromFun fun Nothing
                 (DuplicateIdentifier $ i <> " is duplicate.")) <$> dupIds
 
 -- Given a list of globals (functions), verify that one cannot take ref of a function
-verifyRefTaking :: [Identifier] -> FunDecl -> [SemanticError]
+verifyRefTaking :: (Show a, Data a) => [Identifier] -> FunDecl a -> [SemanticError]
 verifyRefTaking globals fun = funRefTakenErrors
     where
-        idsTaken :: Data a => a -> [Identifier]
-        idsTaken node = [i | UnOp Ref (EIdentifier i) <- universeBi node]
+        idsTaken node = [(i, loc) | UnOp loc Ref (EIdentifier _ i) <- universeBi node]
 
         funRefTakenErrors =
-            (\i -> eFromFun fun
-                (TakingAddrOfFun $ "Taking address of function " <> i)) <$> filter (`elem` globals) (idsTaken fun)
+            (\(i, loc) -> eFromFun fun (Just loc)
+                (TakingAddrOfFun $ "Taking address of function " <> i)) <$> filter (\(e,_) -> e `elem` globals) (idsTaken fun)
 
-verifyAssignments :: [Identifier] -> FunDecl -> [SemanticError]
+verifyAssignments :: (Show a, Data a) => [Identifier] -> FunDecl a -> [SemanticError]
 verifyAssignments globals fun = assignmentErrors
     where
         -- figure whether assignments are valid
-        assignmentTargetValid :: Expr -> Bool
+        assignmentTargetValid :: Expr a -> Bool
         -- *foo = _ is valid
-        assignmentTargetValid (UnOp Deref _) = True
+        assignmentTargetValid (UnOp _ Deref _) = True
         -- non_global_var = _ is valid
-        assignmentTargetValid (EIdentifier id) | id `notElem` globals = True
+        assignmentTargetValid (EIdentifier _ id) | id `notElem` globals = True
         -- foo.bar = _ is valid
-        assignmentTargetValid (FieldAccess _ _) = True
+        assignmentTargetValid (FieldAccess _ _ _) = True
         -- anything else is invalid
         assignmentTargetValid _ = False
 
-        assignmentsValid :: Data a => a -> [(Expr, Bool)]
-        assignmentsValid node = [(target, assignmentTargetValid target) | AssignmentStmt target _ <- universeBi node]
+        assignmentsValid node = [((target, loc), assignmentTargetValid target) | AssignmentStmt loc target _ <- universeBi node]
 
         invalidExprs = fst <$> filter (not . snd) (assignmentsValid fun)
 
         assignmentErrors =
-            (\e -> eFromFun fun
+            (\(e, loc) -> eFromFun fun (Just loc)
                 (InvalidAssignment $ "Cannot assign into non-lvalue: " <> show e)) <$> invalidExprs
 
 
 
 -- Record definitions may NOT contain other fields inside them
-verifyFieldDefitions :: FunDecl -> [SemanticError]
+verifyFieldDefitions :: forall a. (Show a, Data a) => FunDecl a -> [SemanticError]
 verifyFieldDefitions fun = errors
     where
-        fieldDefs = [f | Record (Fields f) <- universeBi fun]
+        fieldDefs = concat [f | Record (_ :: a) (Fields f) <- universeBi fun]
 
-        fieldDefsWithRecord =
-            filter
-                ((\e -> case e of Record _ -> True; _ -> False) . snd)
-                (concat fieldDefs)
+        fieldDefsWithRecord = catMaybes $ map
+            (\(id, e) -> case e of Record loc _ -> Just (id, loc); _ -> Nothing)
+            fieldDefs
         
         errors =
-            (\e -> eFromFun fun
-                (NestedRecord $ "Field " <> fst e <> " contains nested field."))
+            (\(id, loc) -> eFromFun fun (Just loc)
+                (NestedRecord $ "Field " <> id <> " contains nested field."))
             <$> fieldDefsWithRecord
 
 
 -- When using a record, one may NOT reference a field it was not declared with
-verifyFieldAccess :: FunDecl -> [SemanticError]
+verifyFieldAccess :: forall a. (Show a, Data a) => FunDecl a -> [SemanticError]
 verifyFieldAccess fun = errors
     where
-        fieldDefs = [f | Record (Fields f) <- universeBi fun]
-        allFieldNames = fst <$> concat fieldDefs
+        fieldDefs = concat [f | Record (_ :: a) (Fields f) <- universeBi fun]
 
-        fieldAccesses = [i | FieldAccess _ i <- universeBi fun]
+        fieldNames = fst <$> fieldDefs
 
-        invalidAccess = filter (`notElem` allFieldNames) fieldAccesses
+        fieldAccesses = [(i, loc) | FieldAccess loc _ i <- universeBi fun]
+        
+        invalidAccess = filter (\(e, _) -> e `notElem` fieldNames) fieldAccesses
 
         errors =
-            (\e -> eFromFun fun
+            (\(e, loc) -> eFromFun fun (Just loc)
                 (InvalidRecordField $ "Accessing unknown record field: " <> e))
             <$> invalidAccess
-
 

@@ -6,16 +6,18 @@ import Parse.AST
 import Text.Parsec
 import qualified Text.Parsec.Expr as E
 import Text.Parsec.String (Parser)
+import Parse.Location
+import Utils
 
 
-expression :: Parser Expr
+expression :: Parser (Expr SourcePos)
 expression = try exprArithm <|> try exprWithoutArithmetics <?> "expression"
 
-exprWithoutArithmetics :: Parser Expr
+exprWithoutArithmetics :: Parser (Expr SourcePos)
 exprWithoutArithmetics =
     try input <|> try nul <|> try alloc <|> try postfixExpr
 
-postfixExpr :: Parser Expr
+postfixExpr :: Parser (Expr SourcePos)
 postfixExpr = do
     -- It certainly has a primary expression first
     e <- primaryExpr
@@ -24,15 +26,15 @@ postfixExpr = do
 
     pure $ recApply e ops
     where
-        fieldAccessRest :: Parser (Expr -> Expr)
-        fieldAccessRest = Lexer.dot >> flip FieldAccess <$> Lexer.identifierStr
+        fieldAccessRest :: Parser (Expr SourcePos -> Expr SourcePos)
+        fieldAccessRest = Lexer.dot >> (flip . FieldAccess <$> loc) <*> Lexer.identifierStr
 
-        callRest :: Parser (Expr -> Expr)
+        callRest :: Parser (Expr SourcePos -> Expr SourcePos)
         callRest = do
             _ <- Lexer.parenOpen
             ex <- many (expression <* spaces <* optional (char ',') <* spaces)
             _ <- Lexer.parenClose
-            pure $ flip Call ex
+            (flip . Call <$> loc) <+> ex
 
         -- This function has to exist
         recApply :: a -> [a -> a] -> a
@@ -40,74 +42,76 @@ postfixExpr = do
         recApply a (x:xs) = recApply (x a) xs
 
 
-primaryExpr :: Parser Expr
+primaryExpr :: Parser (Expr SourcePos)
 primaryExpr = try number <|> try identifier <|> try record <|> try paren
 
-identifier :: Parser Expr
-identifier = EIdentifier <$> Lexer.identifierStr
+identifier :: Parser (Expr SourcePos)
+identifier = EIdentifier <$> loc <*> Lexer.identifierStr
 
-record :: Parser Expr
+record :: Parser (Expr SourcePos)
 record = do
     _ <- Lexer.bracketOpen
     fx <- many (field <* spaces <* optional (char ',') <* spaces)
     _ <- Lexer.bracketClose
-    pure $ Record $ Fields fx
+    Record <$> loc <+> Fields fx
     where
-        field :: Parser (Identifier, Expr)
+        field :: Parser (Identifier, Expr SourcePos)
         field = do
             i <- Lexer.identifierStr
             _ <- Lexer.colon
             e <- expression
             pure (i, e)
 
-paren :: Parser Expr
+paren :: Parser (Expr SourcePos)
 paren = between Lexer.parenOpen Lexer.parenClose expression
 
-number :: Parser Expr
+number :: Parser (Expr SourcePos)
 number = do
     L.Number num <- Lexer.numLiteral
-    pure $ Number num
+    Number <$> loc <+> num
 
-input :: Parser Expr
-input = Lexer.keyword L.Input >> pure Input
+input :: Parser (Expr SourcePos)
+input = Lexer.keyword L.Input >> Input <$> loc
 
-nul :: Parser Expr
-nul = Lexer.keyword L.Null >> pure Null
+nul :: Parser (Expr SourcePos)
+nul = Lexer.keyword L.Null >> Null <$> loc
 
-alloc :: Parser Expr
-alloc = Lexer.keyword L.Alloc >> UnOp Alloc <$> expression
+alloc :: Parser (Expr SourcePos)
+alloc = Lexer.keyword L.Alloc >> UnOp <$> loc <+> Alloc <*> expression
 
-exprArithm :: Parser Expr
-exprArithm = E.buildExpressionParser arithmTable arithmTerm
+exprArithm :: Parser (Expr SourcePos)
+exprArithm = do
+    l <- loc
+    E.buildExpressionParser (arithmTable l) arithmTerm
 
-arithmTerm :: Parser Expr
+arithmTerm :: Parser (Expr SourcePos)
 arithmTerm = try exprWithoutArithmetics <|> try arithmParens
 
-arithmTable = [
+arithmTable l = [
         [
-            E.Prefix (try $ UnOp Deref <$ Lexer.star)
+            E.Prefix (try $ UnOp l Deref <$ Lexer.star)
         ],
         [
-            E.Prefix (try $ UnOp Ref <$ Lexer.and) -- &
+            E.Prefix (try $ UnOp l Ref <$ Lexer.and) -- &
         ],
         [
-            E.Prefix (try $ UnOp Alloc <$ Lexer.keyword L.Alloc)
+            E.Prefix (try $ UnOp l Alloc <$ Lexer.keyword L.Alloc)
         ],
         [
-            E.Infix (try $ BiOp Mul <$ Lexer.star) E.AssocLeft,
-            E.Infix (try $ BiOp Div <$ Lexer.division) E.AssocLeft
+            E.Infix (try $ BiOp l Mul <$ Lexer.star) E.AssocLeft,
+            E.Infix (try $ BiOp l Div <$ Lexer.division) E.AssocLeft
         ],
         [
-            E.Infix (try $ BiOp Plus <$ Lexer.plus) E.AssocLeft,
-            E.Infix (try $ BiOp Minus <$ Lexer.minus) E.AssocLeft
+            E.Infix (try $ BiOp l Plus <$ Lexer.plus) E.AssocLeft,
+            E.Infix (try $ BiOp l Minus <$ Lexer.minus) E.AssocLeft
         ],
         [
-            E.Infix (try $ BiOp Gt <$ Lexer.gt) E.AssocLeft
+            E.Infix (try $ BiOp l Gt <$ Lexer.gt) E.AssocLeft
         ],
         [
-            E.Infix (try $ BiOp Eq <$ Lexer.eq) E.AssocLeft
+            E.Infix (try $ BiOp l Eq <$ Lexer.eq) E.AssocLeft
         ]
     ]
 
-arithmParens :: Parser Expr
+arithmParens :: Parser (Expr SourcePos)
 arithmParens = between Lexer.parenOpen Lexer.parenClose exprArithm

@@ -5,7 +5,7 @@ import Control.Monad.State (StateT, evalStateT, execStateT, mapStateT)
 import Control.Monad (forM_)
 import Control.Monad.Identity (Identity, runIdentity)
 import System.Exit (exitFailure, exitWith, ExitCode (ExitFailure), exitSuccess)
-import Text.Parsec (parse)
+import Text.Parsec (parse, SourcePos)
 
 import Parse.DeclParser (program)
 import Parse.AST
@@ -61,7 +61,7 @@ runProgram filepath args = do
           exitFailure
         Just mainFun -> do
           -- Check argument count matches
-          let FunDecl _ funArgs _ = mainFun
+          let FunDecl _ _ funArgs _ = mainFun
           let expectedArgs = length funArgs
           let providedArgs = length args
           if expectedArgs /= providedArgs
@@ -84,19 +84,19 @@ runProgram filepath args = do
 
 
 -- Find a function by name in the program
-findFunction :: Identifier -> Program -> Maybe FunDecl
+findFunction :: Identifier -> Program a -> Maybe (FunDecl a)
 findFunction name = foldr go Nothing
   where
-    go f@(FunDecl fname _ _) acc
+    go f@(FunDecl _ fname _ _) acc
       | fname == name = Just f
       | otherwise = acc
 
 -- Initialize the interpreter state with all functions in global scope
-initializeState :: Program -> IO IS.State
+initializeState :: Program SourcePos -> IO IS.State
 initializeState prog = do
   -- Start with empty state and add all functions to global scope
   let addFunctionsAction :: StateT IS.State IO ()
-      addFunctionsAction = forM_ prog $ \f@(FunDecl fname _ _) ->
+      addFunctionsAction = forM_ prog $ \f@(FunDecl _ fname _ _) ->
         liftIdentityToIO $ IS.putsGlobal fname (Function f)
   execStateT addFunctionsAction IS.empty
   where

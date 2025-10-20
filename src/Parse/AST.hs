@@ -1,40 +1,42 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Parse.AST where
 import Data.Data
-import Data.Typeable
-import Data.Generics.Uniplate.Data
 
-type Program = [FunDecl]
+type Program a = [FunDecl a]
 
-data FunDecl = FunDecl {
+data FunDecl a = FunDecl {
+        d :: a,
         name :: Identifier,
         args :: [Identifier],
-        body :: FunBlock
+        body :: FunBlock a
     }
     deriving (Show, Eq, Data, Typeable)
 
 type Identifier = String
 
-data FunBlock = FunBlock {
+data FunBlock a = FunBlock {
+        d :: a,
         idDecl :: [Identifier],
-        body :: [Stmt],
-        return :: Expr
+        body :: [Stmt a],
+        return :: Expr a
     }
     deriving (Show, Eq, Data, Typeable)
 
-data Stmt
-    = OutputStmt Expr
+data Stmt a
+    = OutputStmt a (Expr a)
     | WhileStmt {
-        condition :: Expr,
-        body :: Stmt
+        d :: a,
+        condition :: Expr a,
+        body :: Stmt a
     }
-    | IfStmt { 
-        condition :: Expr,
-        body :: Stmt,
-        elseBody :: Maybe Stmt
+    | IfStmt {
+        d :: a,
+        condition :: Expr a,
+        body :: Stmt a,
+        elseBody :: Maybe (Stmt a)
     }
-    | Block [Stmt]
-    | AssignmentStmt Expr Expr
+    | Block a [Stmt a]
+    | AssignmentStmt a (Expr a) (Expr a)
     deriving (Show, Eq, Data, Typeable)
 
 data UnOp
@@ -52,20 +54,21 @@ data BiOp
     | Div
     deriving (Show, Eq, Data, Typeable)
 
-data Expr
-    = BiOp BiOp Expr Expr
-    | UnOp UnOp Expr
-    | Input
-    | Null
-    | FieldAccess Expr Identifier
+data Expr a
+    = BiOp a BiOp (Expr a) (Expr a)
+    | UnOp a UnOp (Expr a)
+    | Input a
+    | Null a
+    | FieldAccess a (Expr a) Identifier
     | Call {
-        target :: Expr,
-        args   :: [Expr]
+        d :: a,
+        target :: Expr a,
+        args   :: [Expr a]
     }
-    | Record Record
-    | Number Int
-    | EIdentifier Identifier
+    | Record a (Record a)
+    | Number a Int
+    | EIdentifier a Identifier
     deriving (Show, Eq, Data, Typeable)
 
-newtype Record = Fields [(Identifier, Expr)]
+newtype Record a = Fields [(Identifier, Expr a)]
     deriving (Show, Eq, Data, Typeable)

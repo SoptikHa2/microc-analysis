@@ -3,8 +3,9 @@ import Parse.AST
 import qualified Analysis.Semantics as Semantics
 import Control.Monad
 import System.Exit (exitFailure)
+import Data.Data
 
-runAnalysis :: Program -> IO ()
+runAnalysis :: (Show a, Data a) => Program a -> IO ()
 runAnalysis prog = if null errors
         then pure ()
         else do
