@@ -1,9 +1,8 @@
 ---
 test: run suites/task-1/23-uninitialized-2.uc
 ---
-suites/task-1/23-uninitialized-2.uc:3:5: execution error: Uninitialized variable
-     *x = 1;
-      ^
-
+Analysis found some problems. Aborting run.
+UninitIdentifier "In main, \"suites/task-1/23-uninitialized-2.uc\" (line 3, column 5): Identifier x was not initialized."
+UninitIdentifier "In main, \"suites/task-1/23-uninitialized-2.uc\" (line 4, column 10): Identifier x was not initialized."
 
 exit: 1

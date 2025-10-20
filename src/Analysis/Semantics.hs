@@ -3,7 +3,7 @@ module Analysis.Semantics (SemanticError(..), verify) where
 import Parse.AST
 import Data.Generics.Uniplate.Data
 import Data.List (group, sort)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Data
 
 data SemanticError = UndeclaredIdentifier String
@@ -66,56 +66,52 @@ verifyInitIdentifiers fun = notInitErrors
         -- We are only interested in variables that are declared locals in the function.
         locals = fun.body.idDecl
 
-        -- Get all ID accesses that are NOT on the left side of any assignment
-        -- This does not catch expressions using uninit identifiers on the left side, but whatever
-        idAccess :: (Show e, Data e) => e -> [(Identifier, a)]
-        idAccess e = filter ((`notElem` leftSidesIds) . fst) allIds
-            where
-                leftSides = [lhs | AssignmentStmt (_ :: a) lhs _ <- universeBi e]
-                leftSidesIds = [id | EIdentifier (_ :: a) id <- universeBi leftSides]
+        -- Now, we traverse the tree
+        -- node, list of init. identifiers, and list of incorrect uses
+        te :: Expr a -> [Identifier] -> [(Identifier, a)]
+        te e ix = [(id, loc) | EIdentifier loc id <- universeBi e, id `elem` locals && id `notElem` ix]
 
-                allIds = [(id, a) | EIdentifier a id <- universeBi e]
-
-        -- Now, for each statement, we recurse.
-        -- We pass the list of initialized identifiers. If we find some local before it is
-        -- initialized, it is an error
-        -- Params: statement, init. identifiers -> exprs that cause the error
-        verifyStmtx :: [Stmt a] -> [Identifier] -> [(Identifier, a)]
-        verifyStmtx [] _ = []
-        verifyStmtx ((AssignmentStmt _ target rhs):stmtx) ids =
+        ts :: Stmt a -> [Identifier] -> ([(Identifier, a)], [Identifier])
+        ts (OutputStmt _ e) ix = (te e ix, ix)
+        ts (WhileStmt _ cond body) ix =
             let
-                targetId = head [id | EIdentifier (_ :: a) id <- universeBi target]
-
-                rhsIds = idAccess rhs
-                badRhsIds :: [(Identifier, a)] = filter (\(i,_) -> i `elem` locals && i `notElem` ids) rhsIds
+                ce = te cond ix
+                (be, bx) = ts body ix
             in
-                if null badRhsIds then
-                    verifyStmtx stmtx (targetId:ids)
-                else
-                    badRhsIds
-        verifyStmtx (stmt:stmx) ids =
+                (ce <> be, bx)
+        ts (IfStmt _ c b e) ix =
             let
-                rhsIds = idAccess stmt
-                badRhsIds = filter (\(i,_) -> i `elem` locals && i `notElem` ids) rhsIds
+                ce = te c ix
+                (be, bx) = ts b ix
+                (ee, ex) = maybe ([], ix) (`ts` ix) e
             in
-                if null badRhsIds then
-                    verifyStmtx stmx ids
-                else
-                    badRhsIds
+                (ce <> be <> ee, bx <> ex)
+        ts (Block _ []) ix = ([], ix)
+        ts (Block l (st:stx)) ix =
+            let
+                (se, sx) = ts st ix
+                (re, rx) = ts (Block l stx) sx
+            in
+                (se <> re, rx)
+        ts (AssignmentStmt _ (EIdentifier _ target) rhs) ix =
+            let
+                rhse = te rhs ix
+            in
+                (rhse, target : ix)
+        ts (AssignmentStmt _ lhs rhs) ix =
+            let
+                lhse = te lhs ix
+                rhse = te rhs ix
+            in
+                (lhse <> rhse, ix)
         
-        bodyErrors = verifyStmtx fun.body.body []
-
-        returnIds = idAccess fun.body.return
-        allDefs = [ id | EIdentifier (_ :: a) id <- universeBi
-                    [target | AssignmentStmt (_ :: a) target _ <- universeBi fun.body.body]
-                ]
-        badReturnIds = filter (\(i,_) -> i `elem` locals && i `notElem` allDefs) returnIds
-
-        errors = bodyErrors <> badReturnIds
+        (errors, inited) = ts (Block fun.d fun.body.body) []
+        retErrors = te fun.body.return inited
 
         notInitErrors =
             (\(i, loc) -> eFromFun fun (Just loc)
-                (UninitIdentifier $ "Accessing local " <> i <> " that is not initialized.")) <$> errors
+                (UninitIdentifier $ "Identifier " <> i <> " was not initialized.")) <$> (errors <> retErrors)
+
 
 
 -- Given a list of globals (functions), verify that one cannot take ref of a function
@@ -163,11 +159,11 @@ verifyFieldDefitions fun = errors
         fieldDefsWithRecord = catMaybes $ map
             (\(id, e) -> case e of Record loc _ -> Just (id, loc); _ -> Nothing)
             fieldDefs
-        
+
         fieldDefsWithBadName = catMaybes $ map
             (\(id, e) -> case e of EIdentifier loc i | i `elem` simpleRecordVars -> Just (id, loc); _ -> Nothing)
             fieldDefs
-        
+
         errors =
             (\(id, loc) -> eFromFun fun (Just loc)
                 (NestedRecord $ "Field " <> id <> " contains nested field."))
@@ -183,7 +179,7 @@ verifyFieldAccess fun = errors
         fieldNames = fst <$> fieldDefs
 
         fieldAccesses = [(i, loc) | FieldAccess loc _ i <- universeBi fun]
-        
+
         invalidAccess = filter (\(e, _) -> e `notElem` fieldNames) fieldAccesses
 
         errors =
