@@ -97,14 +97,14 @@ evalExpr (EIdentifier loc id) = do
 evalExpr (Call loc fun params) = do
     f <- funBody <$> evalExpr fun
     evalParams <- forM params evalExpr
-    evalFun f evalParams
+    evalFun f loc evalParams
     where
         funBody (Function fb) = fb
         funBody x = errwl loc $ "Not a function: " <> show x
 
-evalFun :: FunDecl SourcePos -> [Value] -> StateT State IO Value
-evalFun (FunDecl loc name args (FunBlock _ decl body ret)) params = do
-    when (length args /= length params) (errwl loc $
+evalFun :: FunDecl SourcePos -> SourcePos -> [Value] -> StateT State IO Value
+evalFun (FunDecl _ name args (FunBlock _ decl body ret)) callSite params = do
+    when (length args /= length params) (errwl callSite $
         "Expected " <> show (length args) <> " params for function " <> name)
 
     -- create new stack frame
@@ -168,6 +168,7 @@ evalExprForWrite :: Expr SourcePos -> StateT State IO Value
 evalExprForWrite (UnOp loc Deref e1) = do
     addr <- evalExpr e1
     case addr of
+        Pointer nil | nil == 0 -> errwl loc "Null-pointer dereference"
         Pointer _ -> pure addr
         _ -> errwl loc $ "Deref encountered a non-pointer: " ++ show addr
 

@@ -61,7 +61,7 @@ runProgram filepath args = do
           exitFailure
         Just mainFun -> do
           -- Check argument count matches
-          let FunDecl _ _ funArgs _ = mainFun
+          let FunDecl loc _ funArgs _ = mainFun
           let expectedArgs = length funArgs
           let providedArgs = length args
           if expectedArgs /= providedArgs
@@ -74,13 +74,15 @@ runProgram filepath args = do
               initialState <- initializeState prog
 
               -- Run the main function with provided arguments
-              result <- evalStateT (evalFun mainFun (map VNumber args)) initialState
+              result <- evalStateT (evalFun mainFun loc (map VNumber args)) initialState
 
               -- Exit with the status of main
               case result of
                 (VNumber exitCode) | exitCode == 0 -> exitSuccess
                 (VNumber exitCode) -> exitWith (ExitFailure exitCode)
-                _ -> putStrLn $ "Unknown return value: " <> show result
+                _ -> do
+                  putStrLn $ "Unknown return value from main: " <> show result
+                  exitWith (ExitFailure 1)
 
 
 -- Find a function by name in the program

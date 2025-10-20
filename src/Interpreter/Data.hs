@@ -15,7 +15,7 @@ data Value
 instance Show Value where
   show :: Value -> String
   show (VNumber i) = show i
-  show (Pointer addr) = "* " <> show addr
+  show (Pointer addr) = "<ptr " <> show addr <> ">"
   show (Function (FunDecl loc name _ _)) = "<func " <> name <> " (" <> show loc <> ")>"
   show (Record fields) = "Record " <> show (fst <$> fields)
 
