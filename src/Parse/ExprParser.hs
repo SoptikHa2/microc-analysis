@@ -8,6 +8,7 @@ import qualified Text.Parsec.Expr as E
 import Text.Parsec.String (Parser)
 import Parse.Location
 import Utils
+import Control.Monad.Identity (Identity)
 
 
 expression :: Parser (Expr SourcePos)
@@ -15,7 +16,7 @@ expression = try exprArithm <|> try exprWithoutArithmetics <?> "expression"
 
 exprWithoutArithmetics :: Parser (Expr SourcePos)
 exprWithoutArithmetics =
-    try input <|> try nul <|> try alloc <|> try postfixExpr
+    try input <|> try nul <|> try postfixExpr
 
 postfixExpr :: Parser (Expr SourcePos)
 postfixExpr = do
@@ -76,9 +77,6 @@ input = Lexer.keyword L.Input >> Input <$> loc
 nul :: Parser (Expr SourcePos)
 nul = Lexer.keyword L.Null >> Null <$> loc
 
-alloc :: Parser (Expr SourcePos)
-alloc = Lexer.keyword L.Alloc >> UnOp <$> loc <+> Alloc <*> expression
-
 exprArithm :: Parser (Expr SourcePos)
 exprArithm = do
     l <- loc
@@ -87,24 +85,31 @@ exprArithm = do
 arithmTerm :: Parser (Expr SourcePos)
 arithmTerm = try exprWithoutArithmetics <|> try arithmParens
 
+-- Chain E.Prefix (multiple derefs at once)
+prefix :: Parser (Expr SourcePos -> Expr SourcePos) -> E.Operator String () Identity (Expr SourcePos)
+prefix p = E.Prefix . chainl1 p $ pure (.)
+
+arithmTable :: SourcePos -> [[E.Operator String () Identity (Expr SourcePos)]]
 arithmTable l = [
+        -- *, &, alloc; and chain
         [
-            E.Prefix (try $ UnOp l Deref <$ Lexer.star)
+            prefix $ choice [
+                try $ UnOp l Deref <$ Lexer.star,
+                try $ UnOp l Ref <$ Lexer.and,
+                try $ UnOp l Alloc <$ Lexer.keyword L.Alloc
+            ]
         ],
-        [
-            E.Prefix (try $ UnOp l Ref <$ Lexer.and) -- &
-        ],
-        [
-            E.Prefix (try $ UnOp l Alloc <$ Lexer.keyword L.Alloc)
-        ],
+        -- _ * _, /
         [
             E.Infix (try $ BiOp l Mul <$ Lexer.star) E.AssocLeft,
             E.Infix (try $ BiOp l Div <$ Lexer.division) E.AssocLeft
         ],
+        -- +, -
         [
             E.Infix (try $ BiOp l Plus <$ Lexer.plus) E.AssocLeft,
             E.Infix (try $ BiOp l Minus <$ Lexer.minus) E.AssocLeft
         ],
+        -- <, ==
         [
             E.Infix (try $ BiOp l Gt <$ Lexer.gt) E.AssocLeft
         ],
