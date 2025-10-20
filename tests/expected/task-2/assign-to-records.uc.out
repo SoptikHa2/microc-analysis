@@ -1,0 +1,8 @@
+---
+test: type suites/task-2/assign-to-records.uc
+---
+⟦main(){...}:[1:2]⟧ = () -> int
+⟦r[2:8]⟧ = {a:↑{a:◇,b:◇,c:int},b:↑{a:◇,b:◇,c:int},c:◇}
+⟦s[2:10]⟧ = {a:◇,b:◇,c:int}
+
+exit: 0

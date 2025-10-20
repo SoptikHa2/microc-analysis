@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/err-funass-2.uc
+---
+suites/task-1/err-funass-2.uc:4:9: semantic error: cannot take an address of a function
+      f = &main; // error: taking address of a function
+          ^
+
+
+exit: 1

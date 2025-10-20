@@ -1,0 +1,7 @@
+---
+test: type suites/task-2/deref.uc
+---
+⟦main(){...}:[1:1]⟧ = () -> int
+⟦x[2:8]⟧ = ↑int
+
+exit: 0

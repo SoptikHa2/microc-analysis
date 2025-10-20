@@ -1,0 +1,6 @@
+---
+test: run suites/task-1/fib-rec-slow.uc
+---
+55
+
+exit: 0

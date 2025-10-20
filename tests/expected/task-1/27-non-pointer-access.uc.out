@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/27-non-pointer-access.uc
+---
+suites/task-1/27-non-pointer-access.uc:4:6: execution error: Non-pointer (1) pointer dereference
+     (*r).x = 41;
+       ^
+
+
+exit: 1

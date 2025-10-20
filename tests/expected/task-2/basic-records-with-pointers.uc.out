@@ -1,0 +1,9 @@
+---
+test: type suites/task-2/basic-records-with-pointers.uc
+---
+⟦f(){...}:[1:2]⟧ = () -> int
+⟦n[2:8]⟧ = int
+⟦a[2:10]⟧ = ↑µt2.{h:int,t:↑t2}
+⟦b[2:12]⟧ = ↑µt2.{h:int,t:↑t2}
+
+exit: 0

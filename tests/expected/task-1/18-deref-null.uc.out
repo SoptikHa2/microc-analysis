@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/18-deref-null.uc
+---
+suites/task-1/18-deref-null.uc:4:4: execution error: Null-pointer pointer dereference
+     *x = 42;
+     ^
+
+
+exit: 1

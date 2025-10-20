@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/21-ret-non-int-from-main.uc
+---
+suites/task-1/21-ret-non-int-from-main.uc:4:11: execution error: Non-integer return from function main
+     return &x;
+            ^
+
+
+exit: 1

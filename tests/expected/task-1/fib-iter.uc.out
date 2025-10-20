@@ -1,0 +1,6 @@
+---
+test: run suites/task-1/fib-iter.uc
+---
+267914296
+
+exit: 0

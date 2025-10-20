@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/err-funass-1.uc
+---
+suites/task-1/err-funass-1.uc:2:10: semantic error: cannot assign to a function
+      main = 5; // error: assignment to a function
+           ^
+
+
+exit: 1

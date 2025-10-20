@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/err-notlocal-2.uc
+---
+suites/task-1/err-notlocal-2.uc:6:6: execution error: Non-pointer (<fun: f>) pointer dereference
+      *f=10; // error: not a pointer
+       ^
+
+
+exit: 1

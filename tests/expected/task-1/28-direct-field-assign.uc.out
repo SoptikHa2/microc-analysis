@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/28-direct-field-assign.uc
+---
+
+exit: 42

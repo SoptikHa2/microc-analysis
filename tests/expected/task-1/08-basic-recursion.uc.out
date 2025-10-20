@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/08-basic-recursion.uc
+---
+
+exit: 120

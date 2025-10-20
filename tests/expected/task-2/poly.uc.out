@@ -1,0 +1,9 @@
+---
+test: type suites/task-2/poly.uc
+---
+suites/task-2/poly.uc:9:12: type error: Cannot unify '⟦&y[9:12]⟧' and '↑⟦y[6:12]⟧' (with canonicals 'int' and '↑⟦y[6:12]⟧')
+      z = id(&y);
+             ^
+
+
+exit: 1

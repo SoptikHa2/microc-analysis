@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/02-basic-expression.uc
+---
+
+exit: 42

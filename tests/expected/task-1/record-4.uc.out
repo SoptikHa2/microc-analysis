@@ -1,0 +1,6 @@
+---
+test: run suites/task-1/record-4.uc
+---
+1
+
+exit: 0

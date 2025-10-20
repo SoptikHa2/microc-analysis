@@ -1,0 +1,9 @@
+---
+test: type suites/task-2/record-3.uc
+---
+⟦main(){...}:[1:1]⟧ = () -> int
+⟦n[2:9]⟧ = ↑{f:◇,p:int,q:↑{f:int,p:◇,q:◇}}
+⟦k[2:12]⟧ = {f:int,p:◇,q:◇}
+⟦r1[2:15]⟧ = int
+
+exit: 0

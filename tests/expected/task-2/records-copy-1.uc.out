@@ -1,0 +1,8 @@
+---
+test: type suites/task-2/records-copy-1.uc
+---
+⟦main(){...}:[1:1]⟧ = () -> int
+⟦a[2:8]⟧ = {n:int}
+⟦b[2:10]⟧ = {n:int}
+
+exit: 0

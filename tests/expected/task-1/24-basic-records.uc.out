@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/24-basic-records.uc
+---
+
+exit: 42

@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/16-nested-blocks.uc
+---
+
+exit: 42

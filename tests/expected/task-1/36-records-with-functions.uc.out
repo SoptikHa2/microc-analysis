@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/36-records-with-functions.uc
+---
+
+exit: 2

@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/25-missing-field.uc
+---
+suites/task-1/25-missing-field.uc:4:5: execution error: Non-existing field (y) access in {x:1}
+     r.y = 42;
+      ^
+
+
+exit: 1

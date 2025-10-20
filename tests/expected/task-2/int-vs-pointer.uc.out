@@ -1,0 +1,9 @@
+---
+test: type suites/task-2/int-vs-pointer.uc
+---
+suites/task-2/int-vs-pointer.uc:4:9: type error: Cannot unify '⟦41[4:9]⟧' and 'int' (with canonicals '↑⟦17[3:15]⟧' and 'int')
+      x = 41;
+          ^
+
+
+exit: 1

@@ -1,0 +1,12 @@
+---
+test: type suites/task-2/linked-list-1.uc
+---
+⟦list_append(list[1:13],x[1:19]){...}:[1:1]⟧ = (↑µt6.{v:int,prev:↑t6,next:↑t6},int) -> ↑µt6.{v:int,prev:↑t6,next:↑t6}
+⟦list[1:13]⟧ = ↑µt6.{v:int,prev:↑t6,next:↑t6}
+⟦x[1:19]⟧ = int
+⟦node[2:9]⟧ = ↑µt6.{v:int,prev:↑t6,next:↑t6}
+⟦main(n[12:6]){...}:[12:1]⟧ = (int) -> int
+⟦n[12:6]⟧ = int
+⟦list[13:9]⟧ = ↑µt6.{v:int,prev:↑t6,next:↑t6}
+
+exit: 0

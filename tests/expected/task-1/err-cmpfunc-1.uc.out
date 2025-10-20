@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/err-cmpfunc-1.uc
+---
+suites/task-1/err-cmpfunc-1.uc:12:11: execution error: Non-integer arithmetic operation
+      if (f > g) { // error: function comparison
+            ^
+
+
+exit: 1

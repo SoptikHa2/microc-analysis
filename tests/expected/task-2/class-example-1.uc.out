@@ -1,0 +1,9 @@
+---
+test: type suites/task-2/class-example-1.uc
+---
+⟦foo(){...}:[1:1]⟧ = () -> int
+⟦x[2:8]⟧ = int
+⟦y[2:10]⟧ = ↑int
+⟦z[2:12]⟧ = int
+
+exit: 0

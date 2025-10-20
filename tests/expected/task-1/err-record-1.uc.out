@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/err-record-1.uc
+---
+suites/task-1/err-record-1.uc:5:19: execution error: Nested records are not supported, use pointers
+      n = alloc {c: k, d: 4}; // error: nested records are not allowed
+                    ^
+
+
+exit: 1

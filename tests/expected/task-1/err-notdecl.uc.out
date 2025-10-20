@@ -1,0 +1,13 @@
+---
+test: run suites/task-1/err-notdecl.uc
+---
+suites/task-1/err-notdecl.uc:2:5: semantic error: identifier 'a' not declared
+      a = 5; // error: identifier not declared
+      ^
+
+suites/task-1/err-notdecl.uc:4:12: semantic error: identifier 'a' not declared
+      return a; // error: identifier not declared
+             ^
+
+
+exit: 1

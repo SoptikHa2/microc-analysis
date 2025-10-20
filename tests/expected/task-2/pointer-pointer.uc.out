@@ -1,0 +1,8 @@
+---
+test: type suites/task-2/pointer-pointer.uc
+---
+⟦f(){...}:[1:2]⟧ = () -> ↑↑t2
+⟦a[2:8]⟧ = ↑t2
+⟦b[2:11]⟧ = ↑↑t2
+
+exit: 0

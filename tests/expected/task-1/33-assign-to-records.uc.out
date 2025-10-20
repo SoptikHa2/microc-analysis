@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/33-assign-to-records.uc
+---
+
+exit: 4

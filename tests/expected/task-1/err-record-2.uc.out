@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/err-record-2.uc
+---
+suites/task-1/err-record-2.uc:6:21: execution error: Non-existing field (c) access in {a:1,b:2}
+      output (*(*n).c).c; // error: missing field
+                      ^
+
+
+exit: 1

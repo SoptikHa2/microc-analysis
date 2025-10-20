@@ -1,0 +1,9 @@
+---
+test: type suites/task-2/invalid-number-of-args-2.uc
+---
+suites/task-2/invalid-number-of-args-2.uc:6:12: type error: Cannot unify '⟦f(x[1:4],y[1:7]){...}:[1:2]⟧' and '(⟦1[6:13]⟧,⟦2[6:16]⟧,⟦3[6:19]⟧) -> ⟦f(1,2,3)[6:12]⟧' (with canonicals '(⟦x[1:4]⟧,⟦y[1:7]⟧) -> ⟦(x + y)[2:13]⟧' and '(⟦1[6:13]⟧,⟦2[6:16]⟧,⟦3[6:19]⟧) -> ⟦f(1,2,3)[6:12]⟧')
+     return f(1, 2, 3);
+             ^
+
+
+exit: 1

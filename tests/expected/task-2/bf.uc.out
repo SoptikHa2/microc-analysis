@@ -1,0 +1,39 @@
+---
+test: type suites/task-2/bf.uc
+---
+⟦list_append(list[1:13],x[1:19]){...}:[1:1]⟧ = (↑µt54.{v:int,prev:↑t54,next:↑t54},int) -> ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦list[1:13]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦x[1:19]⟧ = int
+⟦node[2:9]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦list_prepend(list[13:14],x[13:20]){...}:[13:1]⟧ = (↑µt55.{v:int,prev:↑t55,next:↑t55},int) -> ↑µt55.{v:int,prev:↑t55,next:↑t55}
+⟦list[13:14]⟧ = ↑µt55.{v:int,prev:↑t55,next:↑t55}
+⟦x[13:20]⟧ = int
+⟦node[14:9]⟧ = ↑µt55.{v:int,prev:↑t55,next:↑t55}
+⟦read_code(){...}:[25:1]⟧ = () -> ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦x[26:9]⟧ = int
+⟦continue[26:12]⟧ = int
+⟦code[26:22]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦first[26:28]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦create_memory(size[47:15]){...}:[47:1]⟧ = (int) -> ↑µt55.{v:int,prev:↑t55,next:↑t55}
+⟦size[47:15]⟧ = int
+⟦mem[48:9]⟧ = ↑µt55.{v:int,prev:↑t55,next:↑t55}
+⟦jump(code[59:6]){...}:[59:1]⟧ = (↑µt54.{v:int,prev:↑t54,next:↑t54}) -> ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦code[59:6]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦c[60:9]⟧ = int
+⟦continue[60:12]⟧ = int
+⟦direction[60:22]⟧ = int
+⟦c_inc[60:33]⟧ = int
+⟦c_dec[60:40]⟧ = int
+⟦run(code[105:5],mem[105:11]){...}:[105:1]⟧ = (↑µt54.{v:int,prev:↑t54,next:↑t54},↑µt55.{v:int,prev:↑t55,next:↑t55}) -> int
+⟦code[105:5]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦mem[105:11]⟧ = ↑µt55.{v:int,prev:↑t55,next:↑t55}
+⟦continue[106:9]⟧ = int
+⟦status[106:19]⟧ = int
+⟦inst[106:27]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦inst_code[106:33]⟧ = int
+⟦next_inst[106:44]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦main(){...}:[181:1]⟧ = () -> int
+⟦code[182:9]⟧ = ↑µt54.{v:int,prev:↑t54,next:↑t54}
+⟦mem[182:15]⟧ = ↑µt55.{v:int,prev:↑t55,next:↑t55}
+
+exit: 0

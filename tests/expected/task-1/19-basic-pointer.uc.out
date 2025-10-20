@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/19-basic-pointer.uc
+---
+
+exit: 42

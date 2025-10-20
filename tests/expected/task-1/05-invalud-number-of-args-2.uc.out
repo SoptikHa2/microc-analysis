@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/05-invalud-number-of-args-2.uc
+---
+suites/task-1/05-invalud-number-of-args-2.uc:6:12: execution error: Invalid argument list: expected 2, got: 3
+     return f(1, 2, 3);
+             ^
+
+
+exit: 1

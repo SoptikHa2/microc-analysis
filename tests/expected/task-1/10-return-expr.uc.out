@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/10-return-expr.uc
+---
+
+exit: 42

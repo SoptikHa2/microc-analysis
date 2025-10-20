@@ -1,0 +1,11 @@
+---
+test: type suites/task-2/records-with-functions.uc
+---
+⟦inc(s[1:6]){...}:[1:2]⟧ = (↑{c:int,inc:µt7.(↑{c:int,inc:t7}) -> t6}) -> {c:int,inc:µt7.(↑{c:int,inc:t7}) -> t6}
+⟦s[1:6]⟧ = ↑{c:int,inc:µt7.(↑{c:int,inc:t7}) -> t6}
+⟦new(){...}:[6:2]⟧ = () -> {c:int,inc:µt7.(↑{c:int,inc:t7}) -> t6}
+⟦main(){...}:[10:2]⟧ = () -> int
+⟦c[11:8]⟧ = {c:int,inc:µt7.(↑{c:int,inc:t7}) -> t6}
+⟦p[11:11]⟧ = ↑{c:int,inc:µt7.(↑{c:int,inc:t7}) -> t6}
+
+exit: 0

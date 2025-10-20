@@ -1,0 +1,6 @@
+---
+test: run suites/task-1/cli-test-1.uc 2 39
+---
+42
+
+exit: 0

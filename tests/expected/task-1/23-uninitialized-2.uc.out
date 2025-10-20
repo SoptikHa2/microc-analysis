@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/23-uninitialized-2.uc
+---
+suites/task-1/23-uninitialized-2.uc:3:5: execution error: Uninitialized variable
+     *x = 1;
+      ^
+
+
+exit: 1

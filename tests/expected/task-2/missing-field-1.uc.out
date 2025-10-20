@@ -1,0 +1,9 @@
+---
+test: type suites/task-2/missing-field-1.uc
+---
+suites/task-2/missing-field-1.uc:5:12: type error: Access to an undefined field 'c'
+     return x.c; 
+             ^
+
+
+exit: 1

@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/14-pointer-cmp-2.uc
+---
+
+exit: 1

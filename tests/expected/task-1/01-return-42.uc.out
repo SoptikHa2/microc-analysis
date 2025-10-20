@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/01-return-42.uc
+---
+
+exit: 42

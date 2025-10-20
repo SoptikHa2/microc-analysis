@@ -1,0 +1,8 @@
+---
+test: type suites/task-2/record-1.uc
+---
+⟦f(){...}:[1:2]⟧ = () -> int
+⟦x[2:8]⟧ = {a:int,b:int,c:◇}
+⟦y[2:11]⟧ = {a:↑{a:int,b:int,c:◇},b:◇,c:() -> int}
+
+exit: 0

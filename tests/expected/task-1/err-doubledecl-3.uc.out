@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/err-doubledecl-3.uc
+---
+suites/task-1/err-doubledecl-3.uc:6:1: semantic error: identifier 'f' already declared ([1:1])
+  f(){ // error: identifier already declared
+  ^
+
+
+exit: 1

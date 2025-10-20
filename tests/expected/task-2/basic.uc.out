@@ -1,0 +1,6 @@
+---
+test: type suites/task-2/basic.uc
+---
+⟦f(){...}:[1:1]⟧ = () -> int
+
+exit: 0

@@ -1,0 +1,5 @@
+---
+test: run suites/task-1/07-indirect-assign.uc
+---
+
+exit: 42

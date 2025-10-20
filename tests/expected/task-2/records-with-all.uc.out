@@ -1,0 +1,10 @@
+---
+test: type suites/task-2/records-with-all.uc
+---
+⟦main(){...}:[1:1]⟧ = () -> int
+⟦a[2:9]⟧ = {x:int,y:◇}
+⟦b[2:11]⟧ = {x:↑{x:int,y:◇},y:◇}
+⟦c[2:13]⟧ = {x:() -> int,y:◇}
+⟦d[2:15]⟧ = {x:int,y:↑{x:↑{x:int,y:◇},y:◇}}
+
+exit: 0

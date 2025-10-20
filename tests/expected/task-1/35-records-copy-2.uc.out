@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/35-records-copy-2.uc
+---
+4
+4
+4
+2
+
+exit: 0

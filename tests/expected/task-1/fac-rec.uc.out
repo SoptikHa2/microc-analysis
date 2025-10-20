@@ -1,0 +1,6 @@
+---
+test: run suites/task-1/fac-rec.uc
+---
+120
+
+exit: 0

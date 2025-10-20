@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/22-uninitialized-1.uc
+---
+suites/task-1/22-uninitialized-1.uc:3:11: execution error: Uninitialized variable
+     return x;
+            ^
+
+
+exit: 1

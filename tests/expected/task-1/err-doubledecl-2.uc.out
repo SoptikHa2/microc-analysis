@@ -1,0 +1,9 @@
+---
+test: run suites/task-1/err-doubledecl-2.uc
+---
+suites/task-1/err-doubledecl-2.uc:2:7: semantic error: identifier 'x' already declared ([1:3])
+    var x, z; // error: identifier already declared
+        ^
+
+
+exit: 1
