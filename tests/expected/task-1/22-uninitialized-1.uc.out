@@ -1,9 +1,7 @@
 ---
 test: run suites/task-1/22-uninitialized-1.uc
 ---
-suites/task-1/22-uninitialized-1.uc:3:11: execution error: Uninitialized variable
-     return x;
-            ^
-
+Analysis found some problems. Aborting run.
+UninitIdentifier "In main, \"suites/task-1/22-uninitialized-1.uc\" (line 3, column 10): Accessing local x that is not initialized."
 
 exit: 1

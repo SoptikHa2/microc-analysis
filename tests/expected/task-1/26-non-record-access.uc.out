@@ -1,9 +1,7 @@
 ---
 test: run suites/task-1/26-non-record-access.uc
 ---
-suites/task-1/26-non-record-access.uc:4:12: execution error: Non-record (1) field access
-     return r.x;
-             ^
-
+Analysis found some problems. Aborting run.
+InvalidRecordField "In main, \"suites/task-1/26-non-record-access.uc\" (line 4, column 13): Accessing unknown record field: x"
 
 exit: 1

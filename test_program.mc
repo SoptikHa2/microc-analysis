@@ -1,7 +1,6 @@
  main() {
-   var x;
-   if (1) {
-    x = 1;
-   }
-   return x;
+   var r1, r2;
+   r1 = { a: 1 };
+   r2 = { a: 1, b: r1 };
+   return 0;
  }

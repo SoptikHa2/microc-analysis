@@ -158,14 +158,20 @@ verifyFieldDefitions fun = errors
     where
         fieldDefs = concat [f | Record (_ :: a) (Fields f) <- universeBi fun]
 
+        simpleRecordVars = [id | AssignmentStmt (_ :: a) (EIdentifier (_ :: a) id) (Record _ _) <- universeBi fun]
+
         fieldDefsWithRecord = catMaybes $ map
             (\(id, e) -> case e of Record loc _ -> Just (id, loc); _ -> Nothing)
+            fieldDefs
+        
+        fieldDefsWithBadName = catMaybes $ map
+            (\(id, e) -> case e of EIdentifier loc i | i `elem` simpleRecordVars -> Just (id, loc); _ -> Nothing)
             fieldDefs
         
         errors =
             (\(id, loc) -> eFromFun fun (Just loc)
                 (NestedRecord $ "Field " <> id <> " contains nested field."))
-            <$> fieldDefsWithRecord
+            <$> (fieldDefsWithRecord <> fieldDefsWithBadName)
 
 
 -- When using a record, one may NOT reference a field it was not declared with
