@@ -35,7 +35,7 @@ verify funcs = concat (
             (verifyRefTaking globals <$> funcs) <>
             (verifyAssignments globals <$> funcs) <>
             (verifyFieldDefitions <$> funcs) <>
-            (verifyFieldAccess <$> funcs)
+            (verifyFieldAccess funcs <$> funcs)
         )
     where
         globals = name <$> funcs
@@ -171,10 +171,10 @@ verifyFieldDefitions fun = errors
 
 
 -- When using a record, one may NOT reference a field it was not declared with
-verifyFieldAccess :: forall a. (Show a, Data a) => FunDecl a -> [SemanticError]
-verifyFieldAccess fun = errors
+verifyFieldAccess :: forall a. (Show a, Data a) => [FunDecl a] -> FunDecl a -> [SemanticError]
+verifyFieldAccess allFuncs fun = errors
     where
-        fieldDefs = concat [f | Record (_ :: a) (Fields f) <- universeBi fun]
+        fieldDefs = concat [f | Record (_ :: a) (Fields f) <- universeBi allFuncs]
 
         fieldNames = fst <$> fieldDefs
 
