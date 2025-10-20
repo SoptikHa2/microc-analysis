@@ -17,48 +17,51 @@ runId = mapStateT (pure . runIdentity)
 id' :: a -> a
 id' = Prelude.id
 
-applyBiOp :: BiOp -> Value -> Value -> Value
-applyBiOp Eq v1 v2 = VNumber $ if v1 == v2 then 1 else 0
-applyBiOp Gt (VNumber i1) (VNumber i2) = VNumber $ if i1 > i2 then 1 else 0
-applyBiOp Plus (VNumber i1) (VNumber i2) = VNumber $ i1 + i2
-applyBiOp Minus (VNumber i1) (VNumber i2) = VNumber $ i1 - i2
-applyBiOp Mul (VNumber i1) (VNumber i2) = VNumber $ i1 * i2
-applyBiOp Div (VNumber i1) (VNumber i2) = if i2 == 0
-    then error "Division by zero"
+errwl :: SourcePos -> String -> a
+errwl loc text = error $ "At " <> show loc <> ": " <> text
+
+applyBiOp :: SourcePos -> BiOp -> Value -> Value -> Value
+applyBiOp _ Eq v1 v2 = VNumber $ if v1 == v2 then 1 else 0
+applyBiOp _ Gt (VNumber i1) (VNumber i2) = VNumber $ if i1 > i2 then 1 else 0
+applyBiOp _ Plus (VNumber i1) (VNumber i2) = VNumber $ i1 + i2
+applyBiOp _ Minus (VNumber i1) (VNumber i2) = VNumber $ i1 - i2
+applyBiOp _ Mul (VNumber i1) (VNumber i2) = VNumber $ i1 * i2
+applyBiOp loc Div (VNumber i1) (VNumber i2) = if i2 == 0
+    then errwl loc "Division by zero"
     else VNumber $ i1 `div` i2
-applyBiOp op v1 v2 = error $ "Undefined operation " ++ show op ++ " on " ++ show v1 ++ ", " ++ show v2
+applyBiOp loc op v1 v2 = errwl loc $ "Undefined operation " ++ show op ++ " on " ++ show v1 ++ ", " ++ show v2
 
 evalExpr :: Expr SourcePos -> StateT State IO Value
-evalExpr (BiOp _ op e1 e2) = do
+evalExpr (BiOp loc op e1 e2) = do
     ee1 <- evalExpr e1
     ee2 <- evalExpr e2
-    pure $ applyBiOp op ee1 ee2
+    pure $ applyBiOp loc op ee1 ee2
 
-evalExpr (UnOp _ Deref e1) = do
+evalExpr (UnOp loc Deref e1) = do
     ee1 <- evalExpr e1
     case ee1 of
         Pointer addr -> do
             v <- runId $ getsAddr addr
             case v of
                 Just value -> pure value
-                Nothing -> error $ "Dangling pointer: " ++ show addr
-        _ -> error "Attempted to deref non-pointer"
+                Nothing -> errwl loc $ "Dangling pointer: " ++ show addr
+        _ -> errwl loc "Attempted to deref non-pointer"
 
-evalExpr (UnOp _ Ref (EIdentifier _ id)) = do
+evalExpr (UnOp loc Ref (EIdentifier _ id)) = do
     v <- runId $ getsVarAddr id
     case v of
         Just value -> pure $ Pointer value
-        Nothing -> error $ "Undefined variable " ++ show id
+        Nothing -> errwl loc $ "Undefined variable " ++ show id
 
-evalExpr (UnOp _ Ref (FieldAccess _ record field)) = do
+evalExpr (UnOp loc Ref (FieldAccess _ record field)) = do
     fieldStruct <- evalExpr record
     case fieldStruct of
         Interpreter.Data.Record mapping -> do
-            let addr = maybe (error $ "Nonexistent field " ++ show field) id' (lookup field mapping)
+            let addr = maybe (errwl loc $ "Nonexistent field " ++ show field) id' (lookup field mapping)
             pure $ Pointer addr
-        _ -> error $ "Attempted to access field of " ++ show record
+        _ -> errwl loc $ "Attempted to access field of " ++ show record
 
-evalExpr (UnOp _ Ref _) = error "Attempted to take address of non-variable"
+evalExpr (UnOp loc Ref _) = errwl loc "Attempted to take address of non-variable"
 
 evalExpr (UnOp _ Alloc e1) = do
     valueToStore <- evalExpr e1
@@ -74,7 +77,7 @@ evalExpr (Null _) = pure $ Pointer 0
 
 evalExpr fa@(FieldAccess loc _ id) = do
     Pointer ptr <- evalExpr (UnOp loc Ref fa)
-    runId (getsAddr ptr) >>= maybe (error $ "Invalid field " ++ show id) pure
+    runId (getsAddr ptr) >>= maybe (errwl loc $ "Invalid field " ++ show id) pure
 
 evalExpr (Parse.AST.Record _ (Fields fx)) = do
     -- Evaluate all the fields
@@ -85,23 +88,23 @@ evalExpr (Parse.AST.Record _ (Fields fx)) = do
 
 evalExpr (Number _ i) = pure $ VNumber i
 
-evalExpr (EIdentifier _ id) = do
+evalExpr (EIdentifier loc id) = do
     val <- runId $ getsVar id
     case val of
         Just v -> pure v
-        Nothing -> error $ "Unknown variable " ++ id
+        Nothing -> errwl loc $ "Unknown variable " ++ id
 
-evalExpr (Call _ fun params) = do
+evalExpr (Call loc fun params) = do
     f <- funBody <$> evalExpr fun
     evalParams <- forM params evalExpr
     evalFun f evalParams
     where
         funBody (Function fb) = fb
-        funBody x = error $ "Not a function: " <> show x
+        funBody x = errwl loc $ "Not a function: " <> show x
 
 evalFun :: FunDecl SourcePos -> [Value] -> StateT State IO Value
-evalFun (FunDecl _ name args (FunBlock _ decl body ret)) params = do
-    when (length args /= length params) (error $
+evalFun (FunDecl loc name args (FunBlock _ decl body ret)) params = do
+    when (length args /= length params) (errwl loc $
         "Expected " <> show (length args) <> " params for function " <> name)
 
     -- create new stack frame
@@ -148,34 +151,34 @@ evalStmt (IfStmt _ cond tru fals) = do
 evalStmt (Block _ stmx) = do
     traverse_ evalStmt stmx
 
-evalStmt (AssignmentStmt _ etarget eval) = do
+evalStmt (AssignmentStmt loc etarget eval) = do
     target <- evalExprForWrite etarget
     value <- evalExpr eval
 
     case target of
         Pointer addr -> do
             runId $ putsAddr addr value
-        _ -> error $ "Cannot assign to read-only value " ++ show target
+        _ -> errwl loc $ "Cannot assign to read-only value " ++ show target
 
 
 -- Eval expression which is target for writing. This works only for identifiers, record field access and *.
 -- This returns a pointer, not the value.
 evalExprForWrite :: Expr SourcePos -> StateT State IO Value
 
-evalExprForWrite (UnOp _ Deref e1) = do
+evalExprForWrite (UnOp loc Deref e1) = do
     addr <- evalExpr e1
     case addr of
         Pointer _ -> pure addr
-        _ -> error $ "Deref encountered a non-pointer: " ++ show addr
+        _ -> errwl loc $ "Deref encountered a non-pointer: " ++ show addr
 
-evalExprForWrite (FieldAccess _ field id) = do
+evalExprForWrite (FieldAccess loc field id) = do
     fieldStruct <- evalExpr field
     case fieldStruct of
         Interpreter.Data.Record mapping ->
-            maybe (error $ "Nonexistent field " ++ show id) (pure . Pointer) (lookup id mapping)
-        _ -> error $ "Attempted to access field of " ++ show field
+            maybe (errwl loc $ "Nonexistent field " ++ show id) (pure . Pointer) (lookup id mapping)
+        _ -> errwl loc $ "Attempted to access field of " ++ show field
 
-evalExprForWrite (EIdentifier _ id) =
-    runId (getsVarAddr id) >>= maybe (error $ "Variable not found: " ++ id) (pure . Pointer)
+evalExprForWrite (EIdentifier loc id) =
+    runId (getsVarAddr id) >>= maybe (errwl loc $ "Variable not found: " ++ id) (pure . Pointer)
 
 evalExprForWrite e = error $ "Target to write is read-only: " ++ show e
