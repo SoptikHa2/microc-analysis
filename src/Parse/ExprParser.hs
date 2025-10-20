@@ -16,24 +16,24 @@ expression = try exprArithm <|> try exprWithoutArithmetics <?> "expression"
 
 exprWithoutArithmetics :: Parser (Expr SourcePos)
 exprWithoutArithmetics =
-    try input <|> try nul <|> try postfixExpr
+    try input <|> try nul <|> try postfixExpr <?> "expression (no arithm)"
 
 postfixExpr :: Parser (Expr SourcePos)
 postfixExpr = do
     -- It certainly has a primary expression first
-    e <- primaryExpr
+    e <- primaryExpr <?> "postfix into primary"
     -- Afterwards, there may be 0 or more times {field access OR call}.
-    ops <- many (try fieldAccessRest <|> try callRest)
+    ops <- many (try fieldAccessRest <|> try callRest) <?> "postfix operators"
 
     pure $ recApply e ops
     where
         fieldAccessRest :: Parser (Expr SourcePos -> Expr SourcePos)
-        fieldAccessRest = Lexer.dot >> (flip . FieldAccess <$> loc) <*> Lexer.identifierStr
+        fieldAccessRest = Lexer.dot >> (flip . FieldAccess <$> loc) <*> Lexer.identifierStr <?> "field access"
 
         callRest :: Parser (Expr SourcePos -> Expr SourcePos)
         callRest = do
             _ <- Lexer.parenOpen
-            ex <- many (expression <* optional Lexer.comma <* spaces)
+            ex <- many (expression <* optional Lexer.comma <* spaces) <?> "call params"
             _ <- Lexer.parenClose
             (flip . Call <$> loc) <+> ex
 
@@ -44,15 +44,15 @@ postfixExpr = do
 
 
 primaryExpr :: Parser (Expr SourcePos)
-primaryExpr = try number <|> try identifier <|> try record <|> try paren
+primaryExpr = try number <|> try identifier <|> try record <|> try paren <?> "primary expr"
 
 identifier :: Parser (Expr SourcePos)
-identifier = EIdentifier <$> loc <*> Lexer.identifierStr
+identifier = EIdentifier <$> loc <*> Lexer.identifierStr <?> "identifier"
 
 record :: Parser (Expr SourcePos)
 record = do
     _ <- Lexer.bracketOpen
-    fx <- many (field <* spaces <* optional Lexer.comma <* spaces)
+    fx <- many (field <* spaces <* optional Lexer.comma <* spaces) <?> "record fields"
     _ <- Lexer.bracketClose
     Record <$> loc <+> Fields fx
     where
@@ -60,30 +60,30 @@ record = do
         field = do
             i <- Lexer.identifierStr
             _ <- Lexer.colon
-            e <- expression
+            e <- expression <?> "field expr"
             pure (i, e)
 
 paren :: Parser (Expr SourcePos)
-paren = between Lexer.parenOpen Lexer.parenClose expression
+paren = between Lexer.parenOpen Lexer.parenClose expression <?> "parens"
 
 number :: Parser (Expr SourcePos)
 number = do
-    L.Number num <- Lexer.numLiteral
+    L.Number num <- Lexer.numLiteral <?> "num literal"
     Number <$> loc <+> num
 
 input :: Parser (Expr SourcePos)
-input = Lexer.keyword L.Input >> Input <$> loc
+input = Lexer.keyword L.Input >> Input <$> loc <?> "input kw"
 
 nul :: Parser (Expr SourcePos)
-nul = Lexer.keyword L.Null >> Null <$> loc
+nul = Lexer.keyword L.Null >> Null <$> loc <?> "null kw"
 
 exprArithm :: Parser (Expr SourcePos)
 exprArithm = do
     l <- loc
-    E.buildExpressionParser (arithmTable l) arithmTerm
+    E.buildExpressionParser (arithmTable l) arithmTerm <?> "expr arithm"
 
 arithmTerm :: Parser (Expr SourcePos)
-arithmTerm = try exprWithoutArithmetics <|> try arithmParens
+arithmTerm = try exprWithoutArithmetics <|> try arithmParens <?> "arithm term"
 
 -- Chain E.Prefix (multiple derefs at once)
 prefix :: Parser (Expr SourcePos -> Expr SourcePos) -> E.Operator String () Identity (Expr SourcePos)
@@ -119,4 +119,4 @@ arithmTable l = [
     ]
 
 arithmParens :: Parser (Expr SourcePos)
-arithmParens = between Lexer.parenOpen Lexer.parenClose exprArithm
+arithmParens = between Lexer.parenOpen Lexer.parenClose exprArithm <?> "arithm parens"

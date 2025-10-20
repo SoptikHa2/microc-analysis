@@ -11,19 +11,19 @@ import Utils
 import Parse.Location
 
 program :: Parser (Program SourcePos)
-program = many func
+program = many func <?> "program"
 
 func :: Parser (FunDecl SourcePos)
 func = do
     l <- loc
-    name <- Lexer.identifierStr
+    name <- Lexer.identifierStr <?> "fun name"
     _ <- Lexer.parenOpen
-    args <- many (Lexer.identifierStr <* optional Lexer.comma)
+    args <- many (Lexer.identifierStr <* optional Lexer.comma) <?> "fun args"
     _ <- Lexer.parenClose
     _ <- Lexer.bracketOpen
-    vars <- concat <$> many (try varStmt)
-    bodyx <- many (try stmt)
-    ret  <- retStmt
+    vars <- concat <$> many (try varStmt) <?> "fun var declares"
+    bodyx <- many (try stmt) <?> "fun body"
+    ret  <- retStmt <?> "fun return"
     body <- FunBlock <$> loc <+> vars <+> bodyx <+> ret
     _ <- Lexer.bracketClose
     pure $ FunDecl l name args body
@@ -31,9 +31,9 @@ func = do
 varStmt :: Parser [Identifier]
 varStmt = do
     _ <- Lexer.keyword L.Var
-    idx <- many1 $ Lexer.identifierStr <* optional Lexer.comma
+    idx <- many1 (Lexer.identifierStr <* optional Lexer.comma) <?> "var declaration"
     _ <- Lexer.semicolon
     pure idx
 
 retStmt :: Parser (Expr SourcePos)
-retStmt = Lexer.keyword L.Return *> expression <* Lexer.semicolon
+retStmt = Lexer.keyword L.Return *> expression <* Lexer.semicolon <?> "ret statement"
