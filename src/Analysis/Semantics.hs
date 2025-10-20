@@ -66,6 +66,16 @@ verifyInitIdentifiers fun = notInitErrors
         -- We are only interested in variables that are declared locals in the function.
         locals = fun.body.idDecl
 
+        -- Get all ID accesses that are NOT on the left side of any assignment
+        -- This does not catch expressions using uninit identifiers on the left side, but whatever
+        idAccess :: (Show e, Data e) => e -> [(Identifier, a)]
+        idAccess e = filter ((`notElem` leftSidesIds) . fst) allIds
+            where
+                leftSides = [lhs | AssignmentStmt (_ :: a) lhs _ <- universeBi e]
+                leftSidesIds = [id | EIdentifier (_ :: a) id <- universeBi leftSides]
+
+                allIds = [(id, a) | EIdentifier a id <- universeBi e]
+
         -- Now, for each statement, we recurse.
         -- We pass the list of initialized identifiers. If we find some local before it is
         -- initialized, it is an error
@@ -76,7 +86,7 @@ verifyInitIdentifiers fun = notInitErrors
             let
                 targetId = head [id | EIdentifier (_ :: a) id <- universeBi target]
 
-                rhsIds :: [(Identifier, a)] = [(id, loc) | EIdentifier (loc :: a) id <- universeBi rhs]
+                rhsIds = idAccess rhs
                 badRhsIds :: [(Identifier, a)] = filter (\(i,_) -> i `elem` locals && i `notElem` ids) rhsIds
             in
                 if null badRhsIds then
@@ -85,7 +95,7 @@ verifyInitIdentifiers fun = notInitErrors
                     badRhsIds
         verifyStmtx (stmt:stmx) ids =
             let
-                rhsIds = [(id, loc) | EIdentifier (loc :: a) id <- universeBi stmt]
+                rhsIds = idAccess stmt
                 badRhsIds = filter (\(i,_) -> i `elem` locals && i `notElem` ids) rhsIds
             in
                 if null badRhsIds then
@@ -95,7 +105,7 @@ verifyInitIdentifiers fun = notInitErrors
         
         bodyErrors = verifyStmtx fun.body.body []
 
-        returnIds = [(id, loc) | EIdentifier (loc :: a) id <- universeBi fun.body.return]
+        returnIds = idAccess fun.body.return
         allDefs = [ id | EIdentifier (_ :: a) id <- universeBi
                     [target | AssignmentStmt (_ :: a) target _ <- universeBi fun.body.body]
                 ]
