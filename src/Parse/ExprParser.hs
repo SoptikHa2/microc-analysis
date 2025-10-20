@@ -33,7 +33,7 @@ postfixExpr = do
         callRest :: Parser (Expr SourcePos -> Expr SourcePos)
         callRest = do
             _ <- Lexer.parenOpen
-            ex <- many (expression <* spaces <* optional (char ',') <* spaces)
+            ex <- many (expression <* optional Lexer.comma <* spaces)
             _ <- Lexer.parenClose
             (flip . Call <$> loc) <+> ex
 
@@ -52,7 +52,7 @@ identifier = EIdentifier <$> loc <*> Lexer.identifierStr
 record :: Parser (Expr SourcePos)
 record = do
     _ <- Lexer.bracketOpen
-    fx <- many (field <* spaces <* optional (char ',') <* spaces)
+    fx <- many (field <* spaces <* optional Lexer.comma <* spaces)
     _ <- Lexer.bracketClose
     Record <$> loc <+> Fields fx
     where

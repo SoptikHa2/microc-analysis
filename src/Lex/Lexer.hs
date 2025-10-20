@@ -1,19 +1,21 @@
 module Lex.Lexer where
 
 import Text.Parsec
-import Lex.Tokens (Token(..), strToKw, Keyword, kwToStr)
-import Data.Maybe
+import Lex.Tokens (Token(..), Keyword, kwToStr)
+import Lex.Comments (comment)
 
+ws :: Parsec String () ()
+ws = try comment <|> spaces
 
 parenOpen :: Parsec String () Token
-parenOpen = spaces >> char '(' >> return ParenOpen
+parenOpen = ws >> char '(' >> return ParenOpen
 
 parenClose :: Parsec String () Token
-parenClose = spaces >> char ')' >> return ParenClose
+parenClose = ws >> char ')' >> return ParenClose
 
 identifierStr :: Parsec String () String
 identifierStr = try $ do
-    spaces
+    ws
     idFirst <- letter <|> char '_'
     idRest <- many (alphaNum <|> char '_')
     pure $ idFirst : idRest
@@ -22,56 +24,56 @@ identifier :: Parsec String () Token
 identifier = Identifier <$> identifierStr
 
 bracketOpen :: Parsec String () Token
-bracketOpen = spaces >> char '{' >> return CBracketOpen
+bracketOpen = ws >> char '{' >> return CBracketOpen
 
 bracketClose :: Parsec String () Token
-bracketClose = spaces >> char '}' >> return CBracketClose
+bracketClose = ws >> char '}' >> return CBracketClose
 
 keyword :: Keyword -> Parsec String () Token
 keyword kw = try $ do
-    spaces
+    ws
     let valid = kwToStr kw
     _ <- choice (try . string <$> valid)
     pure $ Keyword kw
 
 semicolon :: Parsec String () Token
-semicolon = spaces >> char ';' >> return Semicolon
+semicolon = ws >> char ';' >> return Semicolon
 
 comma :: Parsec String () Token
-comma = spaces >> char ',' >> return Comma
+comma = ws >> char ',' >> return Comma
 
 assign :: Parsec String () Token
-assign = spaces >> char '=' >> return Assign
+assign = ws >> char '=' >> return Assign
 
 plus :: Parsec String () Token
-plus = spaces >> char '+' >> return Plus
+plus = ws >> char '+' >> return Plus
 
 minus :: Parsec String () Token
-minus = spaces >> char '-' >> return Minus
+minus = ws >> char '-' >> return Minus
 
 star :: Parsec String () Token
-star = spaces >> char '*' >> return Star
+star = ws >> char '*' >> return Star
 
 division :: Parsec String () Token
-division = spaces >> char '/' >> return Division
+division = ws >> char '/' >> return Division
 
 and :: Parsec String () Token
-and = spaces >> char '&' >> return And
+and = ws >> char '&' >> return And
 
 dot :: Parsec String () Token
-dot = spaces >> char '.' >> return Dot
+dot = ws >> char '.' >> return Dot
 
 colon :: Parsec String () Token
-colon = spaces >> char ':' >> return Colon
+colon = ws >> char ':' >> return Colon
 
 gt :: Parsec String () Token
-gt = spaces >> char '>' >> return Gt
+gt = ws >> char '>' >> return Gt
 
 eq :: Parsec String () Token
-eq = spaces >> string "==" >> return Eq
+eq = ws >> string "==" >> return Eq
 
 numLiteral :: Parsec String () Token
 numLiteral = do
-    spaces
+    ws
     num <- try (read <$> many1 digit)
     pure $ Number num
