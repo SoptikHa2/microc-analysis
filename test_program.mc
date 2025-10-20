@@ -1,15 +1,14 @@
- inc(s) {
-   (*s).c = (*s).c + 1;
-   return *s;
- }
+ sum(n) {
+   var x;
+   x = 0;
+   while (n > 0) {
+     x = x + 1;
+     n = n - 1;
+   }
 
- new() {
-   return { c: 0, inc: inc };
+   return x;
  }
 
  main() {
-   var c, p;
-   c = new();
-   p = &c;
-   return ((((c.inc)(p)).inc)(p)).c;
+   return sum(50000);
  }

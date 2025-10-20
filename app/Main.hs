@@ -78,8 +78,8 @@ runProgram filepath args = do
 
               -- Exit with the status of main
               case result of
-                (VNumber exitCode) | exitCode == 0 -> exitSuccess
-                (VNumber exitCode) -> exitWith (ExitFailure exitCode)
+                (VNumber exitCode) | (exitCode `mod` 256) == 0 -> exitSuccess
+                (VNumber exitCode) -> exitWith (ExitFailure (exitCode `mod` 256))
                 _ -> do
                   putStrLn $ "Unknown return value from main: " <> show result
                   exitWith (ExitFailure 1)
