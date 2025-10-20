@@ -10,6 +10,7 @@ import Control.Monad.State (StateT, mapStateT, MonadTrans (lift))
 import Control.Monad (forM, forM_, when)
 import Data.Foldable (traverse_)
 import Text.Parsec (SourcePos)
+import Debug.Trace
 
 runId :: StateT State Identity a -> StateT State IO a
 runId = mapStateT (pure . runIdentity)
@@ -153,8 +154,7 @@ evalStmt (Block _ stmx) = do
 
 evalStmt (AssignmentStmt loc etarget eval) = do
     target <- evalExprForWrite etarget
-    value <- evalExpr eval
-
+    value <- evalExpr eval >>= copyVal
     case target of
         Pointer addr -> do
             runId $ putsAddr addr value
@@ -183,3 +183,22 @@ evalExprForWrite (EIdentifier loc id) =
     runId (getsVarAddr id) >>= maybe (errwl loc $ "Variable not found: " ++ id) (pure . Pointer)
 
 evalExprForWrite e = error $ "Target to write is read-only: " ++ show e
+
+
+copyVal :: Value -> StateT State IO Value
+-- We need to deep-copy records
+copyVal (Interpreter.Data.Record fields) = do
+    -- For each field, we need to 1) deref the address
+    -- 2) allocate the result on the heap
+    newPtrs <- traverse (\(_, a) -> runId (copyPtr a)) fields
+    pure $ Interpreter.Data.Record $ zip (fst <$> fields) newPtrs
+    where
+        copyPtr :: Address -> StateT State Identity Address
+        copyPtr addr = do
+            val <- getsAddr addr
+            result <- traverse putsValue val
+            case result of
+                Just addr -> pure addr
+                Nothing -> error $ "Record contained bad pointer " <> show addr
+-- For anything else, we don't care
+copyVal x = pure x

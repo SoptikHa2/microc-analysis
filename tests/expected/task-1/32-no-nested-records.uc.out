@@ -1,9 +1,7 @@
 ---
 test: run suites/task-1/32-no-nested-records.uc
 ---
-suites/task-1/32-no-nested-records.uc:4:20: execution error: Nested records are not supported, use pointers
-     r2 = { a: 1, b: r1 };
-                     ^
-
+Analysis found some problems. Aborting run.
+NestedRecord "In main, \"suites/task-1/32-no-nested-records.uc\" (line 4, column 19): Field b contains nested field."
 
 exit: 1

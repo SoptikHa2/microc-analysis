@@ -1,6 +1,9 @@
- main() {
-   var r1, r2;
-   r1 = { a: 1 };
-   r2 = { a: 1, b: r1 };
+main() {
+   var a,b;
+   a = { n:1 };
+   b = a;
+   b.n = 2;
+   output a.n;
+   output b.n;
    return 0;
  }
