@@ -1,9 +1,8 @@
 ---
 test: run suites/task-1/err-record-2.uc
 ---
-suites/task-1/err-record-2.uc:6:21: execution error: Non-existing field (c) access in {a:1,b:2}
-      output (*(*n).c).c; // error: missing field
-                      ^
-
+microc: At "suites/task-1/err-record-2.uc" (line 6, column 22): Nonexistent field "c"
+CallStack (from HasCallStack):
+  error, called at src/Interpreter/Interpret.hs:22:18 in apr-semestral-0.1.0.0-7AYOm87uI8G3bgmoKhgVM9:Interpreter.Interpret
 
 exit: 1

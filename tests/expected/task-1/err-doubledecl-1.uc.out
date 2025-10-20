@@ -1,9 +1,7 @@
 ---
 test: run suites/task-1/err-doubledecl-1.uc
 ---
-suites/task-1/err-doubledecl-1.uc:3:7: semantic error: identifier 'q' already declared ([2:11])
-    var q; // error: identifier already declared
-        ^
-
+Analysis found some problems. Aborting run.
+DuplicateIdentifier "In f: q is duplicate."
 
 exit: 1

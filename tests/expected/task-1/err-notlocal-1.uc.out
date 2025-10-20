@@ -1,9 +1,7 @@
 ---
 test: run suites/task-1/err-notlocal-1.uc
 ---
-suites/task-1/err-notlocal-1.uc:8:5: semantic error: identifier 'n' not declared
-      n=10; // error: identifier not declared
-      ^
-
+Analysis found some problems. Aborting run.
+UndeclaredIdentifier "In main, \"suites/task-1/err-notlocal-1.uc\" (line 7, column 8): n is not declared."
 
 exit: 1

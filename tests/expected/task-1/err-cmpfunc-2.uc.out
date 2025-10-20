@@ -1,9 +1,8 @@
 ---
 test: run suites/task-1/err-cmpfunc-2.uc
 ---
-suites/task-1/err-cmpfunc-2.uc:12:11: execution error: Non-integer arithmetic operation
-      if (f == g) { // error: function comparison
-            ^
-
+microc: At "suites/task-1/err-cmpfunc-2.uc" (line 12, column 9): Undefined operation Eq on <func f ("suites/task-1/err-cmpfunc-2.uc" (line 1, column 1))>, <func g ("suites/task-1/err-cmpfunc-2.uc" (line 3, column 2))>
+CallStack (from HasCallStack):
+  error, called at src/Interpreter/Interpret.hs:22:18 in apr-semestral-0.1.0.0-7AYOm87uI8G3bgmoKhgVM9:Interpreter.Interpret
 
 exit: 1

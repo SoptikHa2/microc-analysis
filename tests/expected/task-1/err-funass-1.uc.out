@@ -1,9 +1,7 @@
 ---
 test: run suites/task-1/err-funass-1.uc
 ---
-suites/task-1/err-funass-1.uc:2:10: semantic error: cannot assign to a function
-      main = 5; // error: assignment to a function
-           ^
-
+Analysis found some problems. Aborting run.
+InvalidAssignment "In main, \"suites/task-1/err-funass-1.uc\" (line 1, column 9): Cannot assign into non-lvalue: EIdentifier \"suites/task-1/err-funass-1.uc\" (line 1, column 9) \"main\""
 
 exit: 1

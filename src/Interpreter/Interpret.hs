@@ -22,7 +22,8 @@ errwl :: SourcePos -> String -> a
 errwl loc text = error $ "At " <> show loc <> ": " <> text
 
 applyBiOp :: SourcePos -> BiOp -> Value -> Value -> Value
-applyBiOp _ Eq v1 v2 = VNumber $ if v1 == v2 then 1 else 0
+applyBiOp _ Eq (VNumber v1) (VNumber v2) = VNumber $ if v1 == v2 then 1 else 0
+applyBiOp _ Eq (Pointer p1) (Pointer p2) = VNumber $ if p1 == p2 then 1 else 0
 applyBiOp _ Gt (VNumber i1) (VNumber i2) = VNumber $ if i1 > i2 then 1 else 0
 applyBiOp _ Plus (VNumber i1) (VNumber i2) = VNumber $ i1 + i2
 applyBiOp _ Minus (VNumber i1) (VNumber i2) = VNumber $ i1 - i2
