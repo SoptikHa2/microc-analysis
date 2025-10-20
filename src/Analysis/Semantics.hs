@@ -5,9 +5,9 @@ import Data.Generics.Uniplate.Data
 import Data.List (group, sort)
 import Data.Maybe (catMaybes)
 import Data.Data
-import Debug.Trace (trace)
 
 data SemanticError = UndeclaredIdentifier String
+                   | UninitIdentifier String
                    | DuplicateIdentifier String
                    | TakingAddrOfFun String
                    | InvalidAssignment String
@@ -21,6 +21,7 @@ eFromFun fun loc = case loc of
         Nothing -> prepend ("In " <> fun.name <>": ")
     where prepend prefix err = case err of
             UndeclaredIdentifier s -> UndeclaredIdentifier (prefix ++ s)
+            UninitIdentifier s -> UninitIdentifier (prefix ++ s)
             DuplicateIdentifier s -> DuplicateIdentifier (prefix ++ s)
             TakingAddrOfFun s -> TakingAddrOfFun (prefix ++ s)
             InvalidAssignment s -> InvalidAssignment (prefix ++ s)
@@ -30,6 +31,7 @@ eFromFun fun loc = case loc of
 verify :: (Show a, Data a) => [FunDecl a] -> [SemanticError]
 verify funcs = concat (
             (verifyIdentifiers globals <$> funcs) <>
+            (verifyInitIdentifiers <$> funcs) <>
             (verifyRefTaking globals <$> funcs) <>
             (verifyAssignments globals <$> funcs) <>
             (verifyFieldDefitions <$> funcs) <>
@@ -55,6 +57,56 @@ verifyIdentifiers globals fun = notValidErrors <> dupErrors
         dupErrors =
             (\i -> eFromFun fun Nothing
                 (DuplicateIdentifier $ i <> " is duplicate.")) <$> dupIds
+
+-- Given a function, verify that all functions that are declared are assigned to before they are used.
+verifyInitIdentifiers :: forall a . (Show a, Data a ) => FunDecl a -> [SemanticError]
+verifyInitIdentifiers fun = notInitErrors
+    where
+        -- First of all, get list of stuff to check.
+        -- We are only interested in variables that are declared locals in the function.
+        locals = fun.body.idDecl
+
+        -- Now, for each statement, we recurse.
+        -- We pass the list of initialized identifiers. If we find some local before it is
+        -- initialized, it is an error
+        -- Params: statement, init. identifiers -> exprs that cause the error
+        verifyStmtx :: [Stmt a] -> [Identifier] -> [(Identifier, a)]
+        verifyStmtx [] _ = []
+        verifyStmtx ((AssignmentStmt _ target rhs):stmtx) ids =
+            let
+                targetId = head [id | EIdentifier (_ :: a) id <- universeBi target]
+
+                rhsIds :: [(Identifier, a)] = [(id, loc) | EIdentifier (loc :: a) id <- universeBi rhs]
+                badRhsIds :: [(Identifier, a)] = filter (\(i,_) -> i `elem` locals && i `notElem` ids) rhsIds
+            in
+                if null badRhsIds then
+                    verifyStmtx stmtx (targetId:ids)
+                else
+                    badRhsIds
+        verifyStmtx (stmt:stmx) ids =
+            let
+                rhsIds = [(id, loc) | EIdentifier (loc :: a) id <- universeBi stmt]
+                badRhsIds = filter (\(i,_) -> i `elem` locals && i `notElem` ids) rhsIds
+            in
+                if null badRhsIds then
+                    verifyStmtx stmx ids
+                else
+                    badRhsIds
+        
+        bodyErrors = verifyStmtx fun.body.body []
+
+        returnIds = [(id, loc) | EIdentifier (loc :: a) id <- universeBi fun.body.return]
+        allDefs = [ id | EIdentifier (_ :: a) id <- universeBi
+                    [target | AssignmentStmt (_ :: a) target _ <- universeBi fun.body.body]
+                ]
+        badReturnIds = filter (\(i,_) -> i `elem` locals && i `notElem` allDefs) returnIds
+
+        errors = bodyErrors <> badReturnIds
+
+        notInitErrors =
+            (\(i, loc) -> eFromFun fun (Just loc)
+                (UninitIdentifier $ "Accessing local " <> i <> " that is not initialized.")) <$> errors
+
 
 -- Given a list of globals (functions), verify that one cannot take ref of a function
 verifyRefTaking :: (Show a, Data a) => [Identifier] -> FunDecl a -> [SemanticError]
