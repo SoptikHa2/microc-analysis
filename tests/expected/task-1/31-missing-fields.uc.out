@@ -1,9 +1,8 @@
 ---
 test: run suites/task-1/31-missing-fields.uc
 ---
-suites/task-1/31-missing-fields.uc:4:5: execution error: Non-existing field (b) access in {a:1}
-     r.b = 1;
-      ^
-
+Analysis found some problems. Aborting run.
+InvalidRecordField "In main, \"suites/task-1/31-missing-fields.uc\" (line 4, column 6): Accessing unknown record field: b"
+InvalidRecordField "In main, \"suites/task-1/31-missing-fields.uc\" (line 5, column 13): Accessing unknown record field: b"
 
 exit: 1

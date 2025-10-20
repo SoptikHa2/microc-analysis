@@ -1,9 +1,8 @@
 ---
 test: run suites/task-1/27-non-pointer-access.uc
 ---
-suites/task-1/27-non-pointer-access.uc:4:6: execution error: Non-pointer (1) pointer dereference
-     (*r).x = 41;
-       ^
-
+Analysis found some problems. Aborting run.
+InvalidRecordField "In main, \"suites/task-1/27-non-pointer-access.uc\" (line 4, column 9): Accessing unknown record field: x"
+InvalidRecordField "In main, \"suites/task-1/27-non-pointer-access.uc\" (line 5, column 13): Accessing unknown record field: x"
 
 exit: 1

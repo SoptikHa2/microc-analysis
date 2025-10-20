@@ -1,9 +1,8 @@
 ---
 test: run suites/task-1/12-div-by-zero.uc
 ---
-suites/task-1/12-div-by-zero.uc:5:12: execution error: Division by zero
-    return x / y;
-             ^
-
+microc: At "suites/task-1/12-div-by-zero.uc" (line 5, column 9): Division by zero
+CallStack (from HasCallStack):
+  error, called at src/Interpreter/Interpret.hs:21:18 in apr-semestral-0.1.0.0-7AYOm87uI8G3bgmoKhgVM9:Interpreter.Interpret
 
 exit: 1

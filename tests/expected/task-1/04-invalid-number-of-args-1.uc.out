@@ -1,9 +1,8 @@
 ---
 test: run suites/task-1/04-invalid-number-of-args-1.uc
 ---
-suites/task-1/04-invalid-number-of-args-1.uc:6:12: execution error: Invalid argument list: expected 2, got: 1
-     return f(1);
-             ^
-
+microc: At "suites/task-1/04-invalid-number-of-args-1.uc" (line 6, column 15): Expected 2 params for function f
+CallStack (from HasCallStack):
+  error, called at src/Interpreter/Interpret.hs:21:18 in apr-semestral-0.1.0.0-7AYOm87uI8G3bgmoKhgVM9:Interpreter.Interpret
 
 exit: 1
