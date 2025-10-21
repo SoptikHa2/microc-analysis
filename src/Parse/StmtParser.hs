@@ -21,12 +21,12 @@ whileStmt =
 
 ifStmt :: Parser (Stmt SourcePos)
 ifStmt = do
-    _ <- Lexer.keyword L.If *> Lexer.parenOpen
+    l <- Lexer.keyword L.If *> loc <* Lexer.parenOpen
     cond <- expression <?> "if cond"
     _ <- Lexer.parenClose
     body <- stmt <?> "if body"
     elseBody <- optionMaybe $ try $ Lexer.keyword L.Else *> stmt
-    IfStmt <$> loc <+> cond <+> body <+> elseBody
+    pure $ IfStmt l cond body elseBody
 
 blockStmt :: Parser (Stmt SourcePos)
 blockStmt =

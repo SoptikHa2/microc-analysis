@@ -33,9 +33,10 @@ postfixExpr = do
         callRest :: Parser (Expr SourcePos -> Expr SourcePos)
         callRest = do
             _ <- Lexer.parenOpen
+            l <- loc
             ex <- many (expression <* optional Lexer.comma <* spaces) <?> "call params"
             _ <- Lexer.parenClose
-            (flip . Call <$> loc) <+> ex
+            pure ((flip . Call) l) <+> ex
 
         -- This function has to exist
         recApply :: a -> [a -> a] -> a
@@ -52,9 +53,10 @@ identifier = EIdentifier <$> loc <*> Lexer.identifierStr <?> "identifier"
 record :: Parser (Expr SourcePos)
 record = do
     _ <- Lexer.bracketOpen
+    l <- loc
     fx <- many (field <* spaces <* optional Lexer.comma <* spaces) <?> "record fields"
     _ <- Lexer.bracketClose
-    Record <$> loc <+> Fields fx
+    pure $ Record l (Fields fx)
     where
         field :: Parser (Identifier, Expr SourcePos)
         field = do
@@ -68,8 +70,9 @@ paren = between Lexer.parenOpen Lexer.parenClose expression <?> "parens"
 
 number :: Parser (Expr SourcePos)
 number = do
+    l <- loc
     L.Number num <- Lexer.numLiteral <?> "num literal"
-    Number <$> loc <+> num
+    pure $ Number l num
 
 input :: Parser (Expr SourcePos)
 input = Lexer.keyword L.Input >> Input <$> loc <?> "input kw"
