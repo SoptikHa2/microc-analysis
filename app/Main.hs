@@ -13,6 +13,8 @@ import qualified Interpreter.State as IS
 import Interpreter.Interpret (evalFun)
 import Interpreter.Data (Value(..))
 import Analysis.Analysis (runAnalysis)
+import Control.Exception
+import Error
 
 -- CLI data types
 data Command = Run FilePath [Int]
@@ -41,48 +43,52 @@ main = do
 
 -- Run a MicroC program
 runProgram :: FilePath -> [Int] -> IO ()
-runProgram filepath args = do
-  -- Read the source file
-  source <- readFile filepath
+runProgram filepath args = go `catch` \e -> do
+    print (e :: MicroCError)
+    exitWith $ ExitFailure 1
+  where
+    go = do
+      -- Read the source file
+      source <- readFile filepath
 
-  -- Parse the program
-  case parse program filepath source of
-    Left err -> do
-      putStrLn $ "Parse error: " ++ show err
-      exitFailure
-    Right prog -> do
-      -- First of all, analyse it
-      _ <- runAnalysis prog
-
-      -- Find the main function
-      case findFunction "main" prog of
-        Nothing -> do
-          putStrLn "Error: No 'main' function found in program"
+      -- Parse the program
+      case parse program filepath source of
+        Left err -> do
+          putStrLn $ "Parse error: " ++ show err
           exitFailure
-        Just mainFun -> do
-          -- Check argument count matches
-          let FunDecl loc _ funArgs _ = mainFun
-          let expectedArgs = length funArgs
-          let providedArgs = length args
-          if expectedArgs /= providedArgs
-            then do
-              putStrLn $ "Error: main function expects " ++ show expectedArgs
-                      ++ " arguments, but " ++ show providedArgs ++ " were provided"
+        Right prog -> do
+          -- First of all, analyse it
+          _ <- runAnalysis prog
+
+          -- Find the main function
+          case findFunction "main" prog of
+            Nothing -> do
+              putStrLn "Error: No 'main' function found in program"
               exitFailure
-            else do
-              -- Initialize state with all functions in global scope
-              initialState <- initializeState prog
+            Just mainFun -> do
+              -- Check argument count matches
+              let FunDecl loc _ funArgs _ = mainFun
+              let expectedArgs = length funArgs
+              let providedArgs = length args
+              if expectedArgs /= providedArgs
+                then do
+                  putStrLn $ "Error: main function expects " ++ show expectedArgs
+                          ++ " arguments, but " ++ show providedArgs ++ " were provided"
+                  exitFailure
+                else do
+                  -- Initialize state with all functions in global scope
+                  initialState <- initializeState prog
 
-              -- Run the main function with provided arguments
-              result <- evalStateT (evalFun mainFun loc (map VNumber args)) initialState
+                  -- Run the main function with provided arguments
+                  result <- evalStateT (evalFun mainFun loc (map VNumber args)) initialState
 
-              -- Exit with the status of main
-              case result of
-                (VNumber exitCode) | (exitCode `mod` 256) == 0 -> exitSuccess
-                (VNumber exitCode) -> exitWith (ExitFailure (exitCode `mod` 256))
-                _ -> do
-                  putStrLn $ "Unknown return value from main: " <> show result
-                  exitWith (ExitFailure 1)
+                  -- Exit with the status of main
+                  case result of
+                    (VNumber exitCode) | (exitCode `mod` 256) == 0 -> exitSuccess
+                    (VNumber exitCode) -> exitWith (ExitFailure (exitCode `mod` 256))
+                    _ -> do
+                      putStrLn $ "Unknown return value from main: " <> show result
+                      exitWith (ExitFailure 1)
 
 
 -- Find a function by name in the program

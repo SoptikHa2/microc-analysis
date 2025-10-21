@@ -1,7 +1,7 @@
 ---
 test: run suites/task-1/err-doubledecl-2.uc
 ---
-Analysis found some problems. Aborting run.
-DuplicateIdentifier "In f: x is duplicate."
+microc: Semantic issue found.
+Duplicate identifier: In f: x is duplicate.
 
 exit: 1

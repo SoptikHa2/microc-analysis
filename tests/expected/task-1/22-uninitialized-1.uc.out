@@ -1,7 +1,7 @@
 ---
 test: run suites/task-1/22-uninitialized-1.uc
 ---
-Analysis found some problems. Aborting run.
-UninitIdentifier "In main, \"suites/task-1/22-uninitialized-1.uc\" (line 3, column 10): Identifier x was not initialized."
+microc: Semantic issue found.
+Uninitialized identifier: In main, "suites/task-1/22-uninitialized-1.uc" (line 3, column 10): Identifier x was not initialized.
 
 exit: 1

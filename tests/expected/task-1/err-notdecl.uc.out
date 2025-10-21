@@ -1,8 +1,8 @@
 ---
 test: run suites/task-1/err-notdecl.uc
 ---
-Analysis found some problems. Aborting run.
-UndeclaredIdentifier "In test, \"suites/task-1/err-notdecl.uc\" (line 1, column 8): a is not declared."
-UndeclaredIdentifier "In test, \"suites/task-1/err-notdecl.uc\" (line 4, column 11): a is not declared."
+microc: Semantic issue found.
+Undeclared identifier: In test, "suites/task-1/err-notdecl.uc" (line 1, column 8): a is not declared.
+Undeclared identifier: In test, "suites/task-1/err-notdecl.uc" (line 4, column 11): a is not declared.
 
 exit: 1

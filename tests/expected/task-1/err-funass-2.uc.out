@@ -1,7 +1,7 @@
 ---
 test: run suites/task-1/err-funass-2.uc
 ---
-Analysis found some problems. Aborting run.
-TakingAddrOfFun "In main, \"suites/task-1/err-funass-2.uc\" (line 4, column 8): Taking address of function main"
+microc: Semantic issue found.
+Invalid reference: In main, "suites/task-1/err-funass-2.uc" (line 4, column 8): Taking address of function main
 
 exit: 1

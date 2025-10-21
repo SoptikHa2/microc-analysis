@@ -1,7 +1,7 @@
 ---
 test: run suites/task-1/err-doubledecl-1.uc
 ---
-Analysis found some problems. Aborting run.
-DuplicateIdentifier "In f: q is duplicate."
+microc: Semantic issue found.
+Duplicate identifier: In f: q is duplicate.
 
 exit: 1

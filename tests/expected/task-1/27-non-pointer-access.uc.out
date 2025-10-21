@@ -1,8 +1,8 @@
 ---
 test: run suites/task-1/27-non-pointer-access.uc
 ---
-Analysis found some problems. Aborting run.
-InvalidRecordField "In main, \"suites/task-1/27-non-pointer-access.uc\" (line 4, column 9): Accessing unknown record field: x"
-InvalidRecordField "In main, \"suites/task-1/27-non-pointer-access.uc\" (line 5, column 13): Accessing unknown record field: x"
+microc: Semantic issue found.
+Bad access: In main, "suites/task-1/27-non-pointer-access.uc" (line 4, column 9): Accessing unknown record field: x
+Bad access: In main, "suites/task-1/27-non-pointer-access.uc" (line 5, column 13): Accessing unknown record field: x
 
 exit: 1

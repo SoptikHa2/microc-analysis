@@ -1,8 +1,7 @@
 ---
 test: run suites/task-1/18-deref-null.uc
 ---
-microc: At "suites/task-1/18-deref-null.uc" (line 3, column 13): Null-pointer dereference
-CallStack (from HasCallStack):
-  error, called at src/Interpreter/Interpret.hs:22:18 in apr-semestral-0.1.0.0-7AYOm87uI8G3bgmoKhgVM9:Interpreter.Interpret
+microc: Error during interpretation.
+At "suites/task-1/18-deref-null.uc" (line 3, column 13): Null-pointer dereference
 
 exit: 1

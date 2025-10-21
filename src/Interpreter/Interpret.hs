@@ -6,11 +6,12 @@ import Parse.AST
 import Interpreter.State
 import Interpreter.Data
 import Control.Monad.Identity (Identity(runIdentity))
-import Control.Monad.State (StateT, mapStateT, MonadTrans (lift))
+import Control.Monad.State (StateT, mapStateT, MonadTrans (lift), MonadIO (liftIO))
 import Control.Monad (forM, forM_, when)
 import Data.Foldable (traverse_)
 import Text.Parsec (SourcePos)
-import Debug.Trace
+import Error (MicroCError(EInterpreter))
+import Control.Exception (throw)
 
 runId :: StateT State Identity a -> StateT State IO a
 runId = mapStateT (pure . runIdentity)
@@ -18,26 +19,29 @@ runId = mapStateT (pure . runIdentity)
 id' :: a -> a
 id' = Prelude.id
 
-errwl :: SourcePos -> String -> a
-errwl loc text = error $ "At " <> show loc <> ": " <> text
+errwlIO :: SourcePos -> String -> IO a
+errwlIO loc text = throw $ EInterpreter $ "At " <> show loc <> ": " <> text
 
-applyBiOp :: SourcePos -> BiOp -> Value -> Value -> Value
-applyBiOp _ Eq (VNumber v1) (VNumber v2) = VNumber $ if v1 == v2 then 1 else 0
-applyBiOp _ Eq (Pointer p1) (Pointer p2) = VNumber $ if p1 == p2 then 1 else 0
-applyBiOp _ Gt (VNumber i1) (VNumber i2) = VNumber $ if i1 > i2 then 1 else 0
-applyBiOp _ Plus (VNumber i1) (VNumber i2) = VNumber $ i1 + i2
-applyBiOp _ Minus (VNumber i1) (VNumber i2) = VNumber $ i1 - i2
-applyBiOp _ Mul (VNumber i1) (VNumber i2) = VNumber $ i1 * i2
+errwl :: SourcePos -> String -> StateT State IO a
+errwl loc text = liftIO $ errwlIO loc text
+
+applyBiOp :: SourcePos -> BiOp -> Value -> Value -> IO Value
+applyBiOp _ Eq (VNumber v1) (VNumber v2) = pure $ VNumber $ if v1 == v2 then 1 else 0
+applyBiOp _ Eq (Pointer p1) (Pointer p2) = pure $ VNumber $ if p1 == p2 then 1 else 0
+applyBiOp _ Gt (VNumber i1) (VNumber i2) = pure $ VNumber $ if i1 > i2 then 1 else 0
+applyBiOp _ Plus (VNumber i1) (VNumber i2) = pure $ VNumber $ i1 + i2
+applyBiOp _ Minus (VNumber i1) (VNumber i2) = pure $ VNumber $ i1 - i2
+applyBiOp _ Mul (VNumber i1) (VNumber i2) = pure $ VNumber $ i1 * i2
 applyBiOp loc Div (VNumber i1) (VNumber i2) = if i2 == 0
-    then errwl loc "Division by zero"
-    else VNumber $ i1 `div` i2
-applyBiOp loc op v1 v2 = errwl loc $ "Undefined operation " ++ show op ++ " on " ++ show v1 ++ ", " ++ show v2
+    then errwlIO loc "Division by zero"
+    else pure $ VNumber $ i1 `div` i2
+applyBiOp loc op v1 v2 = errwlIO loc $ "Undefined operation " ++ show op ++ " on " ++ show v1 ++ ", " ++ show v2
 
 evalExpr :: Expr SourcePos -> StateT State IO Value
 evalExpr (BiOp loc op e1 e2) = do
     ee1 <- evalExpr e1
     ee2 <- evalExpr e2
-    pure $ applyBiOp loc op ee1 ee2
+    liftIO $ applyBiOp loc op ee1 ee2
 
 evalExpr (UnOp loc Deref e1) = do
     ee1 <- evalExpr e1
@@ -59,8 +63,9 @@ evalExpr (UnOp loc Ref (FieldAccess _ record field)) = do
     fieldStruct <- evalExpr record
     case fieldStruct of
         Interpreter.Data.Record mapping -> do
-            let addr = maybe (errwl loc $ "Nonexistent field " ++ show field) id' (lookup field mapping)
-            pure $ Pointer addr
+            case lookup field mapping of
+                Just addr -> pure $ Pointer addr
+                Nothing -> errwl loc $ "Nonexistent field " ++ show field
         _ -> errwl loc $ "Attempted to access field of " ++ show record
 
 evalExpr (UnOp loc Ref _) = errwl loc "Attempted to take address of non-variable"
@@ -97,11 +102,12 @@ evalExpr (EIdentifier loc id) = do
         Nothing -> errwl loc $ "Unknown variable " ++ id
 
 evalExpr (Call loc fun params) = do
-    f <- funBody <$> evalExpr fun
+    target <- evalExpr fun
+    f <- funBody target
     evalParams <- forM params evalExpr
     evalFun f loc evalParams
     where
-        funBody (Function fb) = fb
+        funBody (Function fb) = pure fb
         funBody x = errwl loc $ "Not a function: " <> show x
 
 evalFun :: FunDecl SourcePos -> SourcePos -> [Value] -> StateT State IO Value
@@ -183,7 +189,7 @@ evalExprForWrite (FieldAccess loc field id) = do
 evalExprForWrite (EIdentifier loc id) =
     runId (getsVarAddr id) >>= maybe (errwl loc $ "Variable not found: " ++ id) (pure . Pointer)
 
-evalExprForWrite e = error $ "Target to write is read-only: " ++ show e
+evalExprForWrite e = throw $ EInterpreter $ "Target to write is read-only: " ++ show e
 
 
 copyVal :: Value -> StateT State IO Value
@@ -200,6 +206,6 @@ copyVal (Interpreter.Data.Record fields) = do
             result <- traverse putsValue val
             case result of
                 Just addr -> pure addr
-                Nothing -> error $ "Record contained bad pointer " <> show addr
+                Nothing -> throw $ EInterpreter $ "Record contained bad pointer " <> show addr
 -- For anything else, we don't care
 copyVal x = pure x

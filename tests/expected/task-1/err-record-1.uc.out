@@ -1,7 +1,7 @@
 ---
 test: run suites/task-1/err-record-1.uc
 ---
-Analysis found some problems. Aborting run.
-NestedRecord "In main, \"suites/task-1/err-record-1.uc\" (line 5, column 18): Field c contains nested field."
+microc: Semantic issue found.
+Bad definition: In main, "suites/task-1/err-record-1.uc" (line 5, column 18): Field c contains nested field.
 
 exit: 1

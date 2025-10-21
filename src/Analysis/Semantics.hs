@@ -1,9 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE InstanceSigs #-}
 module Analysis.Semantics (SemanticError(..), verify) where
 import Parse.AST
 import Data.Generics.Uniplate.Data
 import Data.List (group, sort)
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes)
 import Data.Data
 
 data SemanticError = UndeclaredIdentifier String
@@ -13,7 +14,17 @@ data SemanticError = UndeclaredIdentifier String
                    | InvalidAssignment String
                    | InvalidRecordField String
                    | NestedRecord String
-    deriving (Show)
+
+instance Show SemanticError where
+  show :: SemanticError -> String
+  show (UndeclaredIdentifier reason) = "Undeclared identifier: " <> reason
+  show (UninitIdentifier reason) = "Uninitialized identifier: " <> reason
+  show (DuplicateIdentifier reason) = "Duplicate identifier: " <> reason
+  show (TakingAddrOfFun reason) = "Invalid reference: " <> reason
+  show (InvalidAssignment reason) = "Bad assignment: " <> reason
+  show (InvalidRecordField reason) = "Bad access: " <> reason
+  show (NestedRecord reason) = "Bad definition: " <> reason
+
 
 eFromFun :: Show a => FunDecl a -> Maybe a -> SemanticError -> SemanticError
 eFromFun fun loc = case loc of
