@@ -75,5 +75,8 @@ eq = ws >> string "==" >> return Eq
 numLiteral :: Parsec String () Token
 numLiteral = do
     ws
+    minusSign <- optionMaybe $ try $ char '-'
     num <- try (read <$> many1 digit)
-    pure $ Number num
+    case minusSign of
+        Just _ -> pure $ Number (- num)
+        Nothing -> pure $ Number num

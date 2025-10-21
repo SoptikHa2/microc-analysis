@@ -81,6 +81,15 @@ spec = do
           , body = Block  testPos [OutputStmt  testPos (Number  testPos 1)]
           , elseBody = Just (Block  testPos [OutputStmt  testPos (Number  testPos 0)])
           })
+    
+    it "parses condition with negative number inside" $
+      parseStmt "if (x > -1) {}" `shouldBe`
+        Right (IfStmt
+          { d =  testPos
+          , condition = BiOp  testPos Gt (EIdentifier  testPos "x") (Number  testPos (-1))
+          , body = Block  testPos []
+          , elseBody = Nothing
+          })
   
   describe "Comments" $ do
     it "works in blocks" $
