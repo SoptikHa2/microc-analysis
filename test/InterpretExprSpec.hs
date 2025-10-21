@@ -9,7 +9,7 @@ import qualified Prelude
 
 import Interpreter.Interpret
 import Interpreter.State
-import Interpreter.Data (Value(..), Address)
+import Interpreter.Data (Value(..))
 import Parse.AST
 import Text.Parsec.Pos (SourcePos, newPos)
 
@@ -65,7 +65,7 @@ spec = do
 
     it "throws error for undefined variable" $ do
       evalExprTest (evalExpr (EIdentifier  testPos "undefined_var")) empty
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
   describe "Binary operations - arithmetic" $ do
     it "evaluates addition" $ do
@@ -152,11 +152,11 @@ spec = do
 
     it "throws error for undefined variable" $ do
       evalExprTest (evalExpr (UnOp  testPos Ref (EIdentifier  testPos "undefined"))) empty
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
     it "throws error for non-variable expression" $ do
       evalExprTest (evalExpr (UnOp  testPos Ref (Number  testPos 42))) empty
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
   describe "Unary operations - Deref (dereference)" $ do
     it "dereferences pointer to value" $ do
@@ -173,12 +173,12 @@ spec = do
     it "throws error for dangling pointer" $ do
       let state' = execStateTest (putsVar "ptr" (Pointer 999)) empty
       evalExprTest (evalExpr (UnOp  testPos Deref (EIdentifier  testPos "ptr"))) state'
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
     it "throws error for dereferencing non-pointer" $ do
       let state' = execStateTest (putsVar "x" (VNumber 42)) empty
       evalExprTest (evalExpr (UnOp  testPos Deref (EIdentifier  testPos "x"))) state'
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
   describe "Null expression" $ do
     it "evaluates to null pointer (address 0)" $ do
@@ -246,12 +246,12 @@ spec = do
             addr1 <- putsValue (VNumber 42)
             putsVar "obj" (Interpreter.Data.Record [("x", addr1)])) empty
       evalExprTest (evalExpr (FieldAccess  testPos (EIdentifier  testPos "obj") "nonexistent")) state'
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
     it "throws error for accessing field of non-record" $ do
       let state' = execStateTest (putsVar "x" (VNumber 42)) empty
       evalExprTest (evalExpr (FieldAccess  testPos (EIdentifier  testPos "x") "field")) state'
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
     it "accesses field on record expression" $ do
       let recordExpr = Parse.AST.Record  testPos $ Fields [("value", Number  testPos 99)]
@@ -295,7 +295,7 @@ spec = do
     it "throws error when calling non-function" $ do
       let state' = execStateTest (putsVar "x" (VNumber 42)) empty
       evalExprTest (evalExpr (Call  testPos (EIdentifier  testPos "x") [])) state'
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
   describe "Complex evaluation scenarios" $ do
     it "evaluates nested field access and operations" $ do

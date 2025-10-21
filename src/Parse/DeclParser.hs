@@ -1,8 +1,8 @@
-module Parse.DeclParser where
+module Parse.DeclParser (program, func, varStmt, retStmt) where
 
 import qualified Lex.Lexer as Lexer
 import qualified Lex.Tokens as L
-import Parse.AST
+import Parse.AST hiding (name, args, body)
 import Text.Parsec
 import Text.Parsec.String (Parser)
 import Parse.ExprParser (expression)

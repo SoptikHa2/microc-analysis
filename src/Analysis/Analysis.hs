@@ -1,8 +1,8 @@
-module Analysis.Analysis where
+module Analysis.Analysis (runAnalysis) where
 import Parse.AST
 import qualified Analysis.Semantics as Semantics
 import Data.Data
-import Data.List
+import Data.List (intercalate)
 import Error (MicroCError(ESemanticAnalysis))
 import Control.Exception
 

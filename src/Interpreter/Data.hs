@@ -1,4 +1,5 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 module Interpreter.Data where
 import Parse.AST (FunDecl(..), Identifier)
 import Text.Parsec (SourcePos)
@@ -16,7 +17,7 @@ instance Show Value where
   show :: Value -> String
   show (VNumber i) = show i
   show (Pointer addr) = "<ptr " <> show addr <> ">"
-  show (Function (FunDecl loc name _ _)) = "<func " <> name <> " (" <> show loc <> ")>"
+  show (Function (FunDecl loc funName _ _)) = "<func " <> funName <> " (" <> show loc <> ")>"
   show (Record fields) = "Record " <> show (fst <$> fields)
 
 

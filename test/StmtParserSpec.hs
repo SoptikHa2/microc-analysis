@@ -5,7 +5,7 @@ import Text.Parsec
 
 import Parse.AST
 import Parse.StmtParser
-import Text.Parsec.Pos (SourcePos, newPos)
+import Text.Parsec.Pos (newPos)
 import TestUtils (normalizeSourcePos)
 
 testPos :: SourcePos

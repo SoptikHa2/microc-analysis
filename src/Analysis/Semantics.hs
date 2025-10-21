@@ -1,7 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE InstanceSigs #-}
 module Analysis.Semantics (SemanticError(..), verify) where
-import Parse.AST
+import Prelude hiding (id)
+import Parse.AST hiding (target)
 import Data.Generics.Uniplate.Data
 import Data.List (group, sort)
 import Data.Maybe (catMaybes)
@@ -28,7 +29,7 @@ instance Show SemanticError where
 
 eFromFun :: Show a => FunDecl a -> Maybe a -> SemanticError -> SemanticError
 eFromFun fun loc = case loc of
-        Just loc -> prepend ("In " <> fun.name <> ", " <> show loc <> ": ")
+        Just l -> prepend ("In " <> fun.name <> ", " <> show l <> ": ")
         Nothing -> prepend ("In " <> fun.name <>": ")
     where prepend prefix err = case err of
             UndeclaredIdentifier s -> UndeclaredIdentifier (prefix ++ s)
@@ -84,10 +85,10 @@ verifyInitIdentifiers fun = notInitErrors
 
         ts :: Stmt a -> [Identifier] -> ([(Identifier, a)], [Identifier])
         ts (OutputStmt _ e) ix = (te e ix, ix)
-        ts (WhileStmt _ cond body) ix =
+        ts (WhileStmt _ cond loopBody) ix =
             let
                 ce = te cond ix
-                (be, bx) = ts body ix
+                (be, bx) = ts loopBody ix
             in
                 (ce <> be, bx)
         ts (IfStmt _ c b e) ix =

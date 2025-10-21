@@ -1,8 +1,7 @@
 module Interpreter.Interpret (evalExpr, applyBiOp, evalStmt, evalExprForWrite, evalFun) where
 
 import Prelude hiding (id)
-import qualified Prelude
-import Parse.AST
+import Parse.AST hiding (target, body, args, name)
 import Interpreter.State
 import Interpreter.Data
 import Control.Monad.Identity (Identity(runIdentity))
@@ -15,9 +14,6 @@ import Control.Exception (throw)
 
 runId :: StateT State Identity a -> StateT State IO a
 runId = mapStateT (pure . runIdentity)
-
-id' :: a -> a
-id' = Prelude.id
 
 errwlIO :: SourcePos -> String -> IO a
 errwlIO loc text = throw $ EInterpreter $ "At " <> show loc <> ": " <> text
@@ -205,7 +201,7 @@ copyVal (Interpreter.Data.Record fields) = do
             val <- getsAddr addr
             result <- traverse putsValue val
             case result of
-                Just addr -> pure addr
+                Just a -> pure a
                 Nothing -> throw $ EInterpreter $ "Record contained bad pointer " <> show addr
 -- For anything else, we don't care
 copyVal x = pure x

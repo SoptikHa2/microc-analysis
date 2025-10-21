@@ -2,12 +2,10 @@ module DeclParserSpec (spec) where
 
 import Test.Hspec
 import Text.Parsec
-import Text.Parsec.String (Parser)
 
 import Parse.AST
 import Parse.DeclParser
-import qualified Lex.Lexer as Lexer
-import Text.Parsec.Pos (SourcePos, newPos)
+import Text.Parsec.Pos (newPos)
 import TestUtils (normalizeSourcePos)
 
 testPos :: SourcePos

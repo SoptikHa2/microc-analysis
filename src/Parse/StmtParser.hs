@@ -2,12 +2,11 @@ module Parse.StmtParser (stmt) where
 
 import qualified Lex.Lexer as Lexer
 import qualified Lex.Tokens as L
-import Parse.AST
+import Parse.AST hiding (body, elseBody)
 import Text.Parsec
 import Text.Parsec.String (Parser)
 import Parse.ExprParser (expression)
 import Parse.Location
-import Utils
 
 stmt :: Parser (Stmt SourcePos)
 stmt = try outputStmt <|> try whileStmt <|> try ifStmt <|> try blockStmt <|> try assStmt <?> "stmt"

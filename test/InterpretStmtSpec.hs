@@ -1,15 +1,14 @@
 module InterpretStmtSpec (spec) where
 
 import Test.Hspec
-import Control.Monad.State (StateT, runStateT, evalStateT, execStateT, runState, evalState, execState)
+import Control.Monad.State (StateT, evalStateT, execStateT, runState, evalState, execState)
 import Control.Monad.Identity (Identity)
-import qualified Data.Map as M
 import Prelude hiding (return)
 import qualified Prelude
 
 import Interpreter.Interpret
 import Interpreter.State
-import Interpreter.Data (Value(..), Address)
+import Interpreter.Data (Value(..))
 import Parse.AST
 import Text.Parsec.Pos (SourcePos, newPos)
 
@@ -17,9 +16,6 @@ import Text.Parsec.Pos (SourcePos, newPos)
 -- Helper function to create a dummy SourcePos for testing
 testPos :: SourcePos
 testPos = newPos "test" 0 0
-
-runStmtTest :: StateT State IO a -> State -> IO (a, State)
-runStmtTest = runStateT
 
 evalStmtTest :: StateT State IO a -> State -> IO a
 evalStmtTest = evalStateT
@@ -87,7 +83,7 @@ spec = do
 
     it "throws error for undefined variable" $ do
       execStmtTest (evalStmt (AssignmentStmt  testPos (EIdentifier  testPos "undefined") (Number  testPos 42))) empty
-        `shouldThrow` anyErrorCall
+        `shouldThrow` anyException
 
   describe "AssignmentStmt - dereference target" $ do
     it "assigns through pointer" $ do

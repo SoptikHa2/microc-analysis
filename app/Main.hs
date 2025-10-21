@@ -8,7 +8,7 @@ import System.Exit (exitFailure, exitWith, ExitCode (ExitFailure), exitSuccess)
 import Text.Parsec (parse, SourcePos)
 
 import Parse.DeclParser (program)
-import Parse.AST
+import Parse.AST hiding (name, args)
 import qualified Interpreter.State as IS
 import Interpreter.Interpret (evalFun)
 import Interpreter.Data (Value(..))

@@ -1,4 +1,5 @@
 module Interpreter.State (State(..), empty, getsVar, getsAddr, getsVarAddr, putsVar, putsAddr, putsValue, putsGlobal, newFrame, dropFrame) where
+import Prelude hiding (id)
 import Interpreter.Data
 import Parse.AST
 import Control.Monad.State (StateT, gets, modify)
