@@ -28,6 +28,8 @@ library
       Analysis.Analysis
       Analysis.Error
       Analysis.Semantics
+      Analysis.Typecheck.Type
+      Analysis.Typecheck.Typecheck
       Error
       Interpreter.Data
       Interpreter.Interpret

@@ -69,9 +69,16 @@ The codebase follows a classic interpreter architecture:
   - Stack-based variable scoping (stack of Maps)
   - Heap memory model (Map Address Value)
   - Functions: `getsVar`, `putsVar`, `getsAddr`, `putsAddr`, `newFrame`, `dropFrame`
-- `InterpretExpr.hs`: Expression evaluation (partially implemented)
-  - Binary operations are complete
-  - Several operations have `undefined` placeholders
+- `Interpret.hs`: Expression and statement evaluation
+
+**Analysis/** - Static Analysis
+- `Analysis.hs`: Entry point for running semantic analysis
+- `Semantics.hs`: Semantic checks including:
+  - Undefined/duplicate identifiers
+  - Taking address of functions
+  - Invalid assignments (must be lvalues)
+  - Record field validation
+  - Recursive record detection
 
 ### Key Design Decisions
 
