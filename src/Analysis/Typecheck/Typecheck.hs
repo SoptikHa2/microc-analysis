@@ -2,16 +2,11 @@ module Analysis.Typecheck.Typecheck where
 import Data.Data (Data)
 import Parse.AST
 import Analysis.Typecheck.Type
-import Control.Monad.State (StateT (runStateT), gets, put, State, modify)
-import Control.Monad.Identity (Identity, runIdentity)
+import Control.Monad.State (StateT (runStateT), gets, State, modify)
+import Control.Monad.Identity (runIdentity)
 import Data.Maybe
 import qualified Data.Map as M
-
-data Typeable a
-    = CExpr (Expr a)
-    | CFun (FunDecl a)
-    | CId Identifier
-    deriving (Show, Eq)
+import Analysis.Typecheck.Constraints
 
 data TypeState = TypeState {
     nextId :: Int,
@@ -41,7 +36,6 @@ varType fun var = do
             modify (\(TypeState ni locals) -> TypeState ni (M.insert key nt locals))
             pure nt
 
-type Constraints a = [(Typeable a, Type)]
 
 verify :: (Show a, Data a) => [FunDecl a] -> [TypeError]
 verify funcs = do

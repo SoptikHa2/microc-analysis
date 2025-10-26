@@ -12,7 +12,7 @@ data FunDecl a = FunDecl {
         args :: [Identifier],
         body :: FunBlock a
     }
-    deriving (Show, Eq, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable)
 
 type Identifier = String
 
@@ -22,7 +22,7 @@ data FunBlock a = FunBlock {
         body :: [Stmt a],
         return :: Expr a
     }
-    deriving (Show, Eq, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable)
 
 data Stmt a
     = OutputStmt a (Expr a)
@@ -39,13 +39,13 @@ data Stmt a
     }
     | Block a [Stmt a]
     | AssignmentStmt a (Expr a) (Expr a)
-    deriving (Show, Eq, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable)
 
 data UnOp
     = Deref
     | Ref
     | Alloc
-    deriving (Show, Eq, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable)
 
 data BiOp
     = Eq
@@ -54,7 +54,7 @@ data BiOp
     | Minus
     | Mul
     | Div
-    deriving (Show, Eq, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable)
 
 data Expr a
     = BiOp a BiOp (Expr a) (Expr a)
@@ -70,7 +70,7 @@ data Expr a
     | Record a (Record a)
     | Number a Int
     | EIdentifier a Identifier
-    deriving (Show, Eq, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable)
 
 newtype Record a = Fields [(Identifier, Expr a)]
-    deriving (Show, Eq, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable)
