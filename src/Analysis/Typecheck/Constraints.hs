@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE InstanceSigs #-}
 module Analysis.Typecheck.Constraints (Typeable(..), Constraints, typeableLoc) where
 import Parse.AST
 import Analysis.Typecheck.Type

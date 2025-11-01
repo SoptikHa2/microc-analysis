@@ -18,6 +18,18 @@ data TypeState = TypeState {
 emptyState :: TypeState
 emptyState = TypeState 0 M.empty
 
+-- Extract location from any expression
+exprLoc :: Expr a -> a
+exprLoc (BiOp l _ _ _) = l
+exprLoc (UnOp l _ _) = l
+exprLoc (Input l) = l
+exprLoc (Null l) = l
+exprLoc (FieldAccess l _ _) = l
+exprLoc (Call l _ _) = l
+exprLoc (Parse.AST.Record l _) = l
+exprLoc (Number l _) = l
+exprLoc (EIdentifier l _) = l
+
 -- Generate new unknown type
 newType :: State TypeState Type
 newType = do
@@ -55,8 +67,8 @@ genConstraintsFun fun = do
 
         let funConstraints =
                 [
-                    (CFun "?" fun, Fun argsT retT),
-                    (CExpr "?" fun.body.return, retT)
+                    (CFun (show fun.d) fun, Fun argsT retT),
+                    (CExpr (show $ exprLoc fun.body.return) fun.body.return, retT)
                 ] <> argC
 
         bodyConstraints <- concat <$> traverse (genConstraintsStmt fun) fun.body.body
@@ -76,12 +88,12 @@ genConstraintsStmt f (OutputStmt _ e) = genConstraintsExpr f e
 
 genConstraintsStmt f (WhileStmt _ cond body) = do
         bodyC <- genConstraintsStmt f body
-        pure $ (CExpr "?" cond, Int) : bodyC
+        pure $ (CExpr (show $ exprLoc cond) cond, Int) : bodyC
 
 genConstraintsStmt f (IfStmt _ cond truB falsB) = do
         truC <- genConstraintsStmt f truB
         falsC <- fromMaybe [] <$> traverse (genConstraintsStmt f) falsB
-        pure $ (CExpr "?" cond, Int) : (truC <> falsC)
+        pure $ (CExpr (show $ exprLoc cond) cond, Int) : (truC <> falsC)
 
 genConstraintsStmt f (Block _ stmtx) = concat <$> traverse (genConstraintsStmt f) stmtx
 
@@ -90,7 +102,7 @@ genConstraintsStmt f (AssignmentStmt _ lhs rhs) = do
     lhsC <- genConstraintsExpr f lhs
     rhsC <- genConstraintsExpr f rhs
     commonType <- newType
-    pure $ (CExpr "?" lhs, commonType) : (CExpr "?" rhs, commonType) : (lhsC <> rhsC)
+    pure $ (CExpr (show $ exprLoc lhs) lhs, commonType) : (CExpr (show $ exprLoc rhs) rhs, commonType) : (lhsC <> rhsC)
 
 genConstraintsExpr :: (Show a, Data a) => FunDecl a -> Expr a -> State TypeState (Constraints a)
 
@@ -100,43 +112,43 @@ genConstraintsExpr f e@(BiOp l Eq lhs rhs) = do
     rhsC <- genConstraintsExpr f rhs
     commonType <- newType
 
-    pure $ (CExpr (show l) e, Int) : (CExpr (show l) lhs, commonType) : (CExpr (show l) rhs, commonType) : (lhsC <> rhsC)
+    pure $ (CExpr (show l) e, Int) : (CExpr (show $ exprLoc lhs) lhs, commonType) : (CExpr (show $ exprLoc rhs) rhs, commonType) : (lhsC <> rhsC)
 
 -- gt, plus, minus, mul, div -- all require ints
-genConstraintsExpr f e@(BiOp _ _ lhs rhs) = do
+genConstraintsExpr f e@(BiOp l _ lhs rhs) = do
     lhsC <- genConstraintsExpr f lhs
     rhsC <- genConstraintsExpr f rhs
-    
-    pure $ (CExpr "?" e, Int) : (CExpr "?" lhs, Int) : (CExpr "?" rhs, Int) : (lhsC <> rhsC)
 
-genConstraintsExpr f e@(UnOp _ Deref target) = do
+    pure $ (CExpr (show l) e, Int) : (CExpr (show $ exprLoc lhs) lhs, Int) : (CExpr (show $ exprLoc rhs) rhs, Int) : (lhsC <> rhsC)
+
+genConstraintsExpr f e@(UnOp l Deref target) = do
     targetC <- genConstraintsExpr f target
     underlyingTargetT <- newType
 
-    pure $ (CExpr "?" target, Ptr underlyingTargetT) : (CExpr "?" e, underlyingTargetT) : targetC
+    pure $ (CExpr (show $ exprLoc target) target, Ptr underlyingTargetT) : (CExpr (show l) e, underlyingTargetT) : targetC
 
-genConstraintsExpr f e@(UnOp _ Ref target) = do
+genConstraintsExpr f e@(UnOp l Ref target) = do
     targetC <- genConstraintsExpr f target
     targetT <- newType
 
-    pure $ (CExpr "?" target, targetT) : (CExpr "?" e, Ptr targetT) : targetC
+    pure $ (CExpr (show $ exprLoc target) target, targetT) : (CExpr (show l) e, Ptr targetT) : targetC
 
-genConstraintsExpr f e@(UnOp _ Alloc target) = do
+genConstraintsExpr f e@(UnOp l Alloc target) = do
     targetC <- genConstraintsExpr f target
     targetT <- newType
 
-    pure $ (CExpr "?" target, Ptr targetT) : (CExpr "?" e, Ptr targetT) : targetC
+    pure $ (CExpr (show $ exprLoc target) target, Ptr targetT) : (CExpr (show l) e, Ptr targetT) : targetC
 
 -- input only works for integers
-genConstraintsExpr _ e@(Input _) = pure [(CExpr "?" e, Int)]
+genConstraintsExpr _ e@(Input l) = pure [(CExpr (show l) e, Int)]
 
-genConstraintsExpr _ e@(Null _) = do
+genConstraintsExpr _ e@(Null l) = do
     whatever <- newType
-    pure [(CExpr "?" e, Ptr whatever)]
+    pure [(CExpr (show l) e, Ptr whatever)]
 
 genConstraintsExpr _ e@(FieldAccess _ _ _) = undefined
 
-genConstraintsExpr f e@(Call _ target args) = do
+genConstraintsExpr f e@(Call l target args) = do
     targetC <- genConstraintsExpr f target
     retT <- newType
 
@@ -144,14 +156,14 @@ genConstraintsExpr f e@(Call _ target args) = do
     argsTx <- traverse (const newType) args
 
     pure $ [
-        (CExpr "?" target, Fun argsTx retT),
-        (CExpr "?" e, retT)
+        (CExpr (show $ exprLoc target) target, Fun argsTx retT),
+        (CExpr (show l) e, retT)
         ] <> targetC <> concat argsCx
 
 genConstraintsExpr _ e@(Parse.AST.Record _ _) = undefined
 
-genConstraintsExpr _ e@(Number l _) = pure [(CExpr "?" e, Int)]
+genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]
 
-genConstraintsExpr f e@(EIdentifier _ name) = do
+genConstraintsExpr f e@(EIdentifier l name) = do
     typ <- varType f name
-    pure [(CExpr "?" e, typ)]
+    pure [(CExpr (show l) e, typ)]
