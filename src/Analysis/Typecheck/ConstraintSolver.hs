@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Analysis.Typecheck.ConstraintSolver where
-import Analysis.Typecheck.Constraints (Constraints, Typeable)
+import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc)
 import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
@@ -53,12 +53,12 @@ solve ctx = go typesPerTypable >>= resolveResult
 
 
         resolveResult :: M.Map (Typeable a) [Type] -> Either TypeError (M.Map (Typeable a) Type)
-        resolveResult tpt = traverse finalizeType tpt
+        resolveResult tpt = M.traverseWithKey finalizeType tpt
           where
-            finalizeType :: [Type] -> Either TypeError Type
-            finalizeType [] = Left "No types for typeable"
-            finalizeType [t] = Right t
-            finalizeType types =
+            finalizeType :: (Typeable a) -> [Type] -> Either TypeError Type
+            finalizeType _ [] = Left "No types for typeable"
+            finalizeType _ [t] = Right t
+            finalizeType typ types =
                 -- After resolution, all types should be the same
                 -- Merge them one final time to verify compatibility
                 mergeAll types
@@ -66,7 +66,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                 mergeAll [] = Left "Empty type list"
                 mergeAll [t] = Right t
                 mergeAll (t1:t2:rest) = do
-                    merged <- merge "wtf" t1 t2
+                    merged <- merge (typeableLoc typ) t1 t2
                     mergeAll (merged:rest)
 
 merge :: (Show a) => a -> Type -> Type -> Either TypeError Type
@@ -99,24 +99,24 @@ merge l t1 t2 = Left $ show l ++ ": Cannot merge distinct types " <> show t1 <> 
 -- Find substitutions by merging types for each typeable
 findSubstitutions :: M.Map (Typeable a) [Type] -> Either TypeError Resolutions
 findSubstitutions tpt = do
-    substitutions <- mapM processTypeable (M.elems tpt)
+    substitutions <- M.traverseWithKey processTypeable tpt
     return $ M.unions substitutions
   where
-    processTypeable :: [Type] -> Either TypeError Resolutions
-    processTypeable [] = Right M.empty
-    processTypeable [_] = Right M.empty
-    processTypeable types = do
+    processTypeable :: (Typeable a) -> [Type] -> Either TypeError Resolutions
+    processTypeable _ [] = Right M.empty
+    processTypeable _ [_] = Right M.empty
+    processTypeable typ types = do
         -- Merge all types for this typeable
-        merged <- mergeAll types
+        merged <- mergeAll (typeableLoc typ) types
         -- Extract substitutions: any Unknown in types that differs from merged
         return $ extractSubstitutions types merged
 
-    mergeAll :: [Type] -> Either TypeError Type
-    mergeAll [] = Left "Empty type list"
-    mergeAll [t] = Right t
-    mergeAll (t:ts) = do
-        rest <- mergeAll ts
-        merge "wtf" t rest
+    mergeAll :: String -> [Type] -> Either TypeError Type
+    mergeAll _ [] = Left "Empty type list"
+    mergeAll _ [t] = Right t
+    mergeAll l (t:ts) = do
+        rest <- mergeAll l ts
+        merge l t rest
 
     extractSubstitutions :: [Type] -> Type -> Resolutions
     extractSubstitutions types result =
