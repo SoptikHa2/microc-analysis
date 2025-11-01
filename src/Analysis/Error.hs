@@ -9,4 +9,4 @@ data Error
 
 instance Show Error where
     show (Semantic e) = show e
-    show (Type e) = show e
+    show (Type e) = e

@@ -69,7 +69,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                     merged <- merge (typeableLoc typ) t1 t2
                     mergeAll (merged:rest)
 
-merge :: (Show a) => a -> Type -> Type -> Either TypeError Type
+merge :: String -> Type -> Type -> Either TypeError Type
 merge _ t1 t2 | t1 == t2 = Right t1
 merge _ t1@(Unknown _) (Unknown _) = Right t1
 merge _ t1 (Unknown _) = Right t1
@@ -80,21 +80,21 @@ merge l (Fun args1 ret1) (Fun args2 ret2)
         mergedArgs <- zipWithM (merge l) args1 args2
         mergedRet <- merge l ret1 ret2
         return $ Fun mergedArgs mergedRet
-    | otherwise = Left $ show l ++ ": Attempted to unify functions of arities " ++ show (length args1) ++ " and " ++ show (length args2)
+    | otherwise = Left $ l ++ ": Function being called has arity " ++ show (length args1) ++ ", but should have " ++ show (length args2)
 merge l (Record fields1) (Record fields2) = do
     -- Records must have same field names
     let names1 = map fst fields1
         names2 = map fst fields2
     if names1 /= names2
-        then Left $ show l ++ ": Cannot merge records with different fields (" ++ show names1 ++ " vs " ++ show names2 ++ ")"
+        then Left $ l ++ ": Record contains different fields than it should have (" ++ show names1 ++ " vs " ++ show names2 ++ ")"
         else do
             mergedFields <- zipWithM mergeField fields1 fields2
             return $ Record mergedFields
   where
     mergeField (n1, t1) (n2, t2)
         | n1 == n2 = (,) n1 <$> merge l t1 t2
-        | otherwise = Left $ show l ++ ": Field name mismatch: " <> n1 <> " vs " <> n2
-merge l t1 t2 = Left $ show l ++ ": Cannot merge distinct types " <> show t1 <> " and " <> show t2
+        | otherwise = Left $ l ++ ": Field name mismatch: " <> n1 <> " vs " <> n2
+merge l t1 t2 = Left $ l ++ ": The type is " <> show t1 <> ", but should be " <> show t2
 
 -- Find substitutions by merging types for each typeable
 findSubstitutions :: M.Map (Typeable a) [Type] -> Either TypeError Resolutions
