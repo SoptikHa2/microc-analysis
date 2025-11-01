@@ -8,7 +8,7 @@ import Control.Exception
 import qualified Analysis.Typecheck.Typecheck as Typecheck
 import Analysis.Error
 
-runAnalysis :: (Show a, Data a) => Program a -> IO ()
+runAnalysis :: (Show a, Data a, Ord a) => Program a -> IO ()
 runAnalysis prog = if null errors
         then pure ()
         else do

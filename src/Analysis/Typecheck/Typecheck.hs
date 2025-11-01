@@ -7,6 +7,7 @@ import Control.Monad.Identity (runIdentity)
 import Data.Maybe
 import qualified Data.Map as M
 import Analysis.Typecheck.Constraints
+import Analysis.Typecheck.ConstraintSolver (solve)
 
 data TypeState = TypeState {
     nextId :: Int,
@@ -37,12 +38,16 @@ varType fun var = do
             pure nt
 
 
-verify :: (Show a, Data a) => [FunDecl a] -> [TypeError]
+verify :: (Show a, Data a, Ord a) => [FunDecl a] -> [TypeError]
 verify funcs = do
     -- Generate constraints per function
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) emptyState)
 
-    show <$> concat cx
+    -- Solve the constraints
+    let sol = solve (concat cx)
+    case sol of
+        Left e -> [e]
+        _ -> []
 
 genConstraintsFun :: (Show a, Data a) => FunDecl a -> State TypeState (Constraints a)
 genConstraintsFun fun = do
@@ -52,8 +57,8 @@ genConstraintsFun fun = do
 
         let funConstraints =
                 [
-                    (CFun fun, Fun argsT retT),
-                    (CExpr fun.body.return, retT)
+                    (CFun (show fun.d) fun, Fun argsT retT),
+                    (CExpr (show fun.body.d) fun.body.return, retT)
                 ] <> argC
 
         bodyConstraints <- concat <$> traverse (genConstraintsStmt fun) fun.body.body
@@ -64,76 +69,76 @@ genConstraintsFun fun = do
         genArgs :: State TypeState (Constraints a)
         genArgs = do
             newTypes <- traverse (const newType) fun.args
-            pure $ zip (CId <$> fun.args) newTypes
+            pure $ zip (CId (show fun.d) <$> fun.args) newTypes
 
 
 genConstraintsStmt :: (Show a, Data a) => FunDecl a -> Stmt a -> State TypeState (Constraints a)
 
 genConstraintsStmt f (OutputStmt _ e) = genConstraintsExpr f e
 
-genConstraintsStmt f (WhileStmt _ cond body) = do
+genConstraintsStmt f (WhileStmt l cond body) = do
         bodyC <- genConstraintsStmt f body
-        pure $ (CExpr cond, Int) : bodyC
+        pure $ (CExpr (show l) cond, Int) : bodyC
 
-genConstraintsStmt f (IfStmt _ cond truB falsB) = do
+genConstraintsStmt f (IfStmt l cond truB falsB) = do
         truC <- genConstraintsStmt f truB
         falsC <- fromMaybe [] <$> traverse (genConstraintsStmt f) falsB
-        pure $ (CExpr cond, Int) : (truC <> falsC)
+        pure $ (CExpr (show l) cond, Int) : (truC <> falsC)
 
 genConstraintsStmt f (Block _ stmtx) = concat <$> traverse (genConstraintsStmt f) stmtx
 
-genConstraintsStmt f (AssignmentStmt _ lhs rhs) = do
+genConstraintsStmt f (AssignmentStmt l lhs rhs) = do
     -- lhs type must be equal to rhs type
     lhsC <- genConstraintsExpr f lhs
     rhsC <- genConstraintsExpr f rhs
     commonType <- newType
-    pure $ (CExpr lhs, commonType) : (CExpr rhs, commonType) : (lhsC <> rhsC)
+    pure $ (CExpr (show l) lhs, commonType) : (CExpr (show l) rhs, commonType) : (lhsC <> rhsC)
 
 genConstraintsExpr :: (Show a, Data a) => FunDecl a -> Expr a -> State TypeState (Constraints a)
 
-genConstraintsExpr f e@(BiOp _ Eq lhs rhs) = do
+genConstraintsExpr f e@(BiOp l Eq lhs rhs) = do
     -- lhs, rhs must have equal type; we have type int
     lhsC <- genConstraintsExpr f lhs
     rhsC <- genConstraintsExpr f rhs
     commonType <- newType
 
-    pure $ (CExpr e, Int) : (CExpr lhs, commonType) : (CExpr rhs, commonType) : (lhsC <> rhsC)
+    pure $ (CExpr (show l) e, Int) : (CExpr (show l) lhs, commonType) : (CExpr (show l) rhs, commonType) : (lhsC <> rhsC)
 
 -- gt, plus, minus, mul, div -- all require ints
-genConstraintsExpr f e@(BiOp _ _ lhs rhs) = do
+genConstraintsExpr f e@(BiOp l _ lhs rhs) = do
     lhsC <- genConstraintsExpr f lhs
     rhsC <- genConstraintsExpr f rhs
     
-    pure $ (CExpr e, Int) : (CExpr lhs, Int) : (CExpr rhs, Int) : (lhsC <> rhsC)
+    pure $ (CExpr (show l) e, Int) : (CExpr (show l) lhs, Int) : (CExpr (show l) rhs, Int) : (lhsC <> rhsC)
 
-genConstraintsExpr f e@(UnOp _ Deref target) = do
+genConstraintsExpr f e@(UnOp l Deref target) = do
     targetC <- genConstraintsExpr f target
     underlyingTargetT <- newType
 
-    pure $ (CExpr target, Ptr underlyingTargetT) : (CExpr e, underlyingTargetT) : targetC
+    pure $ (CExpr (show l) target, Ptr underlyingTargetT) : (CExpr (show l) e, underlyingTargetT) : targetC
 
-genConstraintsExpr f e@(UnOp _ Ref target) = do
+genConstraintsExpr f e@(UnOp l Ref target) = do
     targetC <- genConstraintsExpr f target
     targetT <- newType
 
-    pure $ (CExpr target, targetT) : (CExpr e, Ptr targetT) : targetC
+    pure $ (CExpr (show l) target, targetT) : (CExpr (show l) e, Ptr targetT) : targetC
 
-genConstraintsExpr f e@(UnOp _ Alloc target) = do
+genConstraintsExpr f e@(UnOp l Alloc target) = do
     targetC <- genConstraintsExpr f target
     targetT <- newType
 
-    pure $ (CExpr target, Ptr targetT) : (CExpr e, Ptr targetT) : targetC
+    pure $ (CExpr (show l) target, Ptr targetT) : (CExpr (show l) e, Ptr targetT) : targetC
 
 -- input only works for integers
-genConstraintsExpr _ e@(Input _) = pure [(CExpr e, Int)]
+genConstraintsExpr _ e@(Input l) = pure [(CExpr (show l) e, Int)]
 
-genConstraintsExpr _ e@(Null _) = do
+genConstraintsExpr _ e@(Null l) = do
     whatever <- newType
-    pure [(CExpr e, Ptr whatever)]
+    pure [(CExpr (show l) e, Ptr whatever)]
 
 genConstraintsExpr _ e@(FieldAccess _ _ _) = undefined
 
-genConstraintsExpr f e@(Call _ target args) = do
+genConstraintsExpr f e@(Call l target args) = do
     targetC <- genConstraintsExpr f target
     retT <- newType
 
@@ -141,14 +146,14 @@ genConstraintsExpr f e@(Call _ target args) = do
     argsTx <- traverse (const newType) args
 
     pure $ [
-        (CExpr target, Fun argsTx retT),
-        (CExpr e, retT)
+        (CExpr (show l) target, Fun argsTx retT),
+        (CExpr (show l) e, retT)
         ] <> targetC <> concat argsCx
 
 genConstraintsExpr _ e@(Parse.AST.Record _ _) = undefined
 
-genConstraintsExpr _ e@(Number _ _) = pure [(CExpr e, Int)]
+genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]
 
-genConstraintsExpr f e@(EIdentifier _ name) = do
+genConstraintsExpr f e@(EIdentifier l name) = do
     typ <- varType f name
-    pure [(CExpr e, typ)]
+    pure [(CExpr (show l) e, typ)]

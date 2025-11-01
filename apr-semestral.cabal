@@ -91,6 +91,7 @@ test-suite apr-semestral-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      ConstraintSolverSpec
       DeclParserSpec
       ExprParserSpec
       InterpretExprSpec

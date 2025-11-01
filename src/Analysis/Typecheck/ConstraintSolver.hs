@@ -2,6 +2,7 @@
 module Analysis.Typecheck.ConstraintSolver where
 import Analysis.Typecheck.Constraints (Constraints, Typeable)
 import Analysis.Typecheck.Type (TypeError, Type(..))
+import Control.Monad (zipWithM)
 import qualified Data.Map as M
 
 -- mapping from unknown IDs into types
@@ -33,25 +34,105 @@ solve ctx = go typesPerTypable >>= resolveResult
         go :: M.Map (Typeable a) [Type] -> Either TypeError (M.Map (Typeable a) [Type])
         go tpt | isFinal tpt = Right tpt
         go tpt = do
-            -- merge
-            -- if changed, repeat
-            -- else, return
-            undefined
+
+            -- For each typeable, merge all its types and extract substitutions
+            substitutions <- findSubstitutions tpt
+
+            -- If no substitutions found, we can't make progress
+            if M.null substitutions
+                then Left "Cannot resolve all unknown types"
+                else do
+                    -- Apply substitutions to all types
+                    let tpt' = M.map (map (substitute substitutions)) tpt
+                    go tpt'
 
         isFinal :: M.Map (Typeable a) [Type] -> Bool
-        isFinal tpt = all 
+        isFinal tpt = all
             (\types -> all (\t -> case t of Unknown _ -> False; _ -> True) types)
             tpt
-        
+
 
         resolveResult :: M.Map (Typeable a) [Type] -> Either TypeError (M.Map (Typeable a) Type)
-        resolveResult = undefined
+        resolveResult tpt = traverse finalizeType tpt
+          where
+            finalizeType :: [Type] -> Either TypeError Type
+            finalizeType [] = Left "No types for typeable"
+            finalizeType [t] = Right t
+            finalizeType types =
+                -- After resolution, all types should be the same
+                -- Merge them one final time to verify compatibility
+                mergeAll types
+              where
+                mergeAll [] = Left "Empty type list"
+                mergeAll [t] = Right t
+                mergeAll (t1:t2:rest) = do
+                    merged <- merge "wtf" t1 t2
+                    mergeAll (merged:rest)
 
-merge :: Type -> Type -> Either TypeError Type
-merge t1 t2 | t1 == t2 = Right t1
-merge t1@(Unknown _) (Unknown _) = Right t1
-merge t1 (Unknown _) = Right t1
-merge (Unknown _) t2 = Right t2
-merge t1 t2 = Left $ "Cannot merge distinct types " <> show t1 <> " and " <> show t2
+merge :: (Show a) => a -> Type -> Type -> Either TypeError Type
+merge _ t1 t2 | t1 == t2 = Right t1
+merge _ t1@(Unknown _) (Unknown _) = Right t1
+merge _ t1 (Unknown _) = Right t1
+merge _ (Unknown _) t2 = Right t2
+merge l (Ptr t1) (Ptr t2) = Ptr <$> merge l t1 t2
+merge l (Fun args1 ret1) (Fun args2 ret2)
+    | length args1 == length args2 = do
+        mergedArgs <- zipWithM (merge l) args1 args2
+        mergedRet <- merge l ret1 ret2
+        return $ Fun mergedArgs mergedRet
+    | otherwise = Left $ show l ++ ": Attempted to unify functions of arities " ++ show (length args1) ++ " and " ++ show (length args2)
+merge l (Record fields1) (Record fields2) = do
+    -- Records must have same field names
+    let names1 = map fst fields1
+        names2 = map fst fields2
+    if names1 /= names2
+        then Left $ show l ++ ": Cannot merge records with different fields (" ++ show names1 ++ " vs " ++ show names2 ++ ")"
+        else do
+            mergedFields <- zipWithM mergeField fields1 fields2
+            return $ Record mergedFields
+  where
+    mergeField (n1, t1) (n2, t2)
+        | n1 == n2 = (,) n1 <$> merge l t1 t2
+        | otherwise = Left $ show l ++ ": Field name mismatch: " <> n1 <> " vs " <> n2
+merge l t1 t2 = Left $ show l ++ ": Cannot merge distinct types " <> show t1 <> " and " <> show t2
+
+-- Find substitutions by merging types for each typeable
+findSubstitutions :: M.Map (Typeable a) [Type] -> Either TypeError Resolutions
+findSubstitutions tpt = do
+    substitutions <- mapM processTypeable (M.elems tpt)
+    return $ M.unions substitutions
+  where
+    processTypeable :: [Type] -> Either TypeError Resolutions
+    processTypeable [] = Right M.empty
+    processTypeable [_] = Right M.empty
+    processTypeable types = do
+        -- Merge all types for this typeable
+        merged <- mergeAll types
+        -- Extract substitutions: any Unknown in types that differs from merged
+        return $ extractSubstitutions types merged
+
+    mergeAll :: [Type] -> Either TypeError Type
+    mergeAll [] = Left "Empty type list"
+    mergeAll [t] = Right t
+    mergeAll (t:ts) = do
+        rest <- mergeAll ts
+        merge "wtf" t rest
+
+    extractSubstitutions :: [Type] -> Type -> Resolutions
+    extractSubstitutions types result =
+        M.fromList [(uid, result) | Unknown uid <- types, Unknown uid /= result]
+
+-- Apply substitutions recursively to a type
+substitute :: Resolutions -> Type -> Type
+substitute subst t@(Unknown uid) =
+    case M.lookup uid subst of
+        Just t' -> substitute subst t'  -- Follow chains
+        Nothing -> t
+substitute subst (Ptr t) = Ptr (substitute subst t)
+substitute subst (Fun args ret) =
+    Fun (map (substitute subst) args) (substitute subst ret)
+substitute subst (Record fields) =
+    Record [(name, substitute subst t) | (name, t) <- fields]
+substitute _ t = t
 
 
