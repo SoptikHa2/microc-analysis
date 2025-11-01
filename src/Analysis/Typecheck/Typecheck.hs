@@ -73,11 +73,9 @@ printTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
 printTyping m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
     where
         go :: Show a => (Typeable a) -> Type -> String
-        -- TODO: dedup
-        go (CExpr _ (EIdentifier l e)) t =  "[" ++ e ++ ":" ++ show l ++ "] = " ++ show t
         go (CExpr _ _) _ = ""
-        go (CFun l f) t = "[" ++ f.name ++ "():" ++ l ++ "] = " ++ show t
-        go (CId l i) t = "[" ++ i ++ ":" ++ l ++ "] = " ++ show t
+        go (CFun l f) t = "[" ++ f.name ++ "() :: " ++ l ++ "] = " ++ show t
+        go (CId l i) t = "[" ++ i ++ " :: " ++ l ++ "] = " ++ show t
 
 genConstraintsFun :: (Show a, Data a) => FunDecl a -> State TypeState (Constraints a)
 genConstraintsFun fun = do
@@ -94,7 +92,15 @@ genConstraintsFun fun = do
         bodyConstraints <- concat <$> traverse (genConstraintsStmt fun) fun.body.body
         retConstraints <- genConstraintsExpr fun fun.body.return
 
-        pure $ funConstraints <> bodyConstraints <> retConstraints
+        -- Add CId constraints for all local variables (not just parameters)
+        -- This ensures each variable has exactly one CId entry for deduplication
+        localsMap <- gets locals
+        let localConstraints = [(CId (fun.name ++ ":" ++ show fun.d) varName, typ)
+                               | ((funName, varName), typ) <- M.toList localsMap
+                               , funName == fun.name
+                               , varName `notElem` fun.args]  -- Skip parameters (already in argC)
+
+        pure $ funConstraints <> bodyConstraints <> retConstraints <> localConstraints
     where
         genArgs :: State TypeState (Constraints a)
         genArgs = do
