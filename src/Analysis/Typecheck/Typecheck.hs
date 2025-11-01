@@ -67,7 +67,7 @@ getTyping funcs = do
     -- Generate constraints per function
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) emptyState)
 
-    solve (concat (trace (intercalate "\n" $ show <$> concat cx) cx))
+    solve (concat cx)
 
 printTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
 printTyping m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))

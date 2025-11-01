@@ -1,7 +1,8 @@
 f() {
-  var x, px, y;
+  var x, y, z;
   x = input;
-  px = &x;
-  y = *px;
-  return 0;
+  y = alloc x;
+  *y = x;
+  z = *y;
+  return z;
 }

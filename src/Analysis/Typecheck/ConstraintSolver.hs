@@ -119,6 +119,11 @@ findSubstitutions tpt = do
         merge l t rest
 
     extractSubstitutions :: [Type] -> Type -> Resolutions
+    extractSubstitutions types result@(Ptr rt) = 
+        let
+            ptrTypes = [t | Ptr t <- types]
+        in
+            extractSubstitutions ptrTypes rt <> M.fromList [(uid, result) | Unknown uid <- types, Unknown uid /= result]
     extractSubstitutions types result =
         M.fromList [(uid, result) | Unknown uid <- types, Unknown uid /= result]
 
