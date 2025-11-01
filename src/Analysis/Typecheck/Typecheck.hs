@@ -9,8 +9,8 @@ import Data.Maybe
 import qualified Data.Map as M
 import Analysis.Typecheck.Constraints
 import Analysis.Typecheck.ConstraintSolver (solve)
-import Debug.Trace
 import Data.List (intercalate)
+import qualified Analysis.Typecheck.Type as Type
 
 data TypeState = TypeState {
     nextId :: Int,
@@ -186,7 +186,19 @@ genConstraintsExpr f e@(Call l target args) = do
         (CExpr (show l) e, retT)
         ] <> targetC <> concat argsCx
 
-genConstraintsExpr _ e@(Parse.AST.Record _ _) = undefined
+genConstraintsExpr _ e@(Parse.AST.Record l (Fields fields)) = do
+    -- This is a record constructor/definition. Generate new unknown for each field.
+    fieldTypes <- traverse (const newType) fields
+    let recTypes = zip (fst <$> fields) fieldTypes
+    let recordType = Type.Record recTypes
+    -- Generate specific types per the expression
+    let exprTypes = zip (snd <$> fields) fieldTypes
+    let typeableTypes = (\(e, t) -> (CExpr (show l) e, t)) <$> exprTypes
+    -- TODO: Do we want to write the same fieldTypes into locals store?
+
+    pure $ [
+        (CExpr (show l) e, recordType)
+        ] <> typeableTypes
 
 genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]
 
