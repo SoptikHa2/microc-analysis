@@ -1,4 +1,5 @@
-module Analysis.Typecheck.Typecheck where
+{-# LANGUAGE RankNTypes #-}
+module Analysis.Typecheck.Typecheck (verify, getTyping, printTyping) where
 import Data.Data (Data)
 import Parse.AST
 import Analysis.Typecheck.Type
@@ -8,6 +9,8 @@ import Data.Maybe
 import qualified Data.Map as M
 import Analysis.Typecheck.Constraints
 import Analysis.Typecheck.ConstraintSolver (solve)
+import Debug.Trace
+import Data.List (intercalate)
 
 data TypeState = TypeState {
     nextId :: Int,
@@ -58,6 +61,23 @@ verify funcs = do
     case solve (concat cx) of
         Left te -> [te]
         Right _ -> []
+
+getTyping :: (Show a, Data a, Ord a) => [FunDecl a] -> Either TypeError (M.Map (Typeable a) Type)
+getTyping funcs = do
+    -- Generate constraints per function
+    let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) emptyState)
+
+    solve (concat (trace (intercalate "\n" $ show <$> concat cx) cx))
+
+printTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
+printTyping m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
+    where
+        go :: Show a => (Typeable a) -> Type -> String
+        -- TODO: dedup
+        go (CExpr _ (EIdentifier l e)) t =  "[" ++ e ++ ":" ++ show l ++ "] = " ++ show t
+        go (CExpr _ _) _ = ""
+        go (CFun l f) t = "[" ++ f.name ++ "():" ++ l ++ "] = " ++ show t
+        go (CId l i) t = "[" ++ i ++ ":" ++ l ++ "] = " ++ show t
 
 genConstraintsFun :: (Show a, Data a) => FunDecl a -> State TypeState (Constraints a)
 genConstraintsFun fun = do
@@ -137,7 +157,7 @@ genConstraintsExpr f e@(UnOp l Alloc target) = do
     targetC <- genConstraintsExpr f target
     targetT <- newType
 
-    pure $ (CExpr (show $ exprLoc target) target, Ptr targetT) : (CExpr (show l) e, Ptr targetT) : targetC
+    pure $ (CExpr (show $ exprLoc target) target, targetT) : (CExpr (show l) e, Ptr targetT) : targetC
 
 -- input only works for integers
 genConstraintsExpr _ e@(Input l) = pure [(CExpr (show l) e, Int)]

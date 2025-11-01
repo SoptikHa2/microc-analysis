@@ -13,21 +13,27 @@ import qualified Interpreter.State as IS
 import Interpreter.Interpret (evalFun)
 import Interpreter.Data (Value(..))
 import Analysis.Analysis (runAnalysis)
+import Analysis.Typecheck.Typecheck (getTyping, printTyping)
 import Control.Exception
 import Error
 
 -- CLI data types
-data Command = Run FilePath [Int]
+data Command
+  = Run FilePath [Int]
+  | Type FilePath
 
 -- Parser for command line arguments
 commandParser :: Parser Command
 commandParser = hsubparser
-  ( command "run" (info runParser (progDesc "Run a MicroC program"))
-  )
+    (  command "run" (info runParser (progDesc "Run a MicroC program"))
+    <> command "type" (info typeParser (progDesc "Type check a MicroC program"))
+    )
   where
     runParser = Run
       <$> argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
       <*> many (argument auto (metavar "ARGS..." <> help "Integer arguments to main function"))
+    typeParser = Type
+      <$> argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
 
 -- Main entry point
 main :: IO ()
@@ -35,6 +41,7 @@ main = do
   cmd <- execParser opts
   case cmd of
     Run filepath args -> runProgram filepath args
+    Type filepath -> typeCheckProgram filepath
   where
     opts = info (commandParser <**> helper)
       ( fullDesc
@@ -90,6 +97,27 @@ runProgram filepath args = go `catch` \e -> do
                       putStrLn $ "Unknown return value from main: " <> show result
                       exitWith (ExitFailure 1)
 
+-- Type check a MicroC program
+typeCheckProgram :: FilePath -> IO ()
+typeCheckProgram filepath = go `catch` \e -> do
+    print (e :: MicroCError)
+    exitWith $ ExitFailure 1
+  where
+    go = do
+      -- Read the source file
+      source <- readFile filepath
+
+      -- Parse the program
+      case parse program filepath source of
+        Left err -> do
+          putStrLn $ "Parse error: " ++ show err
+          exitFailure
+        Right prog -> do
+          -- Run type analysis
+          putStrLn $ case getTyping prog of
+            Right typing -> printTyping typing
+            Left e -> e
+          exitSuccess
 
 -- Find a function by name in the program
 findFunction :: Identifier -> Program a -> Maybe (FunDecl a)

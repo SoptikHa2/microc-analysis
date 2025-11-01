@@ -16,7 +16,7 @@ instance Show Type where
   show (Ptr t) = "<Ptr " ++ (show t) ++ ">"
   show (Fun args ret) = intercalate " -> " (show <$> args) ++ " -> " ++ show ret
   show (Record args) = "{ " ++ show args ++ " }"
-  show (Unknown _) = "?"
+  show (Unknown i) = "?" ++ show i
 
 
 type TypeError = String

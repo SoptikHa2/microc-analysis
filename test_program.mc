@@ -1,4 +1,7 @@
-main() {
-    var x;
-    return x;
+f() {
+  var x, y;
+  x = 0;
+  y = &x;
+
+  return x;
 }

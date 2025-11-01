@@ -5,8 +5,8 @@ import Data.Data
 import Data.List (intercalate)
 import Error (MicroCError(ESemanticAnalysis))
 import Control.Exception
-import qualified Analysis.Typecheck.Typecheck as Typecheck
 import Analysis.Error
+import qualified Analysis.Typecheck.Typecheck as Typecheck
 
 runAnalysis :: (Show a, Data a, Ord a) => Program a -> IO ()
 runAnalysis prog = if null errors
