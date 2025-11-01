@@ -239,6 +239,18 @@ spec = do
         [ (CId "_" "f" :: TestTypeable, Fun [Int] (Ptr (Fun [Ptr Int] Int)))
         , (CId "_" "x", Ptr Int)
         ])
+      
+    it "resolves pointers" $ do
+      let constraints :: TestConstraints =
+            [ (CId "_" "px", Ptr (Unknown 7))
+            , (CId "_" "x", Unknown 7)
+            , (CId "_" "px", Ptr Int)
+            ]
+      let result = solve constraints
+      result `shouldBe` Right (M.fromList
+        [ (CId "_" "px" :: TestTypeable, Ptr Int)
+        , (CId "_" "x", Int)
+        ])
 
 -- Helper function to check if Either is Left
 isLeft :: Either a b -> Bool

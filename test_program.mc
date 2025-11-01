@@ -1,7 +1,7 @@
 f() {
-  var x, y;
-  x = 0;
-  y = &x;
-
-  return x;
+  var x, px, y;
+  x = input;
+  px = &x;
+  y = *px;
+  return 0;
 }
