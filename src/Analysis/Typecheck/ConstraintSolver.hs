@@ -1,11 +1,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Analysis.Typecheck.ConstraintSolver where
-import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc)
+import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, prettyPrintMTT)
 import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
 import Data.Maybe (fromJust)
 import Data.List (intercalate)
+import Debug.Trace (trace)
 
 -- mapping from unknown IDs into types
 type Resolutions = M.Map Int Type
@@ -33,12 +34,6 @@ solve ctx = go typesPerTypable >>= resolveResult
         typesPerTypable :: M.Map (Typeable a) [Type]
         typesPerTypable = M.fromListWith (++) ((\(k,v) -> (k,[v])) <$> ctx)
 
-        prettyPrintMTT :: Show a => M.Map (Typeable a) [Type] -> String
-        prettyPrintMTT m = intercalate "\n" $ pp <$> M.toList m
-            where
-                pp :: Show a => (Typeable a, [Type]) -> String
-                pp (tp, t) = show tp ++ " :: " ++ show t
-
         go :: M.Map (Typeable a) [Type] -> Either TypeError (M.Map (Typeable a) [Type])
         go tpt | isFinal tpt = Right tpt
         go tpt = do
@@ -53,7 +48,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                 else do
                     -- Apply substitutions to all types
                     let tpt' = M.map (map (substitute substitutions)) tpt
-                    go tpt'
+                    go (trace ("\n---------\n" <> prettyPrintMTT (M.toList tpt')) tpt')
 
         isFinal :: M.Map (Typeable a) [Type] -> Bool
         isFinal tpt = not (any (any isUnknown) tpt)

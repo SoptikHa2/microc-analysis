@@ -133,15 +133,16 @@ genConstraintsExpr _ e@(Null l) = do
     whatever <- newType
     pure [(CExpr (show l) e, Ptr whatever)]
 
-genConstraintsExpr _ e@(FieldAccess _ target field) = do
+genConstraintsExpr f e@(FieldAccess _ target field) = do
     -- Target has to be record type that contains current field
     -- with type equal to the result of this expression
     fieldType <- newType
-    pure [
+    targetT <- genConstraintsExpr f target
+    pure $ [
         (CExpr (show $ exprLoc e) e, fieldType),
         (CExpr (show $ exprLoc target) target, 
             Type.Record [(field, fieldType)])
-        ]
+        ] <> targetT
 
 genConstraintsExpr f e@(Call l target args) = do
     targetC <- genConstraintsExpr f target
