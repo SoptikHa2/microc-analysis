@@ -4,6 +4,7 @@ import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc)
 import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
+import Data.Maybe (fromJust)
 
 -- mapping from unknown IDs into types
 type Resolutions = M.Map Int Type
@@ -70,6 +71,8 @@ solve ctx = go typesPerTypable >>= resolveResult
                     mergeAll (merged:rest)
 
 merge :: String -> Type -> Type -> Either TypeError Type
+merge _ Bottom t2 = Right t2
+merge _ t1 Bottom = Right t1
 merge _ t1 t2 | t1 == t2 = Right t1
 merge _ t1@(Unknown _) (Unknown _) = Right t1
 merge _ t1 (Unknown _) = Right t1
@@ -82,14 +85,8 @@ merge l (Fun args1 ret1) (Fun args2 ret2)
         return $ Fun mergedArgs mergedRet
     | otherwise = Left $ l ++ ": Function being called has arity " ++ show (length args1) ++ ", but should have " ++ show (length args2)
 merge l (Record fields1) (Record fields2) = do
-    -- Records must have same field names
-    let names1 = map fst fields1
-        names2 = map fst fields2
-    if names1 /= names2
-        then Left $ l ++ ": Record contains different fields than it should have (" ++ show names1 ++ " vs " ++ show names2 ++ ")"
-        else do
-            mergedFields <- zipWithM mergeField fields1 fields2
-            return $ Record mergedFields
+    mergedFields <- zipWithM mergeField fields1 fields2
+    return $ Record mergedFields
   where
     mergeField (n1, t1) (n2, t2)
         | n1 == n2 = (,) n1 <$> merge l t1 t2
@@ -119,13 +116,28 @@ findSubstitutions tpt = do
         merge l t rest
 
     extractSubstitutions :: [Type] -> Type -> Resolutions
-    extractSubstitutions types result@(Ptr rt) = 
-        let
-            ptrTypes = [t | Ptr t <- types]
-        in
-            extractSubstitutions ptrTypes rt <> M.fromList [(uid, result) | Unknown uid <- types, Unknown uid /= result]
-    extractSubstitutions types result =
-        M.fromList [(uid, result) | Unknown uid <- types, Unknown uid /= result]
+    extractSubstitutions types result = do
+        let extras = case result of
+                (Ptr rt) ->
+                    let
+                        ptrTypes = [t | Ptr t <- types]
+                    in
+                        extractSubstitutions ptrTypes rt
+                (Record fx) ->
+                    let
+                        recTypes = [rfx | Record rfx <- types]
+                        allNames = fst <$> fx
+
+                        perNameFx n = fromJust $ lookup n fx
+                        perNameRt n = fromJust <$> lookup n <$> recTypes
+
+                        substs n = extractSubstitutions (perNameRt n) (perNameFx n)
+                        subst = substs <$> allNames
+                    in
+                        mconcat subst
+                _ -> M.empty
+
+        extras <> M.fromList [(uid, result) | Unknown uid <- types, Unknown uid /= result]
 
 -- Apply substitutions recursively to a type
 substitute :: Resolutions -> Type -> Type

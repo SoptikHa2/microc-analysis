@@ -251,6 +251,18 @@ spec = do
         [ (CId "_" "px" :: TestTypeable, Ptr Int)
         , (CId "_" "x", Int)
         ])
+    
+    it "resolves records" $ do
+      let constraints :: TestConstraints =
+            [ (CId "_" "rx", Record [("a", (Unknown 1))] )
+            , (CId "_" "x", Unknown 1)
+            , (CId "_" "x", Int)
+            ]
+      let result = solve constraints
+      result `shouldBe` Right (M.fromList
+        [ (CId "_" "rx" :: TestTypeable, Record [("a", Int)])
+        , (CId "_" "x", Int)
+        ])
 
 -- Helper function to check if Either is Left
 isLeft :: Either a b -> Bool

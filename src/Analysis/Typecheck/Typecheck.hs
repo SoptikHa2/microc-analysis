@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Analysis.Typecheck.Typecheck (verify, getTyping, printTyping) where
 import Data.Data (Data)
 import Parse.AST
@@ -11,14 +12,17 @@ import Analysis.Typecheck.Constraints
 import Analysis.Typecheck.ConstraintSolver (solve)
 import Data.List (intercalate)
 import qualified Analysis.Typecheck.Type as Type
+import Debug.Trace (trace)
+import Data.Generics.Uniplate.Data (universeBi)
 
 data TypeState = TypeState {
     nextId :: Int,
     -- function x local -> ID
-    locals :: M.Map (Identifier, Identifier) Type
+    locals :: M.Map (Identifier, Identifier) Type,
+    allFieldNames :: [Identifier]
 }
 
-emptyState :: TypeState
+emptyState :: [Identifier] -> TypeState
 emptyState = TypeState 0 M.empty
 
 -- Extract location from any expression
@@ -37,7 +41,7 @@ exprLoc (EIdentifier l _) = l
 newType :: State TypeState Type
 newType = do
     ni <- gets nextId
-    modify (\(TypeState _ locals) -> TypeState (ni + 1) locals)
+    modify (\(TypeState _ locals afs) -> TypeState (ni + 1) locals afs)
     pure $ Unknown ni
 
 varType :: FunDecl a -> Identifier -> State TypeState Type
@@ -49,14 +53,20 @@ varType fun var = do
         Just existingType -> pure existingType
         Nothing -> do
             nt <- newType
-            modify (\(TypeState ni locals) -> TypeState ni (M.insert key nt locals))
+            modify (\(TypeState ni locals afs) -> TypeState ni (M.insert key nt locals) afs)
             pure nt
 
+getAllFieldsNames :: forall a . (Data a) => FunDecl a -> [Identifier]
+getAllFieldsNames fun = fieldNames
+    where
+        fieldCtors = [fields | Parse.AST.Record (_ :: a) (Fields fields) <- universeBi fun]
+        fieldNames = fst <$> concat fieldCtors
 
 verify :: (Show a, Data a, Ord a) => [FunDecl a] -> [TypeError]
 verify funcs = do
     -- Generate constraints per function
-    let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) emptyState)
+    let fn = concat $ getAllFieldsNames <$> funcs
+    let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
 
     case solve (concat cx) of
         Left te -> [te]
@@ -65,9 +75,9 @@ verify funcs = do
 getTyping :: (Show a, Data a, Ord a) => [FunDecl a] -> Either TypeError (M.Map (Typeable a) Type)
 getTyping funcs = do
     -- Generate constraints per function
-    let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) emptyState)
-
-    solve (concat cx)
+    let fn = concat $ getAllFieldsNames <$> funcs
+    let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
+    solve (concat (trace (intercalate "\n" $ show <$> concat cx) cx))
 
 printTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
 printTyping m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
@@ -172,7 +182,15 @@ genConstraintsExpr _ e@(Null l) = do
     whatever <- newType
     pure [(CExpr (show l) e, Ptr whatever)]
 
-genConstraintsExpr _ e@(FieldAccess _ _ _) = undefined
+genConstraintsExpr _ e@(FieldAccess _ target field) = do
+    -- Target has to be record type that contains current field
+    -- with type equal to the result of this expression
+    fieldType <- newType
+    pure [
+        (CExpr (show $ exprLoc e) e, fieldType),
+        (CExpr (show $ exprLoc target) target, 
+            Type.Record [(field, fieldType)])
+        ]
 
 genConstraintsExpr f e@(Call l target args) = do
     targetC <- genConstraintsExpr f target
@@ -186,19 +204,24 @@ genConstraintsExpr f e@(Call l target args) = do
         (CExpr (show l) e, retT)
         ] <> targetC <> concat argsCx
 
-genConstraintsExpr _ e@(Parse.AST.Record l (Fields fields)) = do
+genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     -- This is a record constructor/definition. Generate new unknown for each field.
     fieldTypes <- traverse (const newType) fields
     let recTypes = zip (fst <$> fields) fieldTypes
-    let recordType = Type.Record recTypes
+    -- We need to create bottom types for fields not explicitly mentioned
+    allFields <- gets allFieldNames
+    let extraFields = filter (`notElem` allFields) (fst <$> fields)
+    let extraFieldsTyping = (\n -> (n, Bottom)) <$> extraFields
+    let recordType = Type.Record $ recTypes <> extraFieldsTyping
     -- Generate specific types per the expression
     let exprTypes = zip (snd <$> fields) fieldTypes
     let typeableTypes = (\(e, t) -> (CExpr (show l) e, t)) <$> exprTypes
-    -- TODO: Do we want to write the same fieldTypes into locals store?
+    -- Generate typing for the nested expressions
+    nestedCtx <- traverse (genConstraintsExpr f) (snd <$> fields)
 
     pure $ [
         (CExpr (show l) e, recordType)
-        ] <> typeableTypes
+        ] <> typeableTypes <> concat nestedCtx
 
 genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]
 
