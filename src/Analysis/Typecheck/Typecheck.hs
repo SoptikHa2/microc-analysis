@@ -77,7 +77,7 @@ getTyping funcs = do
     -- Generate constraints per function
     let fn = concat $ getAllFieldsNames <$> funcs
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
-    solve (concat (trace (intercalate "\n" $ show <$> concat cx) cx))
+    solve (concat cx)
 
 printTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
 printTyping m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
@@ -198,11 +198,12 @@ genConstraintsExpr f e@(Call l target args) = do
 
     argsCx <- traverse (genConstraintsExpr f) args
     argsTx <- traverse (const newType) args
+    let argConstraints = zipWith (\arg argT -> (CExpr (show $ exprLoc arg) arg, argT)) args argsTx
 
     pure $ [
         (CExpr (show $ exprLoc target) target, Fun argsTx retT),
         (CExpr (show l) e, retT)
-        ] <> targetC <> concat argsCx
+        ] <> argConstraints <> targetC <> concat argsCx
 
 genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     -- This is a record constructor/definition. Generate new unknown for each field.
@@ -215,7 +216,7 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     let recordType = Type.Record $ recTypes <> extraFieldsTyping
     -- Generate specific types per the expression
     let exprTypes = zip (snd <$> fields) fieldTypes
-    let typeableTypes = (\(e, t) -> (CExpr (show l) e, t)) <$> exprTypes
+    let typeableTypes = (\(e, t) -> (CExpr (show $ exprLoc e) e, t)) <$> exprTypes
     -- Generate typing for the nested expressions
     nestedCtx <- traverse (genConstraintsExpr f) (snd <$> fields)
 

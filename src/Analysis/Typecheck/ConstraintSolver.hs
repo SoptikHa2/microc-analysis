@@ -5,12 +5,13 @@ import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
 import Data.Maybe (fromJust)
+import Data.List (intercalate)
 
 -- mapping from unknown IDs into types
 type Resolutions = M.Map Int Type
 
 -- Resolve Unknown types in the constraints by unification
-solve :: forall a . (Ord a) => Constraints a -> Either TypeError (M.Map (Typeable a) Type)
+solve :: forall a . (Ord a, Show a) => Constraints a -> Either TypeError (M.Map (Typeable a) Type)
 solve ctx = go typesPerTypable >>= resolveResult
     where
         -- First of all, for each typeable, we
@@ -32,6 +33,12 @@ solve ctx = go typesPerTypable >>= resolveResult
         typesPerTypable :: M.Map (Typeable a) [Type]
         typesPerTypable = M.fromListWith (++) ((\(k,v) -> (k,[v])) <$> ctx)
 
+        prettyPrintMTT :: Show a => M.Map (Typeable a) [Type] -> String
+        prettyPrintMTT m = intercalate "\n" $ pp <$> M.toList m
+            where
+                pp :: Show a => (Typeable a, [Type]) -> String
+                pp (tp, t) = show tp ++ " :: " ++ show t
+
         go :: M.Map (Typeable a) [Type] -> Either TypeError (M.Map (Typeable a) [Type])
         go tpt | isFinal tpt = Right tpt
         go tpt = do
@@ -41,16 +48,22 @@ solve ctx = go typesPerTypable >>= resolveResult
 
             -- If no substitutions found, we can't make progress
             if M.null substitutions
-                then Left "Cannot resolve all unknown types"
+                -- Give up, some typing may not be completed, there may be unknown types left. Oh well.
+                then Right tpt
                 else do
                     -- Apply substitutions to all types
                     let tpt' = M.map (map (substitute substitutions)) tpt
                     go tpt'
 
         isFinal :: M.Map (Typeable a) [Type] -> Bool
-        isFinal tpt = all
-            (\types -> all (\t -> case t of Unknown _ -> False; _ -> True) types)
-            tpt
+        isFinal tpt = not (any (any isUnknown) tpt)
+            where
+                isUnknown :: Type -> Bool
+                isUnknown (Unknown _) = True
+                isUnknown (Ptr t) = isUnknown t
+                isUnknown (Fun tx t) = any isUnknown (t:tx)
+                isUnknown (Record fx) = any (isUnknown <$> snd) fx
+                isUnknown _ = False
 
 
         resolveResult :: M.Map (Typeable a) [Type] -> Either TypeError (M.Map (Typeable a) Type)
