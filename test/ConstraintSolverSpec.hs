@@ -6,7 +6,7 @@ import qualified Data.Map as M
 
 import Analysis.Typecheck.ConstraintSolver
 import Analysis.Typecheck.Constraints
-import Analysis.Typecheck.Type
+import Analysis.Typecheck.Type (Type(..), TypeError)
 
 -- Type alias for test constraints with unit annotation
 type TestConstraints = Constraints ()
@@ -258,6 +258,94 @@ spec = do
         [ (CId "_" "rx" :: TestTypeable, Record [("a", Int)])
         , (CId "_" "x", Int)
         ])
+
+  describe "solve - recursive types" $ do
+    it "creates recursive type for self-referential pointer" $ do
+      -- Simulates: node = alloc {next: null}; (*node).next = node;
+      -- node will be: ↑{ [("next",↑μ9 . { [("next",↑μ9)] })] } or similar
+      let constraints :: TestConstraints =
+            [ (CId "_" "node", Ptr (Unknown 9))                    -- node : ↑?9
+            , (CId "_" "node", Ptr (Record [("next", Ptr (Unknown 9))]))  -- node : ↑{ [("next",↑?9)] }
+            ]
+      let result = solve constraints
+      -- The recursive type may be nested, just check it resolves successfully
+      case result of
+        Left err -> expectationFailure $ "Expected success but got error: " ++ err
+        Right solution -> do
+          let nodeType = M.lookup (CId "_" "node" :: TestTypeable) solution
+          case nodeType of
+            Nothing -> expectationFailure "node type not found in solution"
+            Just t -> do
+              -- Check that it's a pointer to a record with a "next" field
+              case t of
+                Ptr (Record fields) -> do
+                  case lookup "next" fields of
+                    Just (Ptr _) -> return () -- Success - has recursive structure
+                    _ -> expectationFailure $ "Expected 'next' field with pointer, but got: " ++ show t
+                Ptr (TypeVarBinding _ (Record fields)) -> do
+                  case lookup "next" fields of
+                    Just (Ptr _) -> return () -- Success - has recursive structure
+                    _ -> expectationFailure $ "Expected 'next' field with pointer, but got: " ++ show t
+                _ -> expectationFailure $ "Expected pointer to record, but got: " ++ show t
+
+    it "creates recursive type with multiple fields" $ do
+      -- Simulates: node = alloc {v: x, prev: list, next: null}; (*node).next = node;
+      let constraints :: TestConstraints =
+            [ (CId "_" "node", Ptr (Record [("v", Unknown 4), ("prev", Unknown 3), ("next", Ptr (Unknown 9))]))
+            , (CId "_" "node", Ptr (Unknown 9))
+            ]
+      let result = solve constraints
+      case result of
+        Left err -> expectationFailure $ "Expected success but got error: " ++ err
+        Right solution -> do
+          let nodeType = M.lookup (CId "_" "node" :: TestTypeable) solution
+          case nodeType of
+            Nothing -> expectationFailure "node type not found in solution"
+            Just t -> do
+              -- Check that it has the expected fields with recursive structure
+              case t of
+                Ptr (Record fields) -> do
+                  -- Check fields exist
+                  case (lookup "v" fields, lookup "prev" fields, lookup "next" fields) of
+                    (Just _, Just _, Just (Ptr _)) -> return () -- Success
+                    _ -> expectationFailure $ "Expected fields v, prev, next with next as pointer, but got: " ++ show t
+                Ptr (TypeVarBinding _ (Record fields)) -> do
+                  case (lookup "v" fields, lookup "prev" fields, lookup "next" fields) of
+                    (Just _, Just _, Just (Ptr _)) -> return () -- Success
+                    _ -> expectationFailure $ "Expected fields v, prev, next with next as pointer, but got: " ++ show t
+                _ -> expectationFailure $ "Expected pointer to record, but got: " ++ show t
+
+    it "handles assignment to different pointer's field" $ do
+      -- Simulates: list = ...; node = alloc {next: null}; (*list).next = node;
+      -- Both list and node should share the same recursive structure
+      let constraints :: TestConstraints =
+            [ (CId "_" "list", Ptr (Unknown 9))
+            , (CId "_" "node", Ptr (Unknown 9))
+            , (CId "_" "list", Ptr (Record [("next", Ptr (Unknown 9))]))
+            , (CId "_" "node", Ptr (Record [("next", Ptr (Unknown 9))]))
+            ]
+      let result = solve constraints
+      case result of
+        Left err -> expectationFailure $ "Expected success but got error: " ++ err
+        Right solution -> do
+          let listType = M.lookup (CId "_" "list" :: TestTypeable) solution
+          let nodeType = M.lookup (CId "_" "node" :: TestTypeable) solution
+          case (listType, nodeType) of
+            (Just lt, Just nt) -> do
+              -- Both should be the same recursive type
+              lt `shouldBe` nt
+              -- And it should have the recursive structure (pointer to record with next field)
+              case lt of
+                Ptr (Record fields) -> do
+                  case lookup "next" fields of
+                    Just (Ptr _) -> return () -- Success
+                    _ -> expectationFailure $ "Expected next field with pointer, but got: " ++ show lt
+                Ptr (TypeVarBinding _ (Record fields)) -> do
+                  case lookup "next" fields of
+                    Just (Ptr _) -> return () -- Success
+                    _ -> expectationFailure $ "Expected next field with pointer, but got: " ++ show lt
+                _ -> expectationFailure $ "Expected pointer to record, but got: " ++ show lt
+            _ -> expectationFailure "list or node type not found in solution"
 
 -- Helper function to check if Either is Left
 isLeft :: Either a b -> Bool

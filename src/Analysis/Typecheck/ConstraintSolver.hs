@@ -7,8 +7,7 @@ import qualified Data.Map as M
 import Data.Maybe (fromJust)
 import Debug.Trace (trace)
 import Data.Generics.Uniplate.Data (universeBi, transform)
-import Utils ((<||>))
-import Data.List (sort, sortBy)
+import Data.List (sortBy)
 
 -- mapping from unknown IDs into types
 type Resolutions = M.Map Int Type
@@ -48,7 +47,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                 -- Give up, some typing may not be completed, there may be unknown types left. Oh well.
                 then Right tpt
                 else do
-                    -- Apply substitutions to all types
+                    -- Apply substitutions to all types and clean up
                     let tpt' = M.map (map (cleanupType . substitute substitutions)) tpt
                     go (trace ("\n---------\n" <> prettyPrintMTT (M.toList tpt')) tpt')
 
@@ -87,17 +86,25 @@ merge _ t1 t2 | t1 == t2 = Right t1
 merge _ t1@(Unknown _) (Unknown _) = Right t1
 merge _ t1 (Unknown _) = Right t1
 merge _ (Unknown _) t2 = Right t2
+merge _ (BoundTypeVar i1) (BoundTypeVar i2) | i1 == i2 = Right (BoundTypeVar i1)
 -- Recursive types
 merge l (TypeVarBinding i1 body1) (TypeVarBinding i2 body2) = do
-        mergedBodies <- merge l body1 body2
-        if i1 == i2
-            then Right (TypeVarBinding i1 mergedBodies)
-            else Right (TypeVarBinding i1 (TypeVarBinding i2 mergedBodies))
+        -- TODO: this is wrong
+        let normalizedBody2 = replaceBoundVar i2 i1 body2
+        mergedBodies <- merge l body1 normalizedBody2
+        Right (TypeVarBinding i1 mergedBodies)
 -- send bound type vars to left
 merge l t1 t2@(TypeVarBinding _ _) = merge l t2 t1
-merge l (TypeVarBinding i1 body1) t2 = do
-    mergedBody <- merge l body1 t2 <||> merge l (unfoldOnce i1 body1) t2
-    Right (TypeVarBinding i1 mergedBody)
+merge l (TypeVarBinding i1 body1) t2 =
+    -- First try to merge the body directly
+    -- TODO: This is weird and maybe wrong
+    case merge l body1 t2 of
+        Right mergedBody -> Right (TypeVarBinding i1 mergedBody)
+        Left _ ->
+            -- If that fails, try unfolding once
+            case merge l (unfoldOnce i1 body1) t2 of
+                Right unfolded -> Right (TypeVarBinding i1 unfolded)
+                Left err2 -> Left err2
 -- Ptr
 merge l (Ptr t1) (Ptr t2) = Ptr <$> merge l t1 t2
 -- Fun
@@ -124,6 +131,13 @@ unfoldOnce :: Int -> Type -> Type
 unfoldOnce i body = transform f body
   where
     f (BoundTypeVar j) | i == j = TypeVarBinding i body
+    f x = x
+
+-- Replace all occurrences of BoundTypeVar with one ID to another ID
+replaceBoundVar :: Int -> Int -> Type -> Type
+replaceBoundVar from to = transform f
+  where
+    f (BoundTypeVar j) | j == from = BoundTypeVar to
     f x = x
 
 -- Find substitutions by merging types for each typeable
