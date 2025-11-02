@@ -28,6 +28,7 @@ library
       Analysis.Analysis
       Analysis.Error
       Analysis.Semantics
+      Analysis.Typecheck.ConstraintGenerator
       Analysis.Typecheck.Constraints
       Analysis.Typecheck.ConstraintSolver
       Analysis.Typecheck.Type

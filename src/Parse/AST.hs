@@ -74,3 +74,14 @@ data Expr a
 
 newtype Record a = Fields [(Identifier, Expr a)]
     deriving (Show, Eq, Ord, Data, Typeable)
+
+exprLoc :: Expr a -> a
+exprLoc (BiOp l _ _ _) = l
+exprLoc (UnOp l _ _) = l
+exprLoc (Input l) = l
+exprLoc (Null l) = l
+exprLoc (FieldAccess l _ _) = l
+exprLoc (Call l _ _) = l
+exprLoc (Parse.AST.Record l _) = l
+exprLoc (Number l _) = l
+exprLoc (EIdentifier l _) = l

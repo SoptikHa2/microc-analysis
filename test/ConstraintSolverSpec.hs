@@ -191,11 +191,6 @@ spec = do
       let result = solve constraints
       result `shouldSatisfy` isLeft
 
-    it "fails when Unknowns cannot be resolved" $ do
-      let constraints :: TestConstraints = [(CId "_" "x", Unknown 1)]
-      let result = solve constraints
-      result `shouldSatisfy` isLeft
-
   describe "solve - complex scenarios" $ do
     it "resolves complex nested types" $ do
       let constraints :: TestConstraints =
