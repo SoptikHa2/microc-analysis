@@ -7,6 +7,8 @@ import qualified Data.Map as M
 import Data.Maybe (fromJust)
 import Debug.Trace (trace)
 import Data.Generics.Uniplate.Data (universeBi, transform)
+import Utils ((<||>))
+import Data.List (sort, sortBy)
 
 -- mapping from unknown IDs into types
 type Resolutions = M.Map Int Type
@@ -47,7 +49,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                 then Right tpt
                 else do
                     -- Apply substitutions to all types
-                    let tpt' = M.map (map (substitute (bindTypeVars substitutions))) tpt
+                    let tpt' = M.map (map (cleanupType . substitute substitutions)) tpt
                     go (trace ("\n---------\n" <> prettyPrintMTT (M.toList tpt')) tpt')
 
         isFinal :: M.Map (Typeable a) [Type] -> Bool
@@ -79,27 +81,50 @@ solve ctx = go typesPerTypable >>= resolveResult
                     mergeAll (merged:rest)
 
 merge :: String -> Type -> Type -> Either TypeError Type
-merge _ Bottom t2 = Right t2
-merge _ t1 Bottom = Right t1
+merge l Bottom t2 = Left $ l ++ ": Record does not contain given field, attempted to use as " ++ show t2
+merge l t1 Bottom = Left $ l ++ ": Record does not contain given field, attempted to use as " ++ show t1
 merge _ t1 t2 | t1 == t2 = Right t1
 merge _ t1@(Unknown _) (Unknown _) = Right t1
 merge _ t1 (Unknown _) = Right t1
 merge _ (Unknown _) t2 = Right t2
+-- Recursive types
+merge l (TypeVarBinding i1 body1) (TypeVarBinding i2 body2) = do
+        mergedBodies <- merge l body1 body2
+        if i1 == i2
+            then Right (TypeVarBinding i1 mergedBodies)
+            else Right (TypeVarBinding i1 (TypeVarBinding i2 mergedBodies))
+-- send bound type vars to left
+merge l t1 t2@(TypeVarBinding _ _) = merge l t2 t1
+merge l (TypeVarBinding i1 body1) t2 = do
+    mergedBody <- merge l body1 t2 <||> merge l (unfoldOnce i1 body1) t2
+    Right (TypeVarBinding i1 mergedBody)
+-- Ptr
 merge l (Ptr t1) (Ptr t2) = Ptr <$> merge l t1 t2
+-- Fun
 merge l (Fun args1 ret1) (Fun args2 ret2)
     | length args1 == length args2 = do
         mergedArgs <- zipWithM (merge l) args1 args2
         mergedRet <- merge l ret1 ret2
         return $ Fun mergedArgs mergedRet
     | otherwise = Left $ l ++ ": Function being called has arity " ++ show (length args1) ++ ", but should have " ++ show (length args2)
+-- Record
 merge l (Record fields1) (Record fields2) = do
-    mergedFields <- zipWithM mergeField fields1 fields2
+    let sfields1 = sortBy (\a b -> compare (fst a) (fst b)) fields1
+    let sfields2 = sortBy (\a b -> compare (fst a) (fst b)) fields2
+    mergedFields <- zipWithM mergeField sfields1 sfields2
     return $ Record mergedFields
   where
     mergeField (n1, t1) (n2, t2)
         | n1 == n2 = (,) n1 <$> merge l t1 t2
         | otherwise = Left $ l ++ ": Field name mismatch: " <> n1 <> " vs " <> n2
 merge l t1 t2 = Left $ l ++ ": The type is " <> show t1 <> ", but should be " <> show t2
+
+-- Unfold a recursive type
+unfoldOnce :: Int -> Type -> Type
+unfoldOnce i body = transform f body
+  where
+    f (BoundTypeVar j) | i == j = TypeVarBinding i body
+    f x = x
 
 -- Find substitutions by merging types for each typeable
 findSubstitutions :: M.Map (Typeable a) [Type] -> Either TypeError Resolutions
@@ -147,37 +172,38 @@ findSubstitutions tpt = do
 
         extras <> M.fromList [(uid, result) | Unknown uid <- types, Unknown uid /= result]
 
-bindTypeVars :: Resolutions -> Resolutions
--- We may have a resolution that looks like: TypeVar 3 binds into -> Ptr (TypeVar 3)
--- This will trigger infinite substitution. In this case, we want to 
--- convert it to TypeVar3 binds into TypeVarBinding 3 (Ptr (BoundTypeVar 3))
-bindTypeVars = M.mapWithKey bind
+-- Remove useless type var bindings
+cleanupType :: Type -> Type
+cleanupType = transform f
     where
-        unknownsInside t = [i | Unknown i <- universeBi t]
-
-        shouldBind :: Int -> Type -> Bool
-        shouldBind k v = k `elem` unknowns
+        hasBoundTypeVar tv typ = tv `elem` typeVars
             where
-                unknowns = unknownsInside v
+                typeVars = [i | BoundTypeVar i <- universeBi typ]
 
-        bind :: Int -> Type -> Type
-        bind k v | not $ shouldBind k v = v
-        -- bind
-        bind k v = TypeVarBinding k $ transform f v
-            where
-                f (Unknown i) | i == k = BoundTypeVar i
-                f x = x
+        f tv@(TypeVarBinding i t) | hasBoundTypeVar i t = tv
+        f    (TypeVarBinding _ t)                       = t
+        f x = x
 
 -- Apply substitutions recursively to a type
+-- If the replacement contains any unknown, we need to:
+-- 1) Wrap it in Type var binding.
+-- 2) Convert any subsequent instances of Unknown of given type var to BoundTypeVar.
 substitute :: Resolutions -> Type -> Type
-substitute subst t@(Unknown uid) =
-    case M.lookup uid subst of
-        Just t' -> substitute subst t'  -- Follow chains
-        Nothing -> t
-substitute subst (Ptr t) = Ptr (substitute subst t)
-substitute subst (Fun args ret) =
-    Fun (map (substitute subst) args) (substitute subst ret)
-substitute subst (Record fields) = Record [(name, substitute subst t) | (name, t) <- fields]
-substitute _ t = t
-
-
+substitute = go []
+    where
+        go tv _ (Unknown uid) | uid `elem` tv = BoundTypeVar uid
+        go tv subst t@(Unknown uid) =
+            case M.lookup uid subst of
+                Just t' -> --substitute subst t'  -- Follow chains
+                    -- We may need to insert type vars
+                    if null [u | u@(Unknown _ ) <- universeBi t']
+                        -- no nested unknowns - we may quit
+                        then t'
+                        -- nested unknowns - wrap in type var
+                        else TypeVarBinding uid (go (uid:tv) subst t')
+                Nothing -> t
+        go tv subst (Ptr t) = Ptr (go tv subst t)
+        go tv subst (Fun args ret) =
+            Fun (map (go tv subst) args) (go tv subst ret)
+        go tv subst (Record fields) = Record [(name, go tv subst t) | (name, t) <- fields]
+        go _ _ t = t

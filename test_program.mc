@@ -1,6 +1,7 @@
-rectype() {
+list_append(list, x) {
   var node;
-  node = alloc {next: null};
+  node = alloc {v: x, prev: list, next: null};
   (*node).next = node;
+
   return node;
 }

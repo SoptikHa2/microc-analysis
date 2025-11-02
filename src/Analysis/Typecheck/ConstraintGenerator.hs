@@ -169,9 +169,9 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     let recTypes = zip (fst <$> fields) fieldTypes
     -- We need to create bottom types for fields not explicitly mentioned
     allFields <- gets allFieldNames
-    let extraFields = filter (`notElem` allFields) (fst <$> fields)
+    let extraFields = filter (`notElem` (fst <$> fields)) allFields
     let extraFieldsTyping = (\n -> (n, Bottom)) <$> extraFields
-    let recordType = Type.Record $ recTypes <> extraFieldsTyping
+    let recordType = Type.Record $ recTypes <> (trace ("eft" ++ show extraFieldsTyping) extraFieldsTyping)
     -- Generate specific types per the expression
     let exprTypes = zip (snd <$> fields) fieldTypes
     let typeableTypes = (\(e, t) -> (CExpr (show $ exprLoc e) e, t)) <$> exprTypes
@@ -179,7 +179,7 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     nestedCtx <- traverse (genConstraintsExpr f) (snd <$> fields)
 
     pure $ [
-        (CExpr (show l) e, recordType)
+        (CExpr (show l) e, (trace ("record type " ++ show recordType )recordType))
         ] <> typeableTypes <> concat nestedCtx
 
 genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]

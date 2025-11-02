@@ -16,7 +16,7 @@ import Debug.Trace (trace)
 
 
 getAllFieldsNames :: forall a . (Data a) => FunDecl a -> [Identifier]
-getAllFieldsNames fun = fieldNames
+getAllFieldsNames fun = trace ("all field names " ++ show fieldNames) fieldNames
     where
         fieldCtors = [fields | Parse.AST.Record (_ :: a) (Fields fields) <- universeBi fun]
         fieldNames = fst <$> concat fieldCtors
