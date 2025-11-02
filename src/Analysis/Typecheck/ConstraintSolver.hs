@@ -170,6 +170,16 @@ findSubstitutions tpt = do
                         ptrTypes = [t | Ptr t <- types]
                     in
                         extractSubstitutions ptrTypes rt
+                (Fun resultArgs resultRet) ->
+                    let
+                        funTypes = [(args, ret) | Fun args ret <- types]
+                        -- Extract substitutions from all argument positions
+                        argSubsts = mconcat [extractSubstitutions (map (!! i) (fst <$> funTypes)) (resultArgs !! i)
+                                           | i <- [0..length resultArgs - 1]]
+                        -- Extract substitutions from return type
+                        retSubsts = extractSubstitutions (snd <$> funTypes) resultRet
+                    in
+                        argSubsts <> retSubsts
                 (Record fx) ->
                     let
                         recTypes = [rfx | Record rfx <- types]

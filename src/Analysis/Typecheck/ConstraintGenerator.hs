@@ -14,43 +14,65 @@ data TypeState = TypeState {
     nextId :: Int,
     -- function x local -> ID
     locals :: M.Map (Identifier, Identifier) Type,
-    allFieldNames :: [Identifier]
+    allFieldNames :: [Identifier],
+    -- Global function types: function name -> type
+    globalFunctions :: M.Map Identifier Type
 }
 
 emptyState :: [Identifier] -> TypeState
-emptyState = TypeState 0 M.empty
+emptyState fn = TypeState 0 M.empty fn M.empty
 
 -- Generate new unknown type
 newType :: State TypeState Type
 newType = do
     ni <- gets nextId
-    modify (\(TypeState _ locals afs) -> TypeState (ni + 1) locals afs)
+    modify (\s -> s { nextId = ni + 1 })
     pure $ Unknown ni
 
+-- Get or create a type for a local variable
 varType :: FunDecl a -> Identifier -> State TypeState Type
 varType fun var = do
-    locals <- gets locals
+    localsMap <- gets locals
     let key = (fun.name, var)
-    let val = M.lookup key locals
-    case val of
+    case M.lookup key localsMap of
         Just existingType -> pure existingType
         Nothing -> do
             nt <- newType
-            modify (\(TypeState ni locals afs) -> TypeState ni (M.insert key nt locals) afs)
+            modify (\s -> s { locals = M.insert key nt (locals s) })
             pure nt
+
+-- Register a global function with its type
+registerFunction :: Identifier -> Type -> State TypeState ()
+registerFunction name typ = do
+    modify (\s -> s { globalFunctions = M.insert name typ (globalFunctions s) })
+
+-- Look up a global function type
+lookupFunction :: Identifier -> State TypeState (Maybe Type)
+lookupFunction name = do
+    M.lookup name <$> gets globalFunctions
 
 genConstraintsFun :: (Show a, Data a) => FunDecl a -> State TypeState (Constraints a)
 genConstraintsFun fun = do
         argC <- genArgs
         retT <- newType
         let argsT = snd <$> argC
+        let funType = Fun argsT retT
+
+        -- Register this function globally so other functions can reference it
+        registerFunction fun.name funType
+
         -- Bind args to variables
         argVarTypes <- traverse (varType fun) fun.args
         let argBinds = zip argTy argVarTypes
 
+        -- If we are main, all args are integers
+        let defaultArgBinds = if fun.name == "main"
+            then zip argTy (repeat Int)
+            else []
+
         let funConstraints =
                 [
-                    (CFun (show fun.d) fun, Fun argsT retT),
+                    (CFun (show fun.d) fun, funType),
                     (CExpr (show $ exprLoc fun.body.return) fun.body.return, retT)
                 ] <> argC
 
@@ -65,7 +87,7 @@ genConstraintsFun fun = do
                                , funName == fun.name
                                , varName `notElem` fun.args]  -- Skip parameters (already in argC)
 
-        pure $ funConstraints <> bodyConstraints <> retConstraints <> localConstraints <> argBinds
+        pure $ funConstraints <> bodyConstraints <> retConstraints <> localConstraints <> argBinds <> defaultArgBinds
     where
         argTy = CId (show fun.d) <$> fun.args
 
@@ -185,5 +207,9 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
 genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]
 
 genConstraintsExpr f e@(EIdentifier l name) = do
-    typ <- varType f name
+    -- Check if it's a global function first
+    maybeFunType <- lookupFunction name
+    typ <- case maybeFunType of
+        Just funType -> pure funType
+        Nothing -> varType f name  -- It's a local variable
     pure [(CExpr (show l) e, typ)]

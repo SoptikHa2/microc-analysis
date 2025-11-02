@@ -1,9 +1,17 @@
-foo(n) {
-    return n;
+list_append(list, x) {
+  var node;
+  node = alloc {v: x, prev: list, next: null};
+  if (list == null) {
+  } else {
+      (*list).next = node;
+  }
+
+  return node;
 }
 
-bar() {
-    n = 0;
-    x = foo(n);
-    return x;
+main(n) {
+  var list;
+  list = null;
+  list = list_append(list, 1);
+  return 0;
 }
