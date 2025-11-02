@@ -12,11 +12,10 @@ import Data.List (intercalate)
 import Data.Generics.Uniplate.Data (universeBi)
 import Analysis.Typecheck.ConstraintGenerator
 import Control.Monad.State
-import Debug.Trace (trace)
 
 
 getAllFieldsNames :: forall a . (Data a) => FunDecl a -> [Identifier]
-getAllFieldsNames fun = trace ("all field names " ++ show fieldNames) fieldNames
+getAllFieldsNames fun = fieldNames
     where
         fieldCtors = [fields | Parse.AST.Record (_ :: a) (Fields fields) <- universeBi fun]
         fieldNames = fst <$> concat fieldCtors
@@ -36,7 +35,7 @@ getTyping funcs = do
     -- Generate constraints per function
     let fn = concat $ getAllFieldsNames <$> funcs
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
-    solve (concat (trace ("\n--- CX:\n" <> (prettyPrintCX $ concat cx) <> "----\n") cx))
+    solve (concat cx)
 
 printTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
 printTyping m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))

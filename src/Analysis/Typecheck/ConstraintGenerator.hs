@@ -7,7 +7,6 @@ import qualified Data.Map as M
 import Analysis.Typecheck.Type
 import Data.Maybe (fromMaybe)
 import qualified Analysis.Typecheck.Type as Type
-import Debug.Trace (trace)
 
 
 data TypeState = TypeState {
@@ -207,7 +206,7 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     allFields <- gets allFieldNames
     let extraFields = filter (`notElem` (fst <$> fields)) allFields
     let extraFieldsTyping = (\n -> (n, Bottom)) <$> extraFields
-    let recordType = Type.Record $ recTypes <> (trace ("eft" ++ show extraFieldsTyping) extraFieldsTyping)
+    let recordType = Type.Record $ recTypes <> extraFieldsTyping
     -- Generate specific types per the expression
     let exprTypes = zip (snd <$> fields) fieldTypes
     let typeableTypes = (\(e, t) -> (CExpr (show $ exprLoc e) e, t)) <$> exprTypes
@@ -215,7 +214,7 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     nestedCtx <- traverse (genConstraintsExpr f) (snd <$> fields)
 
     pure $ [
-        (CExpr (show l) e, (trace ("record type " ++ show recordType )recordType))
+        (CExpr (show l) e, recordType)
         ] <> typeableTypes <> concat nestedCtx
 
 genConstraintsExpr f e@(Parse.AST.Array l items) = do

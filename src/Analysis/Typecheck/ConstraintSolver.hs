@@ -5,7 +5,6 @@ import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
 import Data.Maybe (fromJust)
-import Debug.Trace (trace)
 import Data.Generics.Uniplate.Data (universeBi, transform)
 import Data.List (sortBy)
 
@@ -49,7 +48,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                 else do
                     -- Apply substitutions to all types and clean up
                     let tpt' = M.map (map (cleanupType . substitute substitutions)) tpt
-                    go (trace ("\n---------\n" <> prettyPrintMTT (M.toList tpt')) tpt')
+                    go tpt'
 
         isFinal :: M.Map (Typeable a) [Type] -> Bool
         isFinal tpt = not (any (any isUnknown) tpt)
