@@ -9,6 +9,7 @@ data Type
     | Ptr Type
     | Fun [Type] Type
     | Record [(String, Type)]
+    | Array Type
     | Unknown Int -- unknown type of ID [Int] (also, free type var, but in distinct type)
     | BoundTypeVar Int
     | TypeVarBinding Int Type
@@ -21,6 +22,7 @@ instance Show Type where
   show (Ptr t) = "↑" ++ show t
   show (Fun args ret) = intercalate " -> " (show <$> args) ++ " -> " ++ show ret
   show (Record args) = "{ " ++ show args ++ " }"
+  show (Array t) = "[" ++ show t ++ "]"
   show (Unknown i) = "?" ++ show i
   show (BoundTypeVar i) = "t" ++ show i
   show (TypeVarBinding i t) = "μ t" ++ show i ++ " . " ++ show t

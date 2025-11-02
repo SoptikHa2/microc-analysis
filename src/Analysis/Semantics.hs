@@ -147,6 +147,8 @@ verifyAssignments globals fun = assignmentErrors
         assignmentTargetValid (EIdentifier _ id) | id `notElem` globals = True
         -- foo.bar = _ is valid
         assignmentTargetValid (FieldAccess _ _ _) = True
+        -- foo[x] = _ is valid
+        assignmentTargetValid (ArrayAccess _ _ _) = True
         -- anything else is invalid
         assignmentTargetValid _ = False
 

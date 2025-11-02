@@ -3,6 +3,7 @@
 module Interpreter.Data where
 import Parse.AST (FunDecl(..), Identifier)
 import Text.Parsec (SourcePos)
+import Data.List (intercalate)
 
 type Address = Int
 
@@ -11,6 +12,7 @@ data Value
     | Pointer Address
     | Function (FunDecl SourcePos)
     | Record [(Identifier, Address)]
+    | ArrayRef [Address]
     deriving (Eq)
 
 instance Show Value where
@@ -19,6 +21,7 @@ instance Show Value where
   show (Pointer addr) = "<ptr " <> show addr <> ">"
   show (Function (FunDecl loc funName _ _)) = "<func " <> funName <> " (" <> show loc <> ")>"
   show (Record fields) = "Record " <> show (fst <$> fields)
+  show (ArrayRef addr) = "<arr " <> show addr <> ">"
 
 
 truthy :: Value -> Bool
@@ -26,3 +29,4 @@ truthy (VNumber i) = i /= 0
 truthy (Pointer a) = a /= 0
 truthy (Function _) = True
 truthy (Record _) = True
+truthy (ArrayRef _) = True

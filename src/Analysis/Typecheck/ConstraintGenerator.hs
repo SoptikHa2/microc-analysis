@@ -172,6 +172,20 @@ genConstraintsExpr f e@(FieldAccess _ target field) = do
             Type.Record [(field, fieldType)])
         ] <> targetT
 
+genConstraintsExpr f e@(ArrayAccess _ target idx) = do
+    -- 1) Index has to be of type integer
+    -- 2) Target has to be of type [X]
+    -- 3) This expression has to be of type X
+    arrayInnerType <- newType
+    targetC <- genConstraintsExpr f target
+    idxC <- genConstraintsExpr f idx
+
+    pure $ [
+        (CExpr (show $ exprLoc idx) idx, Int),
+        (CExpr (show $ exprLoc target) target, Type.Array arrayInnerType),
+        (CExpr (show $ exprLoc e) e, arrayInnerType)
+        ] <> targetC <> idxC
+
 genConstraintsExpr f e@(Call l target args) = do
     targetC <- genConstraintsExpr f target
     retT <- newType
@@ -203,6 +217,18 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     pure $ [
         (CExpr (show l) e, (trace ("record type " ++ show recordType )recordType))
         ] <> typeableTypes <> concat nestedCtx
+
+genConstraintsExpr f e@(Parse.AST.Array l items) = do
+    -- 1) All underlying items have to be of the same type X
+    -- 2) This is of type [X]
+    itemsC <- traverse (genConstraintsExpr f) items
+    innerArrayType <- newType
+
+    let itemTypes = (\e -> (CExpr (show $ exprLoc e) e, innerArrayType)) <$> items
+
+    pure $ [
+        (CExpr (show l) e, Type.Array innerArrayType)
+        ] <> concat itemsC <> itemTypes
 
 genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]
 

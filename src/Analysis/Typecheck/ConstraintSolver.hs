@@ -107,6 +107,8 @@ merge l (TypeVarBinding i1 body1) t2 =
                 Left err2 -> Left err2
 -- Ptr
 merge l (Ptr t1) (Ptr t2) = Ptr <$> merge l t1 t2
+-- Array
+merge l (Array t1) (Array t2) = Array <$> merge l t1 t2
 -- Fun
 merge l (Fun args1 ret1) (Fun args2 ret2)
     | length args1 == length args2 = do
@@ -170,6 +172,11 @@ findSubstitutions tpt = do
                         ptrTypes = [t | Ptr t <- types]
                     in
                         extractSubstitutions ptrTypes rt
+                (Array ar) ->
+                    let
+                        arrTypes = [t | Array t <- types]
+                    in
+                        extractSubstitutions arrTypes ar
                 (Fun resultArgs resultRet) ->
                     let
                         funTypes = [(args, ret) | Fun args ret <- types]
@@ -227,6 +234,7 @@ substitute = go []
                         else TypeVarBinding uid (go (uid:tv) subst t')
                 Nothing -> t
         go tv subst (Ptr t) = Ptr (go tv subst t)
+        go tv subst (Array t) = Array (go tv subst t)
         go tv subst (Fun args ret) =
             Fun (map (go tv subst) args) (go tv subst ret)
         go tv subst (Record fields) = Record [(name, go tv subst t) | (name, t) <- fields]

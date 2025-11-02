@@ -11,6 +11,7 @@ import Data.Foldable (traverse_)
 import Text.Parsec (SourcePos)
 import Error (MicroCError(EInterpreter))
 import Control.Exception (throw)
+import Utils
 
 runId :: StateT State Identity a -> StateT State IO a
 runId = mapStateT (pure . runIdentity)
@@ -64,6 +65,16 @@ evalExpr (UnOp loc Ref (FieldAccess _ record field)) = do
                 Nothing -> errwl loc $ "Nonexistent field " ++ show field
         _ -> errwl loc $ "Attempted to access field of " ++ show record
 
+evalExpr (UnOp loc Ref (ArrayAccess _ targetE idxE)) = do
+    target <- evalExpr targetE
+    idx <- evalExpr idxE
+    case (target, idx) of
+        (ArrayRef addrx, VNumber i) -> do
+            case addrx !? i of
+                Just addr -> pure $ Pointer addr
+                Nothing -> errwl loc $ "Bad index " ++ show i
+        _ -> errwl loc $ "Bad array subscript: " ++ show target ++ "[" ++ show idx ++ "]"
+
 evalExpr (UnOp loc Ref _) = errwl loc "Attempted to take address of non-variable"
 
 evalExpr (UnOp _ Alloc e1) = do
@@ -82,12 +93,23 @@ evalExpr fa@(FieldAccess loc _ id) = do
     Pointer ptr <- evalExpr (UnOp loc Ref fa)
     runId (getsAddr ptr) >>= maybe (errwl loc $ "Invalid field " ++ show id) pure
 
+evalExpr aa@(ArrayAccess loc _ id) = do
+    Pointer ptr <- evalExpr (UnOp loc Ref aa)
+    runId (getsAddr ptr) >>= maybe (errwl loc $ "Invalid array item " ++ show id) pure
+
 evalExpr (Parse.AST.Record _ (Fields fx)) = do
     -- Evaluate all the fields
     rr <- forM fx (\(n, value) -> (,) n <$> evalExpr value)
     -- Save them into memory
     ar <- forM rr (\(n, value) -> (,) n <$> runId (putsValue value))
     pure $ Interpreter.Data.Record ar
+
+evalExpr (Parse.AST.Array _ items) = do
+    -- Evaluate all items
+    ix <- traverse evalExpr items
+    -- Save into memory
+    addr <- runId (traverse putsValue ix)
+    pure $ ArrayRef addr
 
 evalExpr (Number _ i) = pure $ VNumber i
 
@@ -181,6 +203,8 @@ evalExprForWrite (FieldAccess loc field id) = do
         Interpreter.Data.Record mapping ->
             maybe (errwl loc $ "Nonexistent field " ++ show id) (pure . Pointer) (lookup id mapping)
         _ -> errwl loc $ "Attempted to access field of " ++ show field
+
+evalExprForWrite aa@(ArrayAccess loc _ _) = evalExpr (UnOp loc Ref aa)
 
 evalExprForWrite (EIdentifier loc id) =
     runId (getsVarAddr id) >>= maybe (errwl loc $ "Variable not found: " ++ id) (pure . Pointer)
