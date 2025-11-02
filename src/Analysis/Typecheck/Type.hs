@@ -22,8 +22,8 @@ instance Show Type where
   show (Fun args ret) = intercalate " -> " (show <$> args) ++ " -> " ++ show ret
   show (Record args) = "{ " ++ show args ++ " }"
   show (Unknown i) = "?" ++ show i
-  show (BoundTypeVar i) = "μ" ++ show i
-  show (TypeVarBinding i t) = "μ" ++ show i ++ " . " ++ show t
+  show (BoundTypeVar i) = "t" ++ show i
+  show (TypeVarBinding i t) = "μ t" ++ show i ++ " . " ++ show t
   show Bottom = "◇"
 
 

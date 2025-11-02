@@ -7,6 +7,7 @@ import StateSpec
 import InterpretExprSpec
 import InterpretStmtSpec
 import ConstraintSolverSpec
+import TypecheckSpec
 
 main :: IO ()
 main = hspec $ do
@@ -17,3 +18,4 @@ main = hspec $ do
   describe "Expression Evaluation" InterpretExprSpec.spec
   describe "Statement Evaluation" InterpretStmtSpec.spec
   describe "Constraint Solver" ConstraintSolverSpec.spec
+  describe "Type Checker (End-to-End)" TypecheckSpec.spec

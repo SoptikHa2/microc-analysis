@@ -22,8 +22,9 @@ This project uses **Stack** (Haskell build tool):
 # Build the project
 stack build
 
-# Run the executable
-stack run
+# Run the executable (with CLI options)
+stack run microc -- run <program.mc> [args...]
+stack run microc -- type <program.mc>
 
 # Run tests
 stack test
@@ -31,12 +32,69 @@ stack test
 # Run a specific test suite
 stack test apr-semestral:apr-semestral-test
 
+# Run a single test (use -m pattern matching)
+stack test --test-arguments "-m \"specific test name\""
+
 # Enter GHCi with project modules loaded
 stack ghci
 
 # Clean build artifacts
 stack clean
 ```
+
+## CLI Usage
+
+The `microc` executable provides two main commands:
+
+**Run a program:**
+```bash
+stack run microc -- run <program.mc> [args...]
+```
+- Parses the source file
+- Runs semantic analysis (undefined/duplicate names, lvalue checks, etc.)
+- Executes the `main()` function with provided integer arguments
+- Returns exit code from `main()`
+
+**Type check a program:**
+```bash
+stack run microc -- type <program.mc>
+```
+- Parses the source file
+- Performs constraint-based type inference
+- Prints inferred types for functions and identifiers
+
+## Language Features
+
+MicroC programs consist of functions only (no global variables). Each function:
+- Has N parameters
+- Declares local variables at the beginning (`var x, y, z;`)
+- Contains statements (assignment, if/else, while, output)
+- Returns a single expression at the end
+
+**Example:**
+```c
+main() {
+    var rec, ptr;
+    rec = { foo: 3, bar: main };
+    ptr = &(rec.bar);
+    *ptr = 5;
+    output rec.bar;
+    return 0;
+}
+```
+
+**Types:**
+- `Int`: Integer values
+- `↑T`: Pointer to type T
+- `{ field: T, ... }`: Record types (struct-like)
+- Functions are first-class (can be stored in records/pointers)
+
+**Key Operations:**
+- `alloc <expr>`: Allocates heap memory (like malloc)
+- `&<expr>`: Takes address (reference)
+- `*<expr>`: Dereferences pointer
+- `input`: Reads integer from stdin
+- `output <expr>`: Prints value to stdout
 
 ## Code Architecture
 
@@ -72,13 +130,19 @@ The codebase follows a classic interpreter architecture:
 - `Interpret.hs`: Expression and statement evaluation
 
 **Analysis/** - Static Analysis
-- `Analysis.hs`: Entry point for running semantic analysis
+- `Analysis.hs`: Entry point for running semantic analysis (combines Semantics and Typecheck)
 - `Semantics.hs`: Semantic checks including:
   - Undefined/duplicate identifiers
   - Taking address of functions
   - Invalid assignments (must be lvalues)
   - Record field validation
   - Recursive record detection
+- `Typecheck/`: Constraint-based type inference system
+  - `Type.hs`: Type representation (Int, Ptr, Fun, Record, type variables)
+  - `Constraints.hs`: Constraint types (Typeable wrapper for AST nodes)
+  - `ConstraintGenerator.hs`: Generates type constraints from AST
+  - `ConstraintSolver.hs`: Solves constraint system via unification
+  - `Typecheck.hs`: Main entry point for type checking
 
 ### Key Design Decisions
 
@@ -89,6 +153,11 @@ The codebase follows a classic interpreter architecture:
 **Bilingual Support**: Keywords support both English and Czech (e.g., "var"/"pro", "return"/"vrať", "output"/"vypiš"). The lexer handles this via the `strToKw` mapping in `Tokens.hs`.
 
 **Parsec-Based Parsing**: Uses Text.Parsec for both lexing and parsing. Expression parsing uses `Text.Parsec.Expr.buildExpressionParser` for operator precedence.
+
+**Constraint-Based Type System**: Type checking uses a constraint generation and solving approach:
+- Each AST node generates type constraints
+- Constraints are unified to infer types
+- Supports recursive types via type variable bindings (μ notation)
 
 ### AST Structure Notes
 
@@ -109,14 +178,22 @@ Test files follow the pattern: parse input strings and compare against expected 
 ## Common Development Workflows
 
 When adding new language features:
-1. Add tokens to `Lex/Tokens.hs` if needed
+1. Add tokens to `Lex/Tokens.hs` if needed (including bilingual support)
 2. Add lexer functions to `Lex/Lexer.hs`
-3. Update AST types in `Parse/AST.hs`
+3. Update AST types in `Parse/AST.hs` (ensure Data and Typeable instances)
 4. Implement parser in appropriate `Parse/*Parser.hs` file
 5. Add test cases in corresponding `test/*Spec.hs` file
-6. Implement interpreter logic in `Interpreter/` (when ready)
+6. Update `Analysis/Typecheck/ConstraintGenerator.hs` if needed
+7. Implement interpreter logic in `Interpreter/Interpret.hs`
 
 When working on the interpreter:
 - Follow the state monad pattern using `StateT State IO`
 - Use helper functions from `Interpreter/State.hs` for state manipulation
 - Remember that all values go through the heap (use `putsVar`, not direct map insertion)
+- Functions are stored in global scope during initialization (see `Main.hs:initializeState`)
+
+When working on type checking:
+- Constraint generation happens in `ConstraintGenerator.hs` via `genConstraintsFun`
+- Constraints are solved via unification in `ConstraintSolver.hs`
+- Type variables use `Unknown Int` for fresh variables and `BoundTypeVar Int` for recursive types
+- The `Typeable` wrapper tags AST nodes with their location for better error messages
