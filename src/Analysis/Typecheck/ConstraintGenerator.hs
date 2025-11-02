@@ -7,6 +7,7 @@ import qualified Data.Map as M
 import Analysis.Typecheck.Type
 import Data.Maybe (fromMaybe)
 import qualified Analysis.Typecheck.Type as Type
+import Debug.Trace (trace)
 
 
 data TypeState = TypeState {
@@ -43,6 +44,9 @@ genConstraintsFun fun = do
         argC <- genArgs
         retT <- newType
         let argsT = snd <$> argC
+        -- Bind args to variables
+        argVarTypes <- traverse (varType fun) fun.args
+        let argBinds = zip argTy argVarTypes
 
         let funConstraints =
                 [
@@ -61,12 +65,14 @@ genConstraintsFun fun = do
                                , funName == fun.name
                                , varName `notElem` fun.args]  -- Skip parameters (already in argC)
 
-        pure $ funConstraints <> bodyConstraints <> retConstraints <> localConstraints
+        pure $ funConstraints <> bodyConstraints <> retConstraints <> localConstraints <> argBinds
     where
+        argTy = CId (show fun.d) <$> fun.args
+
         genArgs :: State TypeState (Constraints a)
         genArgs = do
             newTypes <- traverse (const newType) fun.args
-            pure $ zip (CId (show fun.d) <$> fun.args) newTypes
+            pure $ zip argTy newTypes
 
 
 genConstraintsStmt :: (Show a, Data a) => FunDecl a -> Stmt a -> State TypeState (Constraints a)
@@ -180,4 +186,4 @@ genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]
 
 genConstraintsExpr f e@(EIdentifier l name) = do
     typ <- varType f name
-    pure [(CExpr (show l) e, typ)]
+    pure [(CExpr (show l) e, (trace ("EID: " <> name <> " :: " <> show typ) typ))]
