@@ -62,12 +62,18 @@ data Expr a
     | Input a
     | Null a
     | FieldAccess a (Expr a) Identifier
+    | ArrayAccess {
+        d :: a,
+        target :: Expr a,
+        idx :: Expr a
+    }
     | Call {
         d :: a,
         target :: Expr a,
         args   :: [Expr a]
     }
     | Record a (Record a)
+    | Array a [Expr a]
     | Number a Int
     | EIdentifier a Identifier
     deriving (Show, Eq, Ord, Data, Typeable)
@@ -81,7 +87,9 @@ exprLoc (UnOp l _ _) = l
 exprLoc (Input l) = l
 exprLoc (Null l) = l
 exprLoc (FieldAccess l _ _) = l
+exprLoc (ArrayAccess l _ _) = l
 exprLoc (Call l _ _) = l
 exprLoc (Parse.AST.Record l _) = l
+exprLoc (Array l _) = l
 exprLoc (Number l _) = l
 exprLoc (EIdentifier l _) = l

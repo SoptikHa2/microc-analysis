@@ -30,6 +30,12 @@ bracketOpen = ws >> char '{' >> return CBracketOpen
 bracketClose :: Parsec String () Token
 bracketClose = ws >> char '}' >> return CBracketClose
 
+sqBracketOpen :: Parsec String () Token
+sqBracketOpen = ws >> char '[' >> return SqBracketOpen
+
+sqBracketClose :: Parsec String () Token
+sqBracketClose = ws >> char ']' >> return SqBracketClose
+
 keyword :: Keyword -> Parsec String () Token
 keyword kw = try $ do
     ws

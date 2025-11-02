@@ -6,6 +6,8 @@ data Token
     | Identifier String
     | CBracketOpen
     | CBracketClose
+    | SqBracketOpen
+    | SqBracketClose
     | Keyword Keyword
     | Semicolon
     | Comma

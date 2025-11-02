@@ -23,7 +23,7 @@ postfixExpr = do
     -- It certainly has a primary expression first
     e <- primaryExpr <?> "postfix into primary"
     -- Afterwards, there may be 0 or more times {field access OR call}.
-    ops <- many (try fieldAccessRest <|> try callRest) <?> "postfix operators"
+    ops <- many (try fieldAccessRest <|> try callRest <|> try arrayIndex) <?> "postfix operators"
 
     pure $ recApply e ops
     where
@@ -37,6 +37,9 @@ postfixExpr = do
             ex <- many (expression <* optional Lexer.comma <* spaces) <?> "call params"
             _ <- Lexer.parenClose
             pure ((flip . Call) l) <+> ex
+        
+        arrayIndex :: Parser (Expr SourcePos -> Expr SourcePos)
+        arrayIndex = Lexer.sqBracketOpen >> (flip . ArrayAccess <$> loc) <*> expression <* Lexer.sqBracketClose <?> "array indexing"
 
         -- This function has to exist
         recApply :: a -> [a -> a] -> a
@@ -45,7 +48,7 @@ postfixExpr = do
 
 
 primaryExpr :: Parser (Expr SourcePos)
-primaryExpr = try number <|> try identifier <|> try record <|> try paren <?> "primary expr"
+primaryExpr = try number <|> try identifier <|> try record <|> try array <|> try paren <?> "primary expr"
 
 identifier :: Parser (Expr SourcePos)
 identifier = EIdentifier <$> loc <*> Lexer.identifierStr <?> "identifier"
@@ -64,6 +67,14 @@ record = do
             _ <- Lexer.colon
             e <- expression <?> "field expr"
             pure (i, e)
+
+array :: Parser (Expr SourcePos)
+array = do
+    _ <- Lexer.sqBracketOpen
+    l <- loc
+    fx <- many (expression <* spaces <* optional Lexer.comma <* spaces) <?> "initial array elements"
+    _ <- Lexer.sqBracketClose
+    pure $ Array l fx
 
 paren :: Parser (Expr SourcePos)
 paren = between Lexer.parenOpen Lexer.parenClose expression <?> "parens"
