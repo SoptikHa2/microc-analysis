@@ -5,8 +5,8 @@ import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
 import Data.Maybe (fromJust)
-import Data.List (intercalate)
 import Debug.Trace (trace)
+import Data.Generics.Uniplate.Data (universeBi, transform)
 
 -- mapping from unknown IDs into types
 type Resolutions = M.Map Int Type
@@ -47,7 +47,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                 then Right tpt
                 else do
                     -- Apply substitutions to all types
-                    let tpt' = M.map (map (substitute substitutions)) tpt
+                    let tpt' = M.map (map (substitute (bindTypeVars substitutions))) tpt
                     go (trace ("\n---------\n" <> prettyPrintMTT (M.toList tpt')) tpt')
 
         isFinal :: M.Map (Typeable a) [Type] -> Bool
@@ -147,6 +147,27 @@ findSubstitutions tpt = do
 
         extras <> M.fromList [(uid, result) | Unknown uid <- types, Unknown uid /= result]
 
+bindTypeVars :: Resolutions -> Resolutions
+-- We may have a resolution that looks like: TypeVar 3 binds into -> Ptr (TypeVar 3)
+-- This will trigger infinite substitution. In this case, we want to 
+-- convert it to TypeVar3 binds into TypeVarBinding 3 (Ptr (BoundTypeVar 3))
+bindTypeVars = M.mapWithKey bind
+    where
+        unknownsInside t = [i | Unknown i <- universeBi t]
+
+        shouldBind :: Int -> Type -> Bool
+        shouldBind k v = k `elem` unknowns
+            where
+                unknowns = unknownsInside v
+
+        bind :: Int -> Type -> Type
+        bind k v | not $ shouldBind k v = v
+        -- bind
+        bind k v = TypeVarBinding k $ transform f v
+            where
+                f (Unknown i) | i == k = BoundTypeVar i
+                f x = x
+
 -- Apply substitutions recursively to a type
 substitute :: Resolutions -> Type -> Type
 substitute subst t@(Unknown uid) =
@@ -156,8 +177,7 @@ substitute subst t@(Unknown uid) =
 substitute subst (Ptr t) = Ptr (substitute subst t)
 substitute subst (Fun args ret) =
     Fun (map (substitute subst) args) (substitute subst ret)
-substitute subst (Record fields) =
-    Record [(name, substitute subst t) | (name, t) <- fields]
+substitute subst (Record fields) = Record [(name, substitute subst t) | (name, t) <- fields]
 substitute _ t = t
 
 

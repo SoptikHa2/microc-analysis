@@ -186,4 +186,4 @@ genConstraintsExpr _ e@(Number l _) = pure [(CExpr (show l) e, Int)]
 
 genConstraintsExpr f e@(EIdentifier l name) = do
     typ <- varType f name
-    pure [(CExpr (show l) e, (trace ("EID: " <> name <> " :: " <> show typ) typ))]
+    pure [(CExpr (show l) e, typ)]

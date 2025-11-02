@@ -1,4 +1,6 @@
-store(a,b) {
-    *b = a;
-    return 0;
+rectype() {
+  var node;
+  node = alloc {next: null};
+  (*node).next = node;
+  return node;
 }
