@@ -1,7 +1,7 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 module Analysis.Typecheck.Type where
-import Data.List (intercalate)
+import Data.List (intercalate, sortBy)
 import Data.Data (Data)
 
 data Type
@@ -21,7 +21,8 @@ instance Show Type where
   show Int = "Int"
   show (Ptr t) = "↑" ++ show t
   show (Fun args ret) = "(" ++ intercalate " -> " (show <$> args) ++ ") -> " ++ show ret
-  show (Record args) = "{" ++ intercalate "," ((\(n,t) -> n ++ ":" ++ show t) <$> args) ++ "}"
+  show (Record args) = "{" ++ intercalate "," ((\(n,t) -> n ++ ":" ++ show t) <$> 
+          (sortBy (\a b -> compare (fst a) (fst b)) args)) ++ "}"
   show (Array t) = "[" ++ show t ++ "]"
   show (Unknown i) = "?" ++ show i
   show (BoundTypeVar i) = "t" ++ show i
