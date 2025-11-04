@@ -209,11 +209,10 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     -- This is a record constructor/definition. Generate new unknown for each field.
     fieldTypes <- traverse (const newType) fields
     let recTypes = zip (fst <$> fields) fieldTypes
-    -- Generate fresh type variables for ALL other fields
+    -- Use bottom type for all other fields
     allFields <- gets allFieldNames
     let extraFields = filter (`notElem` (fst <$> fields)) allFields
-    extraFieldTypes <- traverse (const newType) extraFields
-    let extraFieldsTyping = zip extraFields extraFieldTypes
+    let extraFieldsTyping = zip extraFields (repeat Bottom)
     let recordType = Type.Record $ recTypes <> extraFieldsTyping
     -- Generate specific types per the expression
     let exprTypes = zip (snd <$> fields) fieldTypes

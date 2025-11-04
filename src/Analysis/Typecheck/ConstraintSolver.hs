@@ -81,6 +81,8 @@ solve ctx = (trace (prettyPrintCX ctx ++ "\n------") (go typesPerTypable)) >>= r
 
 merge :: String -> Type -> Type -> Either TypeError Type
 merge _ t1 t2 | t1 == t2 = Right t1
+merge l t1 Bottom = Left $ l ++ ": Cannot merge " ++ show t1 ++ " with ◇"
+merge l Bottom t2 = Left $ l ++ ": Cannot merge " ++ show t2 ++ " with ◇"
 merge _ t1@(Unknown _) (Unknown _) = Right t1
 merge _ t1 (Unknown _) = Right t1
 merge _ (Unknown _) t2 = Right t2
