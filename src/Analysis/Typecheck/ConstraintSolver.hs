@@ -80,6 +80,9 @@ solve ctx = go typesPerTypable >>= resolveResult
 
 merge :: String -> Type -> Type -> Either TypeError Type
 merge _ t1 t2 | t1 == t2 = Right t1
+-- Bottoms merge with unknowns (and bottoms via above) into Bottom
+merge _ (Unknown _) Bottom = Right Bottom
+merge _ Bottom (Unknown _) = Right Bottom
 merge l t1 Bottom = Left $ l ++ ": Cannot merge " ++ show t1 ++ " with ◇"
 merge l Bottom t2 = Left $ l ++ ": Cannot merge " ++ show t2 ++ " with ◇"
 merge _ t1@(Unknown _) (Unknown _) = Right t1

@@ -1,10 +1,9 @@
-main() {
-  var a,b,c,d;
-
-  a = {x: 1};
-  b = {x: &a};
-  c = {x: main};
-  d = {x: 1, y: &b};
-
-  return 0;
-}
+ main() {
+   var r,s;
+   r = { a: null, b: null };
+   s = { c: 1 };
+   r.a = &s;
+   r.b = &s;
+   s.c = 2;
+   return (*(r.a)).c + (*(r.b)).c;
+ }
