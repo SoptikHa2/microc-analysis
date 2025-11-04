@@ -1,19 +1,20 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Analysis.Typecheck.ConstraintSolver where
-import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, prettyPrintMTT)
+import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, prettyPrintMTT, prettyPrintCX)
 import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
 import Data.Maybe (fromJust)
 import Data.Generics.Uniplate.Data (universeBi, transform)
 import Data.List (sortBy)
+import Debug.Trace
 
 -- mapping from unknown IDs into types
 type Resolutions = M.Map Int Type
 
 -- Resolve Unknown types in the constraints by unification
 solve :: forall a . (Ord a, Show a) => Constraints a -> Either TypeError (M.Map (Typeable a) Type)
-solve ctx = go typesPerTypable >>= resolveResult
+solve ctx = (trace (prettyPrintCX ctx ++ "\n------") (go typesPerTypable)) >>= resolveResult
     where
         -- First of all, for each typeable, we
         -- find the list of possible types they contain.
@@ -48,7 +49,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                 else do
                     -- Apply substitutions to all types and clean up
                     let tpt' = M.map (map (cleanupType . substitute substitutions)) tpt
-                    go tpt'
+                    go (trace ("-----\n" ++ (prettyPrintMTT $ M.toList tpt')) tpt')
 
         isFinal :: M.Map (Typeable a) [Type] -> Bool
         isFinal tpt = not (any (any isUnknown) tpt)
@@ -79,8 +80,8 @@ solve ctx = go typesPerTypable >>= resolveResult
                     mergeAll (merged:rest)
 
 merge :: String -> Type -> Type -> Either TypeError Type
-merge l Bottom t2 = Left $ l ++ ": Record does not contain given field, attempted to use as " ++ show t2
-merge l t1 Bottom = Left $ l ++ ": Record does not contain given field, attempted to use as " ++ show t1
+merge l Bottom t2 = Right t2
+merge l t1 Bottom = Right t1
 merge _ t1 t2 | t1 == t2 = Right t1
 merge _ t1@(Unknown _) (Unknown _) = Right t1
 merge _ t1 (Unknown _) = Right t1
@@ -119,7 +120,7 @@ merge l (Fun args1 ret1) (Fun args2 ret2)
 merge l (Record fields1) (Record fields2) = do
     let sfields1 = sortBy (\a b -> compare (fst a) (fst b)) fields1
     let sfields2 = sortBy (\a b -> compare (fst a) (fst b)) fields2
-    mergedFields <- zipWithM mergeField sfields1 sfields2
+    mergedFields <- zipWithM mergeField (trace (show sfields1) sfields1) (trace (show sfields2) sfields2)
     return $ Record mergedFields
   where
     mergeField (n1, t1) (n2, t2)
@@ -236,5 +237,5 @@ substitute = go []
         go tv subst (Array t) = Array (go tv subst t)
         go tv subst (Fun args ret) =
             Fun (map (go tv subst) args) (go tv subst ret)
-        go tv subst (Record fields) = Record [(name, go tv subst t) | (name, t) <- fields]
+        go tv subst (Record fields) = Record [(name, go tv subst t) | (name, t) <- (trace ("fields during sub" ++ show fields) fields)]
         go _ _ t = t

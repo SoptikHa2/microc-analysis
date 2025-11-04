@@ -1,16 +1,10 @@
-foo(x) {
-    x[0] = 4;
-    return x;
-}
-
-bar() {
-    var a;
-    a = foo([2]);
-    return a[0];
-}
-
-main() {
-    var a;
-    a = bar();
-    return a;
-}
+ main() {
+   var r,s;
+   r = { a: null, b: null };
+   s = { c: 1 };
+   r.a = &s;
+   r.c = &s;
+   //s.c = 2;
+   //return (*(r.a)).c + (*(r.b)).c;
+   return 0;
+ }

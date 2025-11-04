@@ -20,8 +20,8 @@ instance Show Type where
   show :: Type -> String
   show Int = "Int"
   show (Ptr t) = "↑" ++ show t
-  show (Fun args ret) = intercalate " -> " (show <$> args) ++ " -> " ++ show ret
-  show (Record args) = "{ " ++ show args ++ " }"
+  show (Fun args ret) = "(" ++ intercalate " -> " (show <$> args) ++ ") -> " ++ show ret
+  show (Record args) = "{" ++ intercalate "," ((\(n,t) -> n ++ ":" ++ show t) <$> args) ++ "}"
   show (Array t) = "[" ++ show t ++ "]"
   show (Unknown i) = "?" ++ show i
   show (BoundTypeVar i) = "t" ++ show i
