@@ -7,7 +7,6 @@ import qualified Data.Map as M
 import Analysis.Typecheck.Type
 import Data.Maybe (fromMaybe)
 import qualified Analysis.Typecheck.Type as Type
-import Debug.Trace
 
 
 data TypeState = TypeState {
@@ -221,7 +220,7 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     nestedCtx <- traverse (genConstraintsExpr f) (snd <$> fields)
 
     pure $ [
-        (CExpr (show l) e, (trace ("Outputting record type " ++ show recordType ++ "\n\n") recordType))
+        (CExpr (show l) e, recordType)
         ] <> typeableTypes <> concat nestedCtx
 
 genConstraintsExpr f e@(Parse.AST.Array l items) = do
