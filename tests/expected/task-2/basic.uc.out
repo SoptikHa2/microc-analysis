@@ -1,6 +1,6 @@
 ---
 test: type suites/task-2/basic.uc
 ---
-⟦f(){...}:[1:1]⟧ = () -> int
+[f() :: "suites/task-2/basic.uc" (line 1, column 1)] = () -> Int
 
 exit: 0

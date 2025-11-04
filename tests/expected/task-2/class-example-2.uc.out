@@ -1,9 +1,6 @@
 ---
 test: type suites/task-2/class-example-2.uc
 ---
-suites/task-2/class-example-2.uc:7:8: type error: Cannot unify '⟦1[7:8]⟧' and 'int' (with canonicals '↑⟦(*y)[6:8]⟧' and 'int')
-     y = 1;
-         ^
-
+"suites/task-2/class-example-2.uc" (line 7, column 7): The type is Int, but should be ↑?6
 
 exit: 1

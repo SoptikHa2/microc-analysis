@@ -114,10 +114,13 @@ typeCheckProgram filepath = go `catch` \e -> do
           exitFailure
         Right prog -> do
           -- Run type analysis
-          putStrLn $ case getTyping prog of
-            Right typing -> printTyping typing
-            Left e -> e
-          exitSuccess
+          case getTyping prog of
+            Right typing -> do
+              putStrLn $ printTyping typing
+              exitSuccess
+            Left e -> do
+              putStrLn e
+              exitWith $ ExitFailure 1
 
 -- Find a function by name in the program
 findFunction :: Identifier -> Program a -> Maybe (FunDecl a)

@@ -1,9 +1,9 @@
 ---
 test: type suites/task-2/basic-records-with-pointers.uc
 ---
-⟦f(){...}:[1:2]⟧ = () -> int
-⟦n[2:8]⟧ = int
-⟦a[2:10]⟧ = ↑µt2.{h:int,t:↑t2}
-⟦b[2:12]⟧ = ↑µt2.{h:int,t:↑t2}
+[f() :: "suites/task-2/basic-records-with-pointers.uc" (line 1, column 1)] = () -> Int
+[a :: f:"suites/task-2/basic-records-with-pointers.uc" (line 1, column 1)] = ↑{h:Int,t:↑μ t2 . {h:Int,t:↑t2}}
+[b :: f:"suites/task-2/basic-records-with-pointers.uc" (line 1, column 1)] = ↑μ t2 . {h:Int,t:↑t2}
+[n :: f:"suites/task-2/basic-records-with-pointers.uc" (line 1, column 1)] = Int
 
 exit: 0

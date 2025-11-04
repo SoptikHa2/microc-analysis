@@ -1,8 +1,8 @@
 ---
 test: type suites/task-2/assign-to-records.uc
 ---
-⟦main(){...}:[1:2]⟧ = () -> int
-⟦r[2:8]⟧ = {a:↑{a:◇,b:◇,c:int},b:↑{a:◇,b:◇,c:int},c:◇}
-⟦s[2:10]⟧ = {a:◇,b:◇,c:int}
+[main() :: "suites/task-2/assign-to-records.uc" (line 1, column 1)] = () -> Int
+[r :: main:"suites/task-2/assign-to-records.uc" (line 1, column 1)] = {a:↑{a:◇,b:◇,c:Int},b:↑{a:◇,b:◇,c:Int},c:◇}
+[s :: main:"suites/task-2/assign-to-records.uc" (line 1, column 1)] = {a:◇,b:◇,c:Int}
 
 exit: 0
