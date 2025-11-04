@@ -13,7 +13,6 @@ data Type
     | Unknown Int -- unknown type of ID [Int] (also, free type var, but in distinct type)
     | BoundTypeVar Int
     | TypeVarBinding Int Type
-    | Bottom
     deriving (Eq, Data)
 
 instance Show Type where
@@ -23,10 +22,9 @@ instance Show Type where
   show (Fun args ret) = "(" ++ intercalate " -> " (show <$> args) ++ ") -> " ++ show ret
   show (Record args) = "{" ++ intercalate "," ((\(n,t) -> n ++ ":" ++ show t) <$> args) ++ "}"
   show (Array t) = "[" ++ show t ++ "]"
-  show (Unknown i) = "?" ++ show i
+  show (Unknown _) = "◇"
   show (BoundTypeVar i) = "t" ++ show i
   show (TypeVarBinding i t) = "μ t" ++ show i ++ " . " ++ show t
-  show Bottom = "◇"
 
 
 type TypeError = String

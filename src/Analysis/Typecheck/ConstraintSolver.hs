@@ -80,8 +80,6 @@ solve ctx = (trace (prettyPrintCX ctx ++ "\n------") (go typesPerTypable)) >>= r
                     mergeAll (merged:rest)
 
 merge :: String -> Type -> Type -> Either TypeError Type
-merge l Bottom t2 = Right t2
-merge l t1 Bottom = Right t1
 merge _ t1 t2 | t1 == t2 = Right t1
 merge _ t1@(Unknown _) (Unknown _) = Right t1
 merge _ t1 (Unknown _) = Right t1
@@ -89,7 +87,6 @@ merge _ (Unknown _) t2 = Right t2
 merge _ (BoundTypeVar i1) (BoundTypeVar i2) | i1 == i2 = Right (BoundTypeVar i1)
 -- Recursive types
 merge l (TypeVarBinding i1 body1) (TypeVarBinding i2 body2) = do
-        -- TODO: this is wrong
         let normalizedBody2 = replaceBoundVar i2 i1 body2
         mergedBodies <- merge l body1 normalizedBody2
         Right (TypeVarBinding i1 mergedBodies)

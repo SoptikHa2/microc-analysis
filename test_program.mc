@@ -1,10 +1,17 @@
- main() {
-   var r,s;
-   r = { a: null, b: null };
-   s = { c: 1 };
-   r.a = &s;
-   r.c = &s;
-   //s.c = 2;
-   //return (*(r.a)).c + (*(r.b)).c;
-   return 0;
- }
+list_append(list, x) {
+  var node;
+  node = alloc {v: x, prev: list, next: null};
+  if (list == null) {
+  } else {
+      (*list).next = node;
+  }
+
+  return node;
+}
+
+main(n) {
+  var list;
+  list = null;
+  list = list_append(list, 1);
+  return 0;
+}

@@ -168,11 +168,13 @@ genConstraintsExpr f e@(FieldAccess _ target field) = do
     targetT <- genConstraintsExpr f target
     allFields <- gets allFieldNames
     let extraFields = filter (`notElem` [field]) allFields
-    let extraFieldsTyping = (\n -> (n, Bottom)) <$> extraFields
+    -- Use fresh type variables for non-accessed fields
+    extraFieldTypes <- traverse (const newType) extraFields
+    let extraFieldsTyping = zip extraFields extraFieldTypes
 
     pure $ [
         (CExpr (show $ exprLoc e) e, fieldType),
-        (CExpr (show $ exprLoc target) target, 
+        (CExpr (show $ exprLoc target) target,
             Type.Record ([(field, fieldType)] <> extraFieldsTyping))
         ] <> targetT
 
@@ -207,10 +209,11 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
     -- This is a record constructor/definition. Generate new unknown for each field.
     fieldTypes <- traverse (const newType) fields
     let recTypes = zip (fst <$> fields) fieldTypes
-    -- We need to create bottom types for fields not explicitly mentioned
+    -- Generate fresh type variables for ALL other fields
     allFields <- gets allFieldNames
     let extraFields = filter (`notElem` (fst <$> fields)) allFields
-    let extraFieldsTyping = (\n -> (n, Bottom)) <$> extraFields
+    extraFieldTypes <- traverse (const newType) extraFields
+    let extraFieldsTyping = zip extraFields extraFieldTypes
     let recordType = Type.Record $ recTypes <> extraFieldsTyping
     -- Generate specific types per the expression
     let exprTypes = zip (snd <$> fields) fieldTypes
