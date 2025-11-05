@@ -80,55 +80,66 @@ solve ctx = (trace (prettyPrintCX ctx ++ "\n------") (go typesPerTypable)) >>= r
                     mergeAll (merged:rest)
 
 merge :: String -> Type -> Type -> Either TypeError Type
-merge _ t1 t2 | t1 == t2 = Right t1
+merge = mergeWithAssumptions []
+
+-- I need to keep list of type pairs already paired together
+-- reason: there exist pairs of recursive types that, when
+-- merged, merge into the same pair (but reversed), which loops
+-- indefinitely. Yaiks
+mergeWithAssumptions :: [(Type, Type)] -> String -> Type -> Type -> Either TypeError Type
+mergeWithAssumptions assumptions _ t1 t2
+    | (t1, t2) `elem` assumptions = Right t1
+    | (t2, t1) `elem` assumptions = Right t1
+mergeWithAssumptions _ _ t1 t2 | t1 == t2 = Right t1
 -- Bottoms merge with unknowns (and bottoms via above) into Bottom
-merge _ (Unknown _) Bottom = Right Bottom
-merge _ Bottom (Unknown _) = Right Bottom
-merge l t1 Bottom = Left $ l ++ ": Cannot merge " ++ show t1 ++ " with ◇"
-merge l Bottom t2 = Left $ l ++ ": Cannot merge " ++ show t2 ++ " with ◇"
-merge _ t1@(Unknown _) (Unknown _) = Right t1
-merge _ t1 (Unknown _) = Right t1
-merge _ (Unknown _) t2 = Right t2
-merge _ (BoundTypeVar i1) (BoundTypeVar i2) | i1 == i2 = Right (BoundTypeVar i1)
+mergeWithAssumptions _ _ (Unknown _) Bottom = Right Bottom
+mergeWithAssumptions _ _ Bottom (Unknown _) = Right Bottom
+mergeWithAssumptions _ l t1 Bottom = Left $ l ++ ": Cannot merge " ++ show t1 ++ " with ◇"
+mergeWithAssumptions _ l Bottom t2 = Left $ l ++ ": Cannot merge " ++ show t2 ++ " with ◇"
+mergeWithAssumptions _ _ t1@(Unknown _) (Unknown _) = Right t1
+mergeWithAssumptions _ _ t1 (Unknown _) = Right t1
+mergeWithAssumptions _ _ (Unknown _) t2 = Right t2
+mergeWithAssumptions _ _ (BoundTypeVar i1) (BoundTypeVar i2) | i1 == i2 = Right (BoundTypeVar i1)
 -- Recursive types
-merge l (TypeVarBinding i1 body1) (TypeVarBinding i2 body2) = do
+mergeWithAssumptions assumptions l tvb1@(TypeVarBinding i1 body1) tvb2@(TypeVarBinding i2 body2) = do
         let normalizedBody2 = replaceBoundVar i2 i1 body2
-        mergedBodies <- merge l body1 normalizedBody2
+        let newAssumptions = (tvb1, tvb2) : assumptions
+        mergedBodies <- mergeWithAssumptions newAssumptions l body1 normalizedBody2
         Right (TypeVarBinding i1 mergedBodies)
 -- send bound type vars to left
-merge l t1 t2@(TypeVarBinding _ _) = merge l t2 t1
-merge l (TypeVarBinding i1 body1) t2 =
+mergeWithAssumptions assumptions l t1 t2@(TypeVarBinding _ _) = mergeWithAssumptions assumptions l t2 t1
+mergeWithAssumptions assumptions l tvb@(TypeVarBinding i1 body1) t2 =
     -- First try to merge the body directly
-    -- TODO: This is weird and maybe wrong
-    case merge l body1 t2 of
+    let newAssumptions = (tvb, t2) : assumptions
+    in case mergeWithAssumptions newAssumptions l body1 t2 of
         Right mergedBody -> Right (TypeVarBinding i1 mergedBody)
         Left _ ->
             -- If that fails, try unfolding once
-            case merge l (unfoldOnce i1 body1) t2 of
+            case mergeWithAssumptions newAssumptions l (unfoldOnce i1 body1) t2 of
                 Right unfolded -> Right (TypeVarBinding i1 unfolded)
                 Left err2 -> Left err2
 -- Ptr
-merge l (Ptr t1) (Ptr t2) = Ptr <$> merge l t1 t2
+mergeWithAssumptions assumptions l (Ptr t1) (Ptr t2) = Ptr <$> mergeWithAssumptions assumptions l t1 t2
 -- Array
-merge l (Array t1) (Array t2) = Array <$> merge l t1 t2
+mergeWithAssumptions assumptions l (Array t1) (Array t2) = Array <$> mergeWithAssumptions assumptions l t1 t2
 -- Fun
-merge l (Fun args1 ret1) (Fun args2 ret2)
+mergeWithAssumptions assumptions l (Fun args1 ret1) (Fun args2 ret2)
     | length args1 == length args2 = do
-        mergedArgs <- zipWithM (merge l) args1 args2
-        mergedRet <- merge l ret1 ret2
+        mergedArgs <- zipWithM (mergeWithAssumptions assumptions l) args1 args2
+        mergedRet <- mergeWithAssumptions assumptions l ret1 ret2
         return $ Fun mergedArgs mergedRet
     | otherwise = Left $ l ++ ": Function being called has arity " ++ show (length args1) ++ ", but should have " ++ show (length args2)
 -- Record
-merge l (Record fields1) (Record fields2) = do
+mergeWithAssumptions assumptions l (Record fields1) (Record fields2) = do
     let sfields1 = sortBy (\a b -> compare (fst a) (fst b)) fields1
     let sfields2 = sortBy (\a b -> compare (fst a) (fst b)) fields2
     mergedFields <- zipWithM mergeField (trace (show sfields1) sfields1) (trace (show sfields2) sfields2)
     return $ Record mergedFields
   where
     mergeField (n1, t1) (n2, t2)
-        | n1 == n2 = (,) n1 <$> merge l t1 t2
+        | n1 == n2 = (,) n1 <$> mergeWithAssumptions assumptions l t1 t2
         | otherwise = Left $ l ++ ": Field name mismatch: " <> n1 <> " vs " <> n2
-merge l t1 t2 = Left $ l ++ ": The type is " <> show t1 <> ", but should be " <> show t2
+mergeWithAssumptions _ l t1 t2 = Left $ l ++ ": The type is " <> show t1 <> ", but should be " <> show t2
 
 -- Unfold a recursive type
 unfoldOnce :: Int -> Type -> Type
