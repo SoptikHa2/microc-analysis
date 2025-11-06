@@ -1,9 +1,7 @@
 ---
 test: type suites/task-2/missing-field-1.uc
 ---
-suites/task-2/missing-field-1.uc:5:12: type error: Access to an undefined field 'c'
-     return x.c; 
-             ^
-
+Attempted to use a bottom type. Maybe you attempted to extract a nonexistent field from a record? Use semantic analyzer for precise details.
+[f() :: "suites/task-2/missing-field-1.uc" (line 1, column 1)] = () -> ◇
 
 exit: 1

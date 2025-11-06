@@ -1,21 +1,20 @@
 ---
 test: type suites/task-2/hof.uc
 ---
-⟦not_end(l[1:10]){...}:[1:2]⟧ = (↑µt8.{h:int,t:↑t8}) -> int
-⟦l[1:10]⟧ = ↑µt8.{h:int,t:↑t8}
-⟦x[2:8]⟧ = int
-⟦map(l[11:6],f[11:9]){...}:[11:2]⟧ = (↑µt8.{h:int,t:↑t8},(int) -> int) -> ↑t9
-⟦l[11:6]⟧ = ↑µt8.{h:int,t:↑t8}
-⟦f[11:9]⟧ = (int) -> int
-⟦xs[12:8]⟧ = ↑µt8.{h:int,t:↑t8}
-⟦g[12:11]⟧ = t10
-⟦h[12:13]⟧ = int
-⟦foo(x[26:6]){...}:[26:2]⟧ = (int) -> int
-⟦x[26:6]⟧ = int
-⟦main(){...}:[30:2]⟧ = () -> int
-⟦h[31:8]⟧ = ↑µt8.{h:int,t:↑t8}
-⟦t[31:10]⟧ = ↑µt8.{h:int,t:↑t8}
-⟦n[31:12]⟧ = int
-⟦z[31:14]⟧ = ↑t9
+[not_end() :: "suites/task-2/hof.uc" (line 1, column 1)] = (↑{h:Int,t:μ t20 . ↑{h:Int,t:t20}}) -> Int
+[foo() :: "suites/task-2/hof.uc" (line 24, column 3)] = (Int) -> Int
+[main() :: "suites/task-2/hof.uc" (line 28, column 3)] = () -> Int
+[map() :: "suites/task-2/hof.uc" (line 9, column 3)] = (↑{h:Int,t:μ t20 . ↑{h:Int,t:t20}} -> (Int) -> Int) -> ↑?36
+[l :: "suites/task-2/hof.uc" (line 1, column 1)] = ↑{h:Int,t:μ t20 . ↑{h:Int,t:t20}}
+[x :: "suites/task-2/hof.uc" (line 24, column 3)] = Int
+[f :: "suites/task-2/hof.uc" (line 9, column 3)] = (Int) -> Int
+[l :: "suites/task-2/hof.uc" (line 9, column 3)] = ↑{h:Int,t:μ t20 . ↑{h:Int,t:t20}}
+[h :: main:"suites/task-2/hof.uc" (line 28, column 3)] = ↑{h:Int,t:↑μ t42 . {h:Int,t:↑t42}}
+[n :: main:"suites/task-2/hof.uc" (line 28, column 3)] = Int
+[t :: main:"suites/task-2/hof.uc" (line 28, column 3)] = ↑μ t42 . {h:Int,t:↑t42}
+[z :: main:"suites/task-2/hof.uc" (line 28, column 3)] = ↑?36
+[h :: map:"suites/task-2/hof.uc" (line 9, column 3)] = Int
+[xs :: map:"suites/task-2/hof.uc" (line 9, column 3)] = ↑{h:Int,t:μ t20 . ↑{h:Int,t:t20}}
+[x :: not_end:"suites/task-2/hof.uc" (line 1, column 1)] = Int
 
 exit: 0

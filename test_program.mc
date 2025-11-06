@@ -1,6 +1,11 @@
- f() {
-   var x, y;
-   x = { a: 1, b: 2 };
-   y = x.a;
-   return x.c; 
- }
+main() {
+    var n, k, r1;
+
+    k = {f: 4};
+    n = alloc {p: 4, q: null};
+    *n = {p: 44, q: &k};
+    r1 = (*(*n).q).f;
+    output r1; // outputs 4
+
+    return 0;
+}

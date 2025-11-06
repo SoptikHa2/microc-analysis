@@ -1,10 +1,10 @@
 ---
 test: type suites/task-2/records-with-all.uc
 ---
-⟦main(){...}:[1:1]⟧ = () -> int
-⟦a[2:9]⟧ = {x:int,y:◇}
-⟦b[2:11]⟧ = {x:↑{x:int,y:◇},y:◇}
-⟦c[2:13]⟧ = {x:() -> int,y:◇}
-⟦d[2:15]⟧ = {x:int,y:↑{x:↑{x:int,y:◇},y:◇}}
+[main() :: "suites/task-2/records-with-all.uc" (line 1, column 1)] = () -> Int
+[a :: main:"suites/task-2/records-with-all.uc" (line 1, column 1)] = {x:Int,y:◇}
+[b :: main:"suites/task-2/records-with-all.uc" (line 1, column 1)] = {x:↑{x:Int,y:◇},y:◇}
+[c :: main:"suites/task-2/records-with-all.uc" (line 1, column 1)] = {x:() -> Int,y:◇}
+[d :: main:"suites/task-2/records-with-all.uc" (line 1, column 1)] = {x:Int,y:↑{x:↑{x:Int,y:◇},y:◇}}
 
 exit: 0
