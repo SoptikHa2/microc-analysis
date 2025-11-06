@@ -1,9 +1,7 @@
 ---
 test: type suites/task-2/missing-field-2.uc
 ---
-suites/task-2/missing-field-2.uc:6:15: type error: Cannot unify '◇' and '⟦(*(*n).a).b[6:21]⟧' (with canonicals '◇' and 'int')
-      output (*(*n).a).b; // error: missing field
-                ^
+Attempted to use a bottom type. Maybe you attempted to extract a nonexistent field from a record? Use semantic analyzer for precise details.
 
 
 exit: 1

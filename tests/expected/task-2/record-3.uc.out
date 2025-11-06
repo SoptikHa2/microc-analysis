@@ -1,9 +1,9 @@
 ---
 test: type suites/task-2/record-3.uc
 ---
-⟦main(){...}:[1:1]⟧ = () -> int
-⟦n[2:9]⟧ = ↑{f:◇,p:int,q:↑{f:int,p:◇,q:◇}}
-⟦k[2:12]⟧ = {f:int,p:◇,q:◇}
-⟦r1[2:15]⟧ = int
+[main() :: "suites/task-2/record-3.uc" (line 1, column 1)] = () -> Int
+[k :: main:"suites/task-2/record-3.uc" (line 1, column 1)] = {f:Int,p:◇,q:◇}
+[n :: main:"suites/task-2/record-3.uc" (line 1, column 1)] = ↑{f:◇,p:Int,q:↑{f:Int,p:◇,q:◇}}
+[r1 :: main:"suites/task-2/record-3.uc" (line 1, column 1)] = Int
 
 exit: 0

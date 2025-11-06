@@ -1,11 +1,9 @@
 main() {
-    var n, k, r1;
+    var n, k;
 
-    k = {f: 4};
-    n = alloc {p: 4, q: null};
-    *n = {p: 44, q: &k};
-    r1 = (*(*n).q).f;
-    output r1; // outputs 4
+    k = {a: 1};
+    n = alloc {a: &k, b: 2};
+    output (*(*n).a).b; // error: missing field
 
     return 0;
 }
