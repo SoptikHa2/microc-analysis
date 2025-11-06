@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Analysis.Typecheck.ConstraintSolver where
-import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, prettyPrintMTT, prettyPrintCX, printTyping)
+import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, prettyPrintMTT, prettyPrintCX, printTyping, printAllTyping)
 import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
@@ -76,7 +76,7 @@ solve ctx = go typesPerTypable >>= resolveResult
             typeError typ =
                 if not $ null invalidTypeables
                     then Just $ "Attempted to use a bottom type. Maybe you attempted to extract a nonexistent field from a record? "
-                             ++ "Use semantic analyzer for precise details.\n" ++ printTyping invalidTypeables
+                             ++ "Use semantic analyzer for precise details.\n" ++ printAllTyping invalidTypeables
                     else Nothing
                 where
                     invalidTypeables = 

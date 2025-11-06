@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE InstanceSigs #-}
-module Analysis.Typecheck.Constraints (Typeable(..), Constraints, typeableLoc, prettyPrintMTT, prettyPrintCX, printTyping) where
+module Analysis.Typecheck.Constraints (Typeable(..), Constraints, typeableLoc, prettyPrintMTT, prettyPrintCX, printTyping, printAllTyping) where
 import Parse.AST
 import Analysis.Typecheck.Type
 import Data.List (intercalate)
@@ -29,9 +29,16 @@ prettyPrintCX :: Show a => Constraints a -> String
 prettyPrintCX cx = prettyPrintMTT ((\(ty, tp) -> (ty, [tp])) <$> cx)
 
 printTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
-printTyping m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
+printTyping = printTyping' False
+printAllTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
+printAllTyping = printTyping' True
+
+-- bool: include expr types?
+printTyping' :: forall a . (Show a) => Bool -> (M.Map (Typeable a) Type) -> String
+printTyping' includeExpr m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
     where
         go :: Show a => (Typeable a) -> Type -> String
-        go (CExpr _ _) _ = ""
+        go (CExpr l _) t | includeExpr = "[Expression at " ++ l ++ "] = " ++ show t
+        go (CExpr _ _) _ | not includeExpr = ""
         go (CFun l f) t = "[" ++ f.name ++ "() :: " ++ l ++ "] = " ++ show t
         go (CId l i) t = "[" ++ i ++ " :: " ++ l ++ "] = " ++ show t

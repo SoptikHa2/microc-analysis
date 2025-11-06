@@ -2,6 +2,6 @@
 test: type suites/task-2/missing-field-2.uc
 ---
 Attempted to use a bottom type. Maybe you attempted to extract a nonexistent field from a record? Use semantic analyzer for precise details.
-
+[Expression at "suites/task-2/missing-field-2.uc" (line 6, column 22)] = ◇
 
 exit: 1
