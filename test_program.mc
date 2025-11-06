@@ -1,11 +1,17 @@
-id(x) {
-    return x;
+list_append(list, x) {
+    var node;
+    node = alloc {v: x, prev: list, next: null};
+    if (list == null) {
+    } else {
+        (*list).next = node;
+    }
+
+    return node;
 }
 
-main() {
-    var x, y, z;
-    x = 1;
-    y = id(x);
-    z = id(&y);
+main(n) {
+    var list;
+    list = null;
+    list = list_append(list, 1);
     return 0;
 }
