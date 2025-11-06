@@ -7,14 +7,13 @@ import qualified Data.Map as M
 import Data.Maybe (fromJust)
 import Data.Generics.Uniplate.Data (universeBi, transform)
 import Data.List (sortBy)
-import Debug.Trace
 
 -- mapping from unknown IDs into types
 type Resolutions = M.Map Int Type
 
 -- Resolve Unknown types in the constraints by unification
 solve :: forall a . (Ord a, Show a) => Constraints a -> Either TypeError (M.Map (Typeable a) Type)
-solve ctx = (trace (prettyPrintCX ctx ++ "\n------") (go typesPerTypable)) >>= resolveResult
+solve ctx = go typesPerTypable >>= resolveResult
     where
         -- First of all, for each typeable, we
         -- find the list of possible types they contain.
@@ -49,7 +48,7 @@ solve ctx = (trace (prettyPrintCX ctx ++ "\n------") (go typesPerTypable)) >>= r
                 else do
                     -- Apply substitutions to all types and clean up
                     let tpt' = M.map (map (cleanupType . substitute substitutions)) tpt
-                    go (trace ("-----\n" ++ (prettyPrintMTT $ M.toList tpt')) tpt')
+                    go tpt'
 
         isFinal :: M.Map (Typeable a) [Type] -> Bool
         isFinal tpt = not (any (any isUnknown) tpt)
@@ -169,7 +168,7 @@ mergeWithAssumptions assumptions l (Fun args1 ret1) (Fun args2 ret2)
 mergeWithAssumptions assumptions l (Record fields1) (Record fields2) = do
     let sfields1 = sortBy (\a b -> compare (fst a) (fst b)) fields1
     let sfields2 = sortBy (\a b -> compare (fst a) (fst b)) fields2
-    mergedFields <- zipWithM mergeField (trace (show sfields1) sfields1) (trace (show sfields2) sfields2)
+    mergedFields <- zipWithM mergeField sfields1 sfields2
     return $ Record mergedFields
   where
     mergeField (n1, t1) (n2, t2)
@@ -274,7 +273,7 @@ substitute = go []
         go tv _ (Unknown uid) | uid `elem` tv = BoundTypeVar uid
         go tv subst t@(Unknown uid) =
             case M.lookup uid subst of
-                Just t' -> --substitute subst t'  -- Follow chains
+                Just t' ->
                     -- We may need to insert type vars
                     if null [u | u@(Unknown _ ) <- universeBi t']
                         -- no nested unknowns - we may quit
@@ -286,5 +285,5 @@ substitute = go []
         go tv subst (Array t) = Array (go tv subst t)
         go tv subst (Fun args ret) =
             Fun (map (go tv subst) args) (go tv subst ret)
-        go tv subst (Record fields) = Record [(name, go tv subst t) | (name, t) <- (trace ("fields during sub" ++ show fields) fields)]
+        go tv subst (Record fields) = Record [(name, go tv subst t) | (name, t) <- fields]
         go _ _ t = t
