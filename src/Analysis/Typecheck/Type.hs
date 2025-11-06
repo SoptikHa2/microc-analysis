@@ -1,8 +1,9 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 module Analysis.Typecheck.Type where
-import Data.List (intercalate, sortBy)
+import Data.List (intercalate, sortBy, sort, nub)
 import Data.Data (Data)
+import Data.Maybe (catMaybes)
 
 data Type
     = Int

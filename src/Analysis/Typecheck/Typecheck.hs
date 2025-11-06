@@ -8,7 +8,7 @@ import Control.Monad.Identity (runIdentity)
 import qualified Data.Map as M
 import Analysis.Typecheck.Constraints
 import Analysis.Typecheck.ConstraintSolver (solve)
-import Data.List (intercalate)
+import Data.List (intercalate, nub)
 import Data.Generics.Uniplate.Data (universeBi)
 import Analysis.Typecheck.ConstraintGenerator
 import Control.Monad.State
@@ -23,7 +23,7 @@ getAllFieldsNames fun = fieldNames
 verify :: (Show a, Data a, Ord a) => [FunDecl a] -> [TypeError]
 verify funcs = do
     -- Generate constraints per function
-    let fn = concat $ getAllFieldsNames <$> funcs
+    let fn = nub $ concat $ getAllFieldsNames <$> funcs
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
 
     case solve (concat cx) of
@@ -33,6 +33,6 @@ verify funcs = do
 getTyping :: (Show a, Data a, Ord a) => [FunDecl a] -> Either TypeError (M.Map (Typeable a) Type)
 getTyping funcs = do
     -- Generate constraints per function
-    let fn = concat $ getAllFieldsNames <$> funcs
+    let fn = nub $ concat $ getAllFieldsNames <$> funcs
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
     solve (concat cx)
