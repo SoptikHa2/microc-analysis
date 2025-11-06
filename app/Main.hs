@@ -13,7 +13,8 @@ import qualified Interpreter.State as IS
 import Interpreter.Interpret (evalFun)
 import Interpreter.Data (Value(..))
 import Analysis.Analysis (runAnalysis)
-import Analysis.Typecheck.Typecheck (getTyping, printTyping)
+import Analysis.Typecheck.Typecheck (getTyping)
+import Analysis.Typecheck.Constraints (printTyping)
 import Control.Exception
 import Error
 

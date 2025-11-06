@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Analysis.Typecheck.ConstraintSolver where
-import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, prettyPrintMTT, prettyPrintCX)
+import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, prettyPrintMTT, prettyPrintCX, printTyping)
 import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M
@@ -63,14 +63,50 @@ solve ctx = (trace (prettyPrintCX ctx ++ "\n------") (go typesPerTypable)) >>= r
 
 
         resolveResult :: M.Map (Typeable a) [Type] -> Either TypeError (M.Map (Typeable a) Type)
-        resolveResult tpt = M.traverseWithKey finalizeType tpt
+        resolveResult tpt = do
+            finalTyping <- M.traverseWithKey finalizeType tpt
+
+            case typeError finalTyping of
+                Just err -> Left err
+                Nothing -> Right finalTyping
           where
+
+            -- Failure condition: we see a bottom type (except in a field)
+            -- (we extracted bottom from a field or so)
+            typeError :: M.Map (Typeable a) Type -> Maybe TypeError
+            typeError typ =
+                if not $ null invalidTypeables
+                    then Just $ "Attempted to use a bottom type. Maybe you attempted to extract a nonexistent field from a record? "
+                             ++ "Use semantic analyzer for precise details.\n" ++ printTyping invalidTypeables
+                    else Nothing
+                where
+                    invalidTypeables = 
+                        M.filter isInvalid typ
+
+                    isInvalid :: Type -> Bool
+                    isInvalid Int = False
+                    isInvalid (Ptr t) = isInvalid t
+                    isInvalid (Fun tx rt) = any isInvalid tx || isInvalid rt
+                    isInvalid (Record fields) = any isInvalid ftypesNotBottom
+                        where
+                            ftypes = snd <$> fields
+                            -- Bottom directly in fields are alright
+                            ftypesNotBottom = filter (/= Bottom) ftypes
+                    isInvalid (Array t) = isInvalid t
+                    -- Possible failure condition: we see a free typevar. That would mean
+                    -- that infer didn't infer everything 100%, but we odn't require that.
+                    isInvalid (Unknown _) = False
+                    isInvalid (BoundTypeVar _) = False
+                    isInvalid (TypeVarBinding _ t) = isInvalid t
+                    isInvalid Bottom = True
+
+
             finalizeType :: (Typeable a) -> [Type] -> Either TypeError Type
             finalizeType _ [] = Left "No types for typeable"
             finalizeType _ [t] = Right t
             finalizeType typ types =
                 -- After resolution, all types should be the same
-                -- Merge them one final time to verify compatibility
+                -- Merge them one to verify that they are
                 mergeAll types
               where
                 mergeAll [] = Left "Empty type list"

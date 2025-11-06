@@ -102,13 +102,15 @@ genConstraintsStmt :: (Show a, Data a) => FunDecl a -> Stmt a -> State TypeState
 genConstraintsStmt f (OutputStmt _ e) = genConstraintsExpr f e
 
 genConstraintsStmt f (WhileStmt _ cond body) = do
+        condC <- genConstraintsExpr f cond
         bodyC <- genConstraintsStmt f body
-        pure $ (CExpr (show $ exprLoc cond) cond, Int) : bodyC
+        pure $ (CExpr (show $ exprLoc cond) cond, Int) : (condC <> bodyC)
 
 genConstraintsStmt f (IfStmt _ cond truB falsB) = do
+        condC <- genConstraintsExpr f cond
         truC <- genConstraintsStmt f truB
         falsC <- fromMaybe [] <$> traverse (genConstraintsStmt f) falsB
-        pure $ (CExpr (show $ exprLoc cond) cond, Int) : (truC <> falsC)
+        pure $ (CExpr (show $ exprLoc cond) cond, Int) : (condC <> truC <> falsC)
 
 genConstraintsStmt f (Block _ stmtx) = concat <$> traverse (genConstraintsStmt f) stmtx
 
@@ -163,10 +165,14 @@ genConstraintsExpr _ e@(Null l) = do
 
 genConstraintsExpr f e@(FieldAccess _ target field) = do
     -- Target has to be record type that contains current field
-    -- with type equal to the result of this expression
-    fieldType <- newType
-    targetT <- genConstraintsExpr f target
+    -- with type equal to the result of this expression.
+    -- Except for when the field does not exist, then it is a bottom type.
     allFields <- gets allFieldNames
+
+    fieldType <- if field `elem` allFields
+                    then newType
+                    else pure Bottom
+    targetT <- genConstraintsExpr f target
     let extraFields = filter (`notElem` [field]) allFields
     -- Use fresh type variables for non-accessed fields
     extraFieldTypes <- traverse (const newType) extraFields

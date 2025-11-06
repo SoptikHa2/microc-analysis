@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Analysis.Typecheck.Typecheck (verify, getTyping, printTyping) where
+module Analysis.Typecheck.Typecheck (verify, getTyping) where
 import Data.Data (Data)
 import Parse.AST
 import Analysis.Typecheck.Type
@@ -36,11 +36,3 @@ getTyping funcs = do
     let fn = concat $ getAllFieldsNames <$> funcs
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
     solve (concat cx)
-
-printTyping :: forall a . (Show a) => (M.Map (Typeable a) Type) -> String
-printTyping m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
-    where
-        go :: Show a => (Typeable a) -> Type -> String
-        go (CExpr _ _) _ = ""
-        go (CFun l f) t = "[" ++ f.name ++ "() :: " ++ l ++ "] = " ++ show t
-        go (CId l i) t = "[" ++ i ++ " :: " ++ l ++ "] = " ++ show t
