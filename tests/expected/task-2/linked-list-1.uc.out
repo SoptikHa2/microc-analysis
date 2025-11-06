@@ -1,12 +1,12 @@
 ---
 test: type suites/task-2/linked-list-1.uc
 ---
-[list_append() :: "suites/task-2/linked-list-1.uc" (line 1, column 1)] = (↑{next:μ t14 . ↑{next:↑?9,prev:↑{next:t14,prev:?17,v:?16},v:Int},prev:?17,v:?16} -> Int) -> μ t5 . ↑{next:↑?9,prev:↑{next:t5,prev:?17,v:?16},v:Int}
-[main() :: "suites/task-2/linked-list-1.uc" (line 10, column 2)] = (Int) -> Int
-[list :: "suites/task-2/linked-list-1.uc" (line 1, column 1)] = ↑{next:μ t14 . ↑{next:↑?9,prev:↑{next:t14,prev:?17,v:?16},v:Int},prev:?17,v:?16}
-[x :: "suites/task-2/linked-list-1.uc" (line 1, column 1)] = Int
-[n :: "suites/task-2/linked-list-1.uc" (line 10, column 2)] = Int
-[node :: list_append:"suites/task-2/linked-list-1.uc" (line 1, column 1)] = μ t5 . ↑{next:↑?9,prev:↑{next:t5,prev:?17,v:?16},v:Int}
-[list :: main:"suites/task-2/linked-list-1.uc" (line 10, column 2)] = ↑{next:μ t14 . ↑{next:↑?9,prev:↑{next:t14,prev:?17,v:?16},v:Int},prev:?17,v:?16}
+⟦list_append(list[1:13],x[1:19]){...}:[1:1]⟧ = (↑µt6.{v:int,prev:↑t6,next:↑t6},int) -> ↑µt6.{v:int,prev:↑t6,next:↑t6}
+⟦list[1:13]⟧ = ↑µt6.{v:int,prev:↑t6,next:↑t6}
+⟦x[1:19]⟧ = int
+⟦node[2:9]⟧ = ↑µt6.{v:int,prev:↑t6,next:↑t6}
+⟦main(n[12:6]){...}:[12:1]⟧ = (int) -> int
+⟦n[12:6]⟧ = int
+⟦list[13:9]⟧ = ↑µt6.{v:int,prev:↑t6,next:↑t6}
 
 exit: 0
