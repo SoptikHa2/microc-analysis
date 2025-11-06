@@ -56,6 +56,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                 isUnknown :: Type -> Bool
                 isUnknown (Unknown _) = True
                 isUnknown (Ptr t) = isUnknown t
+                isUnknown (Array t) = isUnknown t
                 isUnknown (Fun tx t) = any isUnknown (t:tx)
                 isUnknown (Record fx) = any (isUnknown <$> snd) fx
                 isUnknown _ = False
