@@ -37,6 +37,10 @@ library
       Interpreter.Data
       Interpreter.Interpret
       Interpreter.State
+      IR.CompilerState
+      IR.Emit
+      IR.Tac
+      IR.TacCompiler
       Lex.Comments
       Lex.Lexer
       Lex.Tokens
