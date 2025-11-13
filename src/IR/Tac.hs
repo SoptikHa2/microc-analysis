@@ -8,39 +8,42 @@ import IR.CompilerState
 import Control.Monad.State
 import Control.Monad.Fix
 import Control.Monad.Writer (WriterT, Writer, MonadWriter)
+import Analysis.Typecheck.Type (Type)
 
-newtype IR = IR [(Label, Instr)]
+newtype TAC = TAC [(Label, Instr)]
     deriving (Eq, Show)
 
 data Instr
-    -- First args, then target
-    = Add Reg Reg Reg
-    | Sub Reg Reg Reg
-    | And Reg Reg Reg
-    | Mul Reg Reg Reg
-    | Xor Reg Reg Reg
-    | Or Reg Reg Reg
-    | Not Reg Reg
-    | Div Reg Reg Reg
-    | Mov Reg Reg Reg
-    | Deref Reg Reg
-    | Ref Reg Reg
-    | Imm Int Reg
+    -- Return type if any; First args, then target
+    = Add Type Reg Reg Reg
+    | Sub Type Reg Reg Reg
+    | And Type Reg Reg Reg
+    | Mul Type Reg Reg Reg
+    | Xor Type Reg Reg Reg
+    | Or Type Reg Reg Reg
+    | Not Type Reg Reg
+    | Div Type Reg Reg Reg
+    | Mov Type Reg Reg
+    | Deref Type Reg Reg
+    | Ref Type Reg Reg
+    | Imm Type Int Reg
     | Jmp Label
     | Jz Reg Label
-    | Call Label [Reg] Reg
+    | Call Type Label [Reg] Reg
     | Push Reg
-    | Pop Reg
+    | Pop Type Reg
     | Ret Reg
     | Halt
     | Nop
+    | Output Reg
+    | Input Type Reg
     deriving (Show, Eq)
 
-instance Semigroup IR where
-    IR a <> IR b = IR (a <> b)
+instance Semigroup TAC where
+    TAC a <> TAC b = TAC (a <> b)
 
-instance Monoid IR where
-    mempty = IR []
+instance Monoid TAC where
+    mempty = TAC []
 
-newtype TAC a = TAC (WriterT IR (State CState) a)
-    deriving (Functor, Applicative, Monad, MonadState CState, MonadFix, MonadWriter IR)
+newtype Emitter a = Emitter (WriterT TAC (State CState) a)
+    deriving (Functor, Applicative, Monad, MonadState CState, MonadFix, MonadWriter TAC)

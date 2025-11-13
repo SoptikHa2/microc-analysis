@@ -1,4 +1,4 @@
-module IR.CompilerState (CState, Reg, Label, empty, reg, label) where
+module IR.CompilerState (CState(..), Reg, Label, empty, reg, label, getFun, saveFun) where
 
 import Control.Monad.State
 import qualified Data.Map as M
@@ -12,11 +12,14 @@ data CState = CState {
     nextLabel :: Label,
     -- Where each function begins.
     -- Impl detail: at first, this is Halt, and is replaced by jump to real body later when the function is actually compiled.
-    funBodies :: M.Map Identifier Label
+    funBodies :: M.Map Identifier Label,
+    -- Each function saves its arguments into a set of registers. This remembers which 
+    -- argument (and variable!) corresponds to which register
+    funRegsForVars :: M.Map Identifier (M.Map Identifier Reg)
 }
 
 empty :: CState
-empty = CState { nextRegister = 0, nextLabel = 0, funBodies = M.empty }
+empty = CState { nextRegister = 0, nextLabel = 0, funBodies = M.empty, funRegsForVars = M.empty }
 
 reg :: State CState Reg
 reg = do
@@ -30,10 +33,20 @@ label = do
     modify (\s -> s { nextLabel = label + 1 })
     pure label
 
-saveFun :: Identifier -> Label -> State CState ()
-saveFun i l = modify (\s@(CState _ _ m) -> s { funBodies = M.insert i l m })
+--saveFun :: Identifier -> Label -> State CState ()
+--saveFun i l = modify (\s@(CState _ _ m _) -> s { funBodies = M.insert i l m })
 
 getFun :: Identifier -> State CState (Maybe Label)
 getFun i = do
     funcs <- gets funBodies
     pure (M.lookup i funcs)
+
+saveFun :: Identifier -> Label -> [(Identifier, Reg)] -> State CState ()
+saveFun funName funLabel funRegs =
+    modify 
+        (\s@(CState _ _ funLabels oldFunRegs) ->
+            s {
+                funBodies = M.insert funName funLabel funLabels,
+                funRegsForVars = M.insert funName (M.fromList funRegs) oldFunRegs
+            }
+            )
