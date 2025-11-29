@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       Analysis.Analysis
+      Analysis.Cfg.Builder
+      Analysis.Cfg.Cfg
       Analysis.Error
       Analysis.Semantics
       Analysis.Typecheck.ConstraintGenerator
