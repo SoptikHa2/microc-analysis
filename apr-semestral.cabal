@@ -28,6 +28,8 @@ library
       Analysis.Analysis
       Analysis.Cfg.Builder
       Analysis.Cfg.Cfg
+      Analysis.Dataflow.Const
+      Analysis.Dataflow.Lattices
       Analysis.Error
       Analysis.Semantics
       Analysis.Typecheck.ConstraintGenerator
@@ -43,6 +45,7 @@ library
       IR.Emit
       IR.Tac
       IR.TacCompiler
+      Lattice
       Lex.Comments
       Lex.Lexer
       Lex.Tokens
