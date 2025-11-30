@@ -98,13 +98,16 @@ main() {
 
 ## Code Architecture
 
-### Three-Stage Pipeline
+### Multi-Stage Pipeline
 
-The codebase follows a classic interpreter architecture:
+The codebase follows a classic interpreter/compiler architecture:
 
 1. **Lexing** (Lex/): Tokenizes source code into tokens
 2. **Parsing** (Parse/): Builds an Abstract Syntax Tree (AST)
-3. **Interpretation** (Interpreter/): Evaluates the AST (in progress)
+3. **Analysis** (Analysis/): Semantic analysis and type checking
+4. **Interpretation** (Interpreter/): Evaluates the AST
+5. **Compilation** (IR/): Three-Address Code (TAC) generation (in progress)
+6. **Control Flow** (Analysis/Cfg/): Control Flow Graph construction (in progress)
 
 ### Module Structure
 
@@ -143,6 +146,17 @@ The codebase follows a classic interpreter architecture:
   - `ConstraintGenerator.hs`: Generates type constraints from AST
   - `ConstraintSolver.hs`: Solves constraint system via unification
   - `Typecheck.hs`: Main entry point for type checking
+- `Cfg/`: Control Flow Graph construction (Work in Progress)
+  - `Cfg.hs`: CFG data structures (CFGNode, CFGMap) with FunEntry/FunExit/Node
+  - `Builder.hs`: State monad-based CFG builder for statements and functions
+
+**IR/** - Intermediate Representation (Work in Progress)
+- `Tac.hs`: Three-Address Code (TAC) instruction set and Emitter monad
+  - Instructions: arithmetic ops, jumps, calls, memory operations
+  - Uses Writer monad pattern for code generation
+- `TacCompiler.hs`: Compiles AST to TAC format
+- `CompilerState.hs`: State management for TAC generation (registers, labels)
+- `Emit.hs`: Helper functions for emitting TAC instructions
 
 ### Key Design Decisions
 
@@ -169,11 +183,26 @@ The codebase follows a classic interpreter architecture:
 ## Testing
 
 Tests are written using HSpec and located in `test/`:
+
+**Parser Tests:**
 - `ExprParserSpec.hs`: Comprehensive expression parser tests
 - `StmtParserSpec.hs`: Statement parser tests
 - `DeclParserSpec.hs`: Declaration parser tests
 
-Test files follow the pattern: parse input strings and compare against expected AST values.
+**Interpreter Tests:**
+- `StateSpec.hs`: Interpreter state management tests
+- `InterpretExprSpec.hs`: Expression evaluation tests
+- `InterpretStmtSpec.hs`: Statement execution tests
+
+**Analysis Tests:**
+- `TypecheckSpec.hs`: Type inference system tests
+- `ConstraintSolverSpec.hs`: Constraint unification tests
+- `CfgSpec.hs`: Control Flow Graph tests
+
+**Test Utilities:**
+- `TestUtils.hs`: Shared helper functions for tests
+
+Test files follow the pattern: parse/execute input and compare against expected results.
 
 ## Common Development Workflows
 
@@ -197,3 +226,16 @@ When working on type checking:
 - Constraints are solved via unification in `ConstraintSolver.hs`
 - Type variables use `Unknown Int` for fresh variables and `BoundTypeVar Int` for recursive types
 - The `Typeable` wrapper tags AST nodes with their location for better error messages
+
+When working on TAC compilation:
+- The `Emitter` monad combines `WriterT TAC (State CState)` for code generation
+- Use `emit_` to emit instructions, `emitL` to emit labeled instructions
+- `emitExpr` and `emitStmt` recursively compile AST nodes to TAC
+- Registers are allocated via the state monad in `CompilerState.hs`
+- Use `RecursiveDo` extension (`mdo`) for forward references in control flow
+
+When working on CFG construction:
+- CFG nodes have unique IDs and track predecessors/successors
+- Use the State monad pattern with `CFGMap` to build graphs incrementally
+- `buildStmt` returns (first node, list of last nodes) for proper edge connections
+- Functions have explicit FunEntry and FunExit nodes for graph boundaries
