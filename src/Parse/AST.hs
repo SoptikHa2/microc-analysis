@@ -109,11 +109,11 @@ instance Show BiOp where
     show Div = "/"
 
 instance Show (Stmt a) where
-    show (OutputStmt _ e) = "output " <> show e
-    show (WhileStmt _ c _b) = "while(" <> show c <> ") ..."
-    show (IfStmt _ c _t _f) = "if(" <> show c <> ") ..."
+    show (OutputStmt _ e) = "output " <> show e <> ";"
+    show (WhileStmt _ c _b) = "(" <> show c <> ")" 
+    show (IfStmt _ c _t _f) = "(" <> show c <> ")" 
     show (Block _ stmx) = "{\n" <> intercalate "\n" (show <$> stmx) <> "\n}"
-    show (AssignmentStmt _ l r) = show l <> " = " <> show r
+    show (AssignmentStmt _ l r) = show l <> " = " <> show r <> ";"
 
 instance Show (Expr a) where
     show (BiOp _ o l r) = show l <> " " <> show o <> " " <> show r
