@@ -31,11 +31,11 @@ type CFGMap a = M.Map Int (CFGNode a)
 addToPrev :: CFGNode a -> Int -> CFGNode a
 addToPrev (Node id p n el) i = Node id (i:p) n el
 addToPrev n@(FunEntry _ _ _) _ = n
-addToPrev (FunExit id s _) i = FunExit id s i
+addToPrev (FunExit id s p) i = FunExit id s (i:p)
 
 addToNext :: CFGNode a -> Int -> CFGNode a
 addToNext (Node id p n el) i = Node id p (i:n) el
-addToNext (FunEntry id s _) i = FunEntry id s i
+addToNext (FunEntry id s n) i = FunEntry id s (i:n)
 addToNext n@(FunExit _ _ _) _ = n
 
 setId :: CFGNode a -> Int -> CFGNode a

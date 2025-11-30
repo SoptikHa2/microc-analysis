@@ -8,6 +8,7 @@ import InterpretExprSpec
 import InterpretStmtSpec
 import ConstraintSolverSpec
 import TypecheckSpec
+import CfgSpec
 
 main :: IO ()
 main = hspec $ do
@@ -19,3 +20,4 @@ main = hspec $ do
   describe "Statement Evaluation" InterpretStmtSpec.spec
   describe "Constraint Solver" ConstraintSolverSpec.spec
   describe "Type Checker (End-to-End)" TypecheckSpec.spec
+  describe "CFG generator" CfgSpec.spec
