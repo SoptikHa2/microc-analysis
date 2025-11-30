@@ -2,6 +2,7 @@ module Analysis.Cfg.Cfg where
 import qualified Data.Map as M
 import Text.Printf (printf)
 import Parse.AST
+import Data.List
 
 -- CFG of a single function
 data CFG a = CFG {
@@ -72,12 +73,28 @@ cfgshow digraphName (CFG m c) =
             (printf "n_%d[label=\"Fun %s exit\"]\n" i (show el), i)
         printCfg m c@(FunEntry i label vars _) = (s, i)
             where
-                -- TODO: vars
                 (child, ci) = printCfg m nc
+
+                varIds = (++"var") . show <$> take (length vars) [1..]
+
                 s = printf "n_%d[label=\"Fun %s entry\"]\n" i label
+                    <> genVars (zip vars varIds) i ci
                     <> child
                     <> printf "n_%d -> n_%d\n\n" i ci
                 nc = head (next m c)  -- fun entry -> just one child
+
+                -- var; var id; start; end
+                genVars :: [(String, String)] -> Int -> Int -> String
+                genVars varsZ startId endId = intercalate "\n" (nodes <> transitionsStr)
+                    where
+                        (vars, varIds) = unzip varsZ
+                        idLine = show startId : varIds ++ [show endId]
+                        transitions = zip idLine (tail idLine)
+                        transitionsStr = 
+                            (\(f, t) -> printf "n_%s -> n_%s\n" f t :: String) <$> transitions
+                        nodes = 
+                            (\(v, i) ->
+                                printf "n_%s[label=\"var %s;\"]\n" i v :: String) <$> varsZ
         printCfg m c@(Node i _ _ el) = (s, i)
             where
                 (children, cidx) = unzip $ printCfg m <$> next m c
