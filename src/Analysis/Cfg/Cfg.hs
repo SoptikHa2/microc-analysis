@@ -6,7 +6,7 @@ import Data.List
 
 -- CFG of a single function
 data CFG a = CFG {
-    map :: CFGMap a,
+    idmap :: CFGMap a,
     root :: CFGNode a
 }
 

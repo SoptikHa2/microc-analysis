@@ -17,23 +17,30 @@ import Analysis.Typecheck.Typecheck (getTyping)
 import Analysis.Typecheck.Constraints (printTyping)
 import Control.Exception
 import Error
+import Analysis.Cfg.Builder as CFGBuilder
+import Analysis.Cfg.Cfg as CFG
+import Data.List
 
 -- CLI data types
 data Command
   = Run FilePath [Int]
   | Type FilePath
+  | Cfg FilePath
 
 -- Parser for command line arguments
 commandParser :: Parser Command
 commandParser = hsubparser
     (  command "run" (info runParser (progDesc "Run a MicroC program"))
     <> command "type" (info typeParser (progDesc "Type check a MicroC program"))
+    <> command "cfg" (info cfgParser (progDesc "Generate CFG of a program"))
     )
   where
     runParser = Run
       <$> argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
       <*> many (argument auto (metavar "ARGS..." <> help "Integer arguments to main function"))
     typeParser = Type
+      <$> argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
+    cfgParser = Cfg
       <$> argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
 
 -- Main entry point
@@ -43,6 +50,7 @@ main = do
   case cmd of
     Run filepath args -> runProgram filepath args
     Type filepath -> typeCheckProgram filepath
+    Cfg filepath -> generateCfg filepath
   where
     opts = info (commandParser <**> helper)
       ( fullDesc
@@ -88,7 +96,7 @@ runProgram filepath args = go `catch` \e -> do
                   initialState <- initializeState prog
 
                   -- Run the main function with provided arguments
-                  result <- evalStateT (evalFun mainFun loc (map VNumber args)) initialState
+                  result <- evalStateT (evalFun mainFun loc (fmap VNumber args)) initialState
 
                   -- Exit with the status of main
                   case result of
@@ -122,6 +130,26 @@ typeCheckProgram filepath = go `catch` \e -> do
             Left e -> do
               putStrLn e
               exitWith $ ExitFailure 1
+
+generateCfg :: FilePath -> IO ()
+generateCfg filepath = go `catch` \e -> do
+    print (e :: MicroCError)
+    exitWith $ ExitFailure 1
+  where
+    go = do
+      source <- readFile filepath
+      case parse program filepath source of
+        Left err -> do
+          putStrLn $ "Parse error: " ++ show err
+          exitFailure
+        Right prog -> do
+          let dots = funToDot <$> prog
+          putStrLn (intercalate "\n\n" dots)
+
+    funToDot :: FunDecl a -> String
+    funToDot fun@(FunDecl _ name _ _) = CFG.cfgshow name cfg
+      where
+        cfg = CFGBuilder.build fun
 
 -- Find a function by name in the program
 findFunction :: Identifier -> Program a -> Maybe (FunDecl a)

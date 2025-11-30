@@ -1,17 +1,9 @@
-list_append(list, x) {
-    var node;
-    node = alloc {v: x, prev: list, next: null};
-    if (list == null) {
-    } else {
-        (*list).next = node;
-    }
-
-    return node;
-}
-
-main(n) {
-    var list;
-    list = null;
-    list = list_append(list, 1);
-    return 0;
+ite(n) {
+  var f;
+  f = 1;
+  while (n > 0) {
+    f = f * n;
+    n = n - 1;
+  }
+  return f;
 }
