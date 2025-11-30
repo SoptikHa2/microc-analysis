@@ -3,6 +3,7 @@ import qualified Data.Map as M
 import Text.Printf (printf)
 import Parse.AST
 
+-- CFG of a single function
 data CFG a = CFG {
     map :: CFGMap a,
     root :: CFGNode a
@@ -18,6 +19,7 @@ data CFGNode a
     | FunEntry {
         id :: Int,
         funName :: String,
+        funVars :: [String],
         _next :: [Int]
       }
     | FunExit {
@@ -30,32 +32,32 @@ type CFGMap a = M.Map Int (CFGNode a)
 
 addToPrev :: CFGNode a -> Int -> CFGNode a
 addToPrev (Node id p n el) i = Node id (i:p) n el
-addToPrev n@(FunEntry _ _ _) _ = n
+addToPrev n@(FunEntry _ _ _ _) _ = n
 addToPrev (FunExit id s p) i = FunExit id s (i:p)
 
 addToNext :: CFGNode a -> Int -> CFGNode a
 addToNext (Node id p n el) i = Node id p (i:n) el
-addToNext (FunEntry id s n) i = FunEntry id s (i:n)
+addToNext (FunEntry id s v n) i = FunEntry id s v (i:n)
 addToNext n@(FunExit _ _ _) _ = n
 
 setId :: CFGNode a -> Int -> CFGNode a
 setId (Node _ a b c) i = Node i a b c
-setId (FunEntry _ a b) i = FunEntry i a b
+setId (FunEntry _ a b c) i = FunEntry i a b c
 setId (FunExit _ a b) i = FunExit i a b
 
 getId :: CFGNode a -> Int
 getId (Node i _ _ _) = i
-getId (FunEntry i _ _) = i
+getId (FunEntry i _ _ _) = i
 getId (FunExit i _ _) = i
 
 next :: CFGMap a -> CFGNode a -> [CFGNode a]
 next m (Node _ _ nextId _) = (m M.!) <$> nextId
-next m (FunEntry _ _ nextId) = (m M.!) <$> nextId
+next m (FunEntry _ _ _ nextId) = (m M.!) <$> nextId
 next _ (FunExit _ _ _) = []
 
 prev :: CFGMap a -> CFGNode a -> [CFGNode a]
 prev m (Node _ prevId _ _) = (m M.!) <$> prevId
-prev m (FunEntry _ _ _) = []
+prev m (FunEntry _ _ _ _) = []
 prev m (FunExit _ _ prevId) = (m M.!) <$> prevId
 
 cfgshow :: String -> CFG a -> String
@@ -68,8 +70,9 @@ cfgshow digraphName (CFG m c) =
         printCfg :: CFGMap a -> CFGNode a -> (String, Int)
         printCfg _m (FunExit i el _) =
             (printf "n_%d[label=\"Fun %s exit\"]\n" i (show el), i)
-        printCfg m c@(FunEntry i label _) = (s, i)
+        printCfg m c@(FunEntry i label vars _) = (s, i)
             where
+                -- TODO: vars
                 (child, ci) = printCfg m nc
                 s = printf "n_%d[label=\"Fun %s entry\"]\n" i label
                     <> child

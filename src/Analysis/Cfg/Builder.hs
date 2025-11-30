@@ -1,14 +1,27 @@
 module Analysis.Cfg.Builder where
 import Analysis.Cfg.Cfg
 import Parse.AST
-import Control.Monad.State (State, get, put, modify, gets)
+import Control.Monad.State (State, get, put, modify, gets, evalState)
 import qualified Data.Map as M
 import Control.Monad.Identity (Identity)
 import Control.Monad
 import Data.Foldable
 
 build :: FunDecl a -> CFG a
-build fun = undefined
+build fun = evalState (buildFun fun) M.empty
+
+buildFun :: FunDecl a -> State (CFGMap a) (CFG a)
+buildFun fun = do
+    funStartNode <- genId $ FunEntry 0 fun.name fun.body.idDecl []
+    (bodyFirst, bodyLast) <- buildStmt (Block fun.body.d fun.body.body)
+    funEndNode <- genId $ FunExit 0 fun.name []
+
+    addChild funStartNode.id bodyFirst.id
+    traverse_ (\p -> addChild p.id funEndNode.id) bodyLast
+
+    rootNode <- refresh funStartNode
+    m <- get
+    pure $ CFG m rootNode
 
 genId :: CFGNode a -> State (CFGMap a) (CFGNode a)
 genId node = do
