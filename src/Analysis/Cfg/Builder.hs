@@ -1,9 +1,8 @@
 module Analysis.Cfg.Builder where
 import Analysis.Cfg.Cfg
 import Parse.AST
-import Control.Monad.State (State, get, put, modify, gets, evalState)
+import Control.Monad.State (State, get, modify, gets, evalState)
 import qualified Data.Map as M
-import Control.Monad.Identity (Identity)
 import Control.Monad
 import Data.Foldable
 
@@ -30,11 +29,11 @@ genId node = do
     modify (M.insert nextId nodeWithId)
     pure nodeWithId
 
-addChildren :: Int -> [Int] -> State (CFGMap a) ()
+addChildren :: CFGId -> [CFGId] -> State (CFGMap a) ()
 addChildren parent children = forM_ children (addChild parent)
 
 -- For a node [Id], add child [Id]
-addChild :: Int -> Int -> State (CFGMap a) ()
+addChild :: CFGId -> CFGId -> State (CFGMap a) ()
 addChild parent child = do
     parentNode <- gets (M.! parent)
     childNode <- gets (M.! child)

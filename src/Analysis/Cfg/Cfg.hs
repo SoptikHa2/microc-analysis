@@ -5,6 +5,8 @@ import Parse.AST
 import Data.List
 import Control.Monad.State
 
+type CFGId = Int
+
 -- CFG of a single function
 data CFG a = CFG {
     idmap :: CFGMap a,
@@ -13,42 +15,42 @@ data CFG a = CFG {
 
 data CFGNode a
     = Node {
-        id :: Int,
-        _prev :: [Int],
-        _next :: [Int],
+        id :: CFGId,
+        _prev :: [CFGId],
+        _next :: [CFGId],
         el :: Stmt a
       }
     | FunEntry {
-        id :: Int,
+        id :: CFGId,
         funName :: String,
         funVars :: [String],
-        _next :: [Int]
+        _next :: [CFGId]
       }
     | FunExit {
-        id :: Int,
+        id :: CFGId,
         funName :: String,
         retVal :: String,
-        _prev :: [Int]
+        _prev :: [CFGId]
       }
 
-type CFGMap a = M.Map Int (CFGNode a)
+type CFGMap a = M.Map CFGId (CFGNode a)
 
-addToPrev :: CFGNode a -> Int -> CFGNode a
+addToPrev :: CFGNode a -> CFGId -> CFGNode a
 addToPrev (Node id p n el) i = Node id (i:p) n el
 addToPrev n@(FunEntry _ _ _ _) _ = n
 addToPrev (FunExit id s r p) i = FunExit id s r (i:p)
 
-addToNext :: CFGNode a -> Int -> CFGNode a
+addToNext :: CFGNode a -> CFGId -> CFGNode a
 addToNext (Node id p n el) i = Node id p (i:n) el
 addToNext (FunEntry id s v n) i = FunEntry id s v (i:n)
 addToNext n@(FunExit _ _ _ _) _ = n
 
-setId :: CFGNode a -> Int -> CFGNode a
+setId :: CFGNode a -> CFGId -> CFGNode a
 setId (Node _ a b c) i = Node i a b c
 setId (FunEntry _ a b c) i = FunEntry i a b c
 setId (FunExit _ a b c) i = FunExit i a b c
 
-getId :: CFGNode a -> Int
+getId :: CFGNode a -> CFGId
 getId (Node i _ _ _) = i
 getId (FunEntry i _ _ _) = i
 getId (FunExit i _ _ _) = i
@@ -69,7 +71,7 @@ cfgshow digraphName (CFG m c) =
         <> fst (evalState (printCfg m c) [])
         <> "}"
     where
-        printCfg :: CFGMap a -> CFGNode a -> State [Int] (String, Int)
+        printCfg :: CFGMap a -> CFGNode a -> State [Int] (String, CFGId)
         printCfg m node = do
             wasGenerated <- gets (node.id `elem`)
 
@@ -81,7 +83,7 @@ cfgshow digraphName (CFG m c) =
                     pure (res, ri)
 
         -- returns output string and ID of the topmost node
-        go :: CFGMap a -> CFGNode a -> State [Int] (String, Int)
+        go :: CFGMap a -> CFGNode a -> State [Int] (String, CFGId)
         go _m (FunExit i el retVal _) = pure (retLabel <> exitLabel <> retTransition, i)
             where
                 retLabel = printf "n_%d[label=\"return %s;\"]\n" i retVal
@@ -106,7 +108,7 @@ cfgshow digraphName (CFG m c) =
             pure (s, i)
 
         -- var; var id; start; end
-        genVars :: [(String, String)] -> Int -> Int -> String
+        genVars :: [(String, String)] -> CFGId -> CFGId -> String
         genVars varsZ startId endId = intercalate "\n" (nodes <> transitionsStr)
             where
                 (vars, varIds) = unzip varsZ
