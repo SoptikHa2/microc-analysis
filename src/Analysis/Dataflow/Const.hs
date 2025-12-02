@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Analysis.Dataflow.Const where
-import Analysis.Cfg.Cfg (CFGMap, CFGId, CFGNode(..), next, getId)
+import Analysis.Cfg.Cfg (CFGMap, CFG(..), CFGId, CFGNode(..), next, getId)
 import qualified Data.Map as M
 import Parse.AST
 import Analysis.Dataflow.Lattices (ConstLattice (..))
@@ -12,6 +12,12 @@ type ResultMap = M.Map CFGId ResultLat
 type ResultLat = M.Map Identifier ConstLattice
 
 -- TODO: generalize
+
+solve :: CFG a -> ResultMap
+solve (CFG map root) = go map [root.id]
+    where
+        go :: CFGMap a -> [CFGId] -> ResultMap
+        go map idx = undefined
 
 -- Args:
 --  id of previously changed CFG node (siblings will be rerun)
