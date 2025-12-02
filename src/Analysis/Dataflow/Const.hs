@@ -3,11 +3,10 @@ module Analysis.Dataflow.Const where
 import Analysis.Cfg.Cfg (CFGMap, CFGId, CFGNode(..), next, getId)
 import qualified Data.Map as M
 import Parse.AST
-import Analysis.Dataflow.Lattices (ConstLattice)
+import Analysis.Dataflow.Lattices (ConstLattice (..))
 import Control.Monad.State
 import Lattice (Lattice(..), (<&&>), (<||>))
 import Data.Maybe
-import Data.Foldable
 
 type ResultMap = M.Map CFGId ResultLat
 type ResultLat = M.Map Identifier ConstLattice
@@ -93,8 +92,42 @@ runCfg (FunExit id _ _ prevs) = do
 computeStmt :: Stmt a -> ResultLat -> ResultLat
 -- The only one that matters is Assignment. Block should not appear (this is CFG!)
 computeStmt (Block _ _) _ = error "Block statement remained in CFG. This is illegal"
-computeStmt (AssignmentStmt _ (EIdentifier _ variable) rhs) lat = undefined
+computeStmt (AssignmentStmt _ (EIdentifier _ variable) rhs) lat = M.insert variable cRhs lat
+    where
+        cRhs = computeExpr rhs lat
 computeStmt _ lat = lat
 
 computeExpr :: Expr a -> ResultLat -> ConstLattice
-computeExpr _ _ = undefined
+computeExpr (BiOp _ op l r) lat = runBiOp op lhs rhs
+    where
+        lhs = computeExpr l lat
+        rhs = computeExpr r lat
+computeExpr (UnOp _ op e) lat = runUnOp op expr
+    where
+        expr = computeExpr e lat
+computeExpr (Input _) _ = top
+computeExpr (Null _) _ = top
+computeExpr (FieldAccess _ _ _) _ = top
+computeExpr (ArrayAccess _ _ _) _ = top
+computeExpr (Call _ _ _) _ = top
+computeExpr (Record _ _) _ = bottom
+computeExpr (Array _ _) _ = bottom
+computeExpr (Number _ i) _ = Const i
+computeExpr (EIdentifier _ id) lat = fromMaybe bottom (lat M.!? id)
+
+runUnOp :: UnOp -> ConstLattice -> ConstLattice
+runUnOp _ _ = bottom
+
+runBiOp :: BiOp -> ConstLattice -> ConstLattice -> ConstLattice
+runBiOp _ Bottom _ = Bottom
+runBiOp _ _ Bottom = Bottom
+runBiOp _ Top _ = Top
+runBiOp _ _ Top = Top
+
+runBiOp Eq (Const l) (Const r) = if l == r then Const 1 else Const 0
+runBiOp Gt (Const l) (Const r) = if l > r then Const 1 else Const 0
+runBiOp Plus (Const l) (Const r) = Const (l + r)
+runBiOp Minus (Const l) (Const r) = Const (l - r)
+runBiOp Mul (Const l) (Const r) = Const (l * r)
+runBiOp Div (Const _) (Const r) | r == 0 = Bottom
+runBiOp Div (Const l) (Const r) = Const (l `div` r)
