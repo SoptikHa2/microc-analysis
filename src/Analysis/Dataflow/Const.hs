@@ -1,116 +1,18 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Analysis.Dataflow.Const (solve, ConstResultMap, ConstResultLat) where
-import Analysis.Cfg.Cfg (CFGMap, CFG(..), CFGId, CFGNode(..), next, getId)
-import Analysis.Dataflow.Analysis (ResultMap, ResultLat)
+import Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysis)
 import qualified Data.Map as M
 import Parse.AST
 import Analysis.Dataflow.Lattices (ConstLattice (..))
-import Control.Monad.State
-import Lattice (Lattice(..), (<||>))
+import Lattice (Lattice(..))
 import Data.Maybe
-import Data.List (nub)
+import Analysis.Cfg.Cfg
 
 type ConstResultMap = ResultMap ConstLattice
 type ConstResultLat = ResultLat ConstLattice
 
--- TODO: generalize
-
-solve :: Show a => CFG a -> ConstResultMap
-solve (CFG cfgMap rootNode) = go cfgMap [rootNode.id] initialResult
-    where
-        -- Initialize the root node first
-        (_, initialResult) = runState (runCfg rootNode) M.empty
-
-        go :: Show a => CFGMap a -> [CFGId] -> ConstResultMap -> ConstResultMap
-        go theMap idxs resultMap =
-            if null newChanged
-                then newResultMap
-                else go theMap (nub newChanged) newResultMap
-            where
-                (newChanged, newResultMap) = foldr
-                    (\nodeId (changedIds, res) ->
-                        let
-                            (newChangedIds, newResult) = runState (runStep nodeId theMap) res
-                        in
-                            (newChangedIds <> changedIds, newResult)
-                        )
-                    ([], resultMap)
-                    idxs
-
--- Args:
---  id of previously changed CFG node (siblings will be rerun)
---  CFG map of the function
--- State:
---  Mapping from CFG Node -> (Variable -> Const value)
--- Returns:
---  List of affected CFG nodes
-runStep :: CFGId -> CFGMap a -> State ConstResultMap [Int]
-runStep toRun cfgMap = do
-    -- First, retrieve the CFG
-    let cfg = cfgMap M.! toRun
-    -- This analysis will run for all children
-    let children = next cfgMap cfg
-
-    childrenThatChanged <- traverse runCfg children
-
-    -- Return ids of nodes that changed
-    let changedChildren = fst <$> filter snd (zip children childrenThatChanged)
-    pure $ getId <$> changedChildren
-
--- Run a single CFG node. Update the 
--- node values in the map if anything changed, and return whether so
-runCfg :: CFGNode a -> State ConstResultMap Bool
-runCfg (FunEntry nodeId _ vars _) = do
-    -- The entry is always out-of-date only once
-    m <- get
-    case m M.!? nodeId of
-        Nothing -> do
-            let defVars = zip vars (repeat bottom)
-            let resLat = M.fromList defVars
-            modify (M.insert nodeId resLat)
-            pure True
-        Just _ -> pure False
-
-runCfg (Node nodeId prevs _ stmt) = do
-    -- 1) get assignments of all previous ones
-    -- 2) use the statement to compute new constraints
-    -- 3) replace self with new ones
-
-    prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> prevs)
-    let mergedPrev = foldr (<||>) M.empty prevAssignments
-
-    -- use the assumptions to compute self values
-    let mine = computeStmt stmt mergedPrev
-
-    existingSolution <- gets (M.!? nodeId)
-
-    let changed = case existingSolution of
-                Just e | e == mine -> False
-                _ -> True
-
-    modify (M.insert nodeId mine)
-
-    pure changed
-
-runCfg (FunExit nodeId _ _ prevs) = do
-    -- 1) get assignments of all previous ones
-    -- 2) <|> them
-    -- 3) insert into map, return if was equialent
-
-    -- assumption: there is at least one child with the items
-    prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> prevs)
-    let mergedPrev = foldr1 (<||>) prevAssignments
-
-    existingSolution <- gets (M.!? nodeId)
-
-    let changed = case existingSolution of
-                Just e | e == mergedPrev -> False
-                _ -> True
-
-    modify (M.insert nodeId mergedPrev)
-
-    pure changed
-
+solve :: CFG a -> ResultMap ConstLattice
+solve cfg = runAnalysis nextId prevId computeStmt cfg cfg.root.id
 
 computeStmt :: Stmt a -> ConstResultLat -> ConstResultLat
 -- The only one that matters is Assignment. Block should not appear (this is CFG!)

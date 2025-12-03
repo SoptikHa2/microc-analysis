@@ -56,15 +56,21 @@ getId (Node i _ _ _) = i
 getId (FunEntry i _ _ _) = i
 getId (FunExit i _ _ _) = i
 
+nextId :: CFGNode a -> [CFGId]
+nextId (Node _ _ n _) = n
+nextId (FunEntry _ _ _ n) = n
+nextId (FunExit _ _ _ _) = []
+
+prevId :: CFGNode a -> [CFGId]
+prevId (Node _ p _ _) = p
+prevId (FunEntry _ _ _ _) = []
+prevId (FunExit _ _ _ p) = p
+
 next :: CFGMap a -> CFGNode a -> [CFGNode a]
-next m (Node _ _ nextId _) = (m M.!) <$> nextId
-next m (FunEntry _ _ _ nextId) = (m M.!) <$> nextId
-next _ (FunExit _ _ _ _) = []
+next m n = (m M.!) <$> nextId n
 
 prev :: CFGMap a -> CFGNode a -> [CFGNode a]
-prev m (Node _ prevId _ _) = (m M.!) <$> prevId
-prev m (FunEntry _ _ _ _) = []
-prev m (FunExit _ _ _ prevId) = (m M.!) <$> prevId
+prev m n = (m M.!) <$> prevId n
 
 cfgshow :: String -> CFG a -> String
 cfgshow digraphName (CFG m c) =
