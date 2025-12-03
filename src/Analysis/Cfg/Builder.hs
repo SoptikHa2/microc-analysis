@@ -65,11 +65,10 @@ buildStmt s@(Block _ stmx) = do
     let bbTails = snd <$> basicBlocks
     -- The blocks themselves are not linked together yet,
     -- but each of them may have multiple children.
-    -- Register the ids as children of each other
-    --let ids = getId <$> basicBlocksEnds
+    -- Connect each block's tail to the next block's head
     let blockHeadIds = getId <$> bbHeads
     let blockTailIds = fmap (fmap getId) bbTails
-    zipWithM_ addChildren blockHeadIds (tail blockTailIds)
+    zipWithM_ (\tails nextHead -> forM_ tails (\tailId -> addChild tailId nextHead)) blockTailIds (tail blockHeadIds)
 
     -- Return toplevel block, and all bottom-level blocks
     firstOfSeq <- gets (M.! head blockHeadIds)
