@@ -14,6 +14,8 @@ import Analysis.Dataflow.Analysis (ResultMap)
 import qualified Analysis.Dataflow.Sign as SignAna
 import Analysis.Dataflow.Sign (SignResultMap)
 import Analysis.Dataflow.Const (ConstResultMap)
+import Analysis.Dataflow.VeryBusy (VeryBusyResultMap)
+import qualified Analysis.Dataflow.VeryBusy as VeryBusyAna
 
 runAnalysis :: (Show a, Data a, Ord a) => Program a -> IO ()
 runAnalysis prog = if null errors
@@ -35,3 +37,6 @@ getConstAnalysis = getDataflowAnalysis ConstAna.solve
 
 getSignAnalysis :: Program a -> [(String, CFG a, SignResultMap)]
 getSignAnalysis = getDataflowAnalysis SignAna.solve
+
+getVeryBusyAnalysis :: (Data a, Ord a) => Program a -> [(String, CFG a, VeryBusyResultMap a)]
+getVeryBusyAnalysis = getDataflowAnalysis VeryBusyAna.solve

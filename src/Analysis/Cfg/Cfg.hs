@@ -1,9 +1,11 @@
+{-# LANGUAGE LambdaCase #-}
 module Analysis.Cfg.Cfg where
 import qualified Data.Map as M
 import Text.Printf (printf)
 import Parse.AST
 import Data.List (intercalate)
 import Control.Monad.State
+import Data.Maybe (listToMaybe)
 
 type CFGId = Int
 
@@ -30,7 +32,7 @@ data CFGNode a
     | FunExit {
         id :: CFGId,
         funName :: String,
-        retVal :: String,
+        retVal :: Expr a,
         _prev :: [CFGId]
       }
       deriving (Show)
@@ -67,6 +69,12 @@ prevId (Node _ p _ _) = p
 prevId (FunEntry _ _ _ _ _) = []
 prevId (FunExit _ _ _ p) = p
 
+findExit :: CFGMap a -> Maybe (CFGNode a)
+findExit m = listToMaybe exitNodes
+    where
+        nodes = snd <$> M.toList m
+        exitNodes = filter (\case (FunExit {}) -> True; _ -> False) nodes
+
 next :: CFGMap a -> CFGNode a -> [CFGNode a]
 next m n = (m M.!) <$> nextId n
 
@@ -94,7 +102,7 @@ cfgshow digraphName (CFG m c) =
         go :: CFGMap a -> CFGNode a -> State [Int] (String, CFGId)
         go _m (FunExit i el retVal _) = pure (retLabel <> exitLabel <> retTransition, i)
             where
-                retLabel = printf "n_%d[label=\"return %s;\"]\n" i retVal
+                retLabel = printf "n_%d[label=\"return %s;\"]\n" i (show retVal)
                 exitLabel = printf "n_exit[label=\"Fun %s exit\"]\n" el
                 retTransition = printf "n_%d -> n_exit\n" i
         go m c@(FunEntry i label vars args _) = do

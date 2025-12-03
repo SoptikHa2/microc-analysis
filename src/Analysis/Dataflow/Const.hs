@@ -14,7 +14,7 @@ data ConstLattice
     deriving (Eq)
 
 instance Show ConstLattice where
-    show Top = "⊤"
+    show Top = "T"
     show Bottom = "⊥"
     show (Const i) = show i
 

@@ -15,7 +15,7 @@ data SignLattice
     deriving (Eq)
 
 instance Show SignLattice where
-    show Top = "⊤"
+    show Top = "T"
     show Bottom = "⊥"
     show Pos = "+"
     show Zer = "0"

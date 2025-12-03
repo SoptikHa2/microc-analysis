@@ -35,7 +35,7 @@ formatNodeDescription (FunEntry _ funName funVars funArgs _) =
     where
         vars = if null funVars then "" else " ; var " ++ intercalate ", " funVars
 formatNodeDescription (FunExit _ _ retVal _) =
-    "return " ++ retVal ++ ";"
+    "return " ++ show retVal ++ ";"
 
 -- this is the list of variables
 formatResultLat :: Show l => ResultLat l -> String
