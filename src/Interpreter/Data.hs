@@ -3,7 +3,6 @@
 module Interpreter.Data where
 import Parse.AST (FunDecl(..), Identifier)
 import Text.Parsec (SourcePos)
-import Data.List (intercalate)
 
 type Address = Int
 

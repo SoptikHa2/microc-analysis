@@ -19,7 +19,7 @@ import Control.Exception
 import Error
 import Analysis.Cfg.Builder as CFGBuilder
 import Analysis.Cfg.Cfg as CFG
-import Data.List
+import Data.List (intercalate)
 import Analysis.Analysis (getDataflowAnalysis)
 import qualified Analysis.Dataflow.Utils as DFUtils
 
@@ -163,7 +163,6 @@ runConsts filepath = go `catch` \e -> do
     exitWith $ ExitFailure 1
   where
     go = do
-      generateCfg filepath
       source <- readFile filepath
       case parse program filepath source of
         Left err -> do

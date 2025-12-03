@@ -1,4 +1,4 @@
-module Analysis.Dataflow.Utils where
+module Analysis.Dataflow.Utils (prettyPrintConstAnalysis) where
 import Analysis.Cfg.Cfg (CFG(..), CFGNode(..), CFGId)
 import qualified Data.Map as M
 import qualified Analysis.Dataflow.Const as Const
@@ -6,12 +6,12 @@ import Data.List (intercalate)
 import Text.Printf (printf)
 
 prettyPrintConstAnalysis :: CFG a -> Const.ResultMap -> String
-prettyPrintConstAnalysis (CFG idmap _root) resultMap =
+prettyPrintConstAnalysis (CFG nodeMap _root) resultMap =
     let
         nodeResults = M.toList resultMap
 
         nodeDescriptions = map (\(nodeId, _) ->
-            maybe "???" formatNodeDescription (M.lookup nodeId idmap)
+            maybe "???" formatNodeDescription (M.lookup nodeId nodeMap)
             ) nodeResults
 
         -- generate line given the target length

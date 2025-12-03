@@ -2,7 +2,7 @@ module Analysis.Cfg.Cfg where
 import qualified Data.Map as M
 import Text.Printf (printf)
 import Parse.AST
-import Data.List
+import Data.List (intercalate)
 import Control.Monad.State
 
 type CFGId = Int

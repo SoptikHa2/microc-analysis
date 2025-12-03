@@ -37,7 +37,7 @@ printAllTyping = printTyping' True
 printTyping' :: forall a . (Show a) => Bool -> (M.Map (Typeable a) Type) -> String
 printTyping' includeExpr m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
     where
-        go :: Show a => (Typeable a) -> Type -> String
+        go :: Typeable a -> Type -> String
         go (CExpr l _) t | includeExpr = "[Expression at " ++ l ++ "] = " ++ show t
         go (CExpr _ _) _ | not includeExpr = ""
         go (CFun l f) t = "[" ++ f.name ++ "() :: " ++ l ++ "] = " ++ show t

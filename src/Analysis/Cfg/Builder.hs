@@ -1,4 +1,4 @@
-module Analysis.Cfg.Builder where
+module Analysis.Cfg.Builder (build) where
 import Analysis.Cfg.Cfg
 import Parse.AST
 import Control.Monad.State (State, get, modify, gets, evalState)
@@ -29,9 +29,6 @@ genId node = do
     modify (M.insert nextId nodeWithId)
     pure nodeWithId
 
-addChildren :: CFGId -> [CFGId] -> State (CFGMap a) ()
-addChildren parent children = forM_ children (addChild parent)
-
 -- For a node [Id], add child [Id]
 addChild :: CFGId -> CFGId -> State (CFGMap a) ()
 addChild parent child = do
@@ -58,7 +55,7 @@ newNode = Node 0 [] []
 buildStmt :: Stmt a -> State (CFGMap a) (CFGNode a, [CFGNode a])
 buildStmt s@(OutputStmt _ _) = asSingleCfgNode <$> genId (newNode s)
 buildStmt s@(AssignmentStmt _ _ _) = asSingleCfgNode <$> genId (newNode s)
-buildStmt s@(Block _ stmx) = do
+buildStmt _s@(Block _ stmx) = do
     basicBlocks <- traverse buildStmt stmx
 
     let bbHeads = fst <$> basicBlocks
@@ -68,7 +65,7 @@ buildStmt s@(Block _ stmx) = do
     -- Connect each block's tail to the next block's head
     let blockHeadIds = getId <$> bbHeads
     let blockTailIds = fmap (fmap getId) bbTails
-    zipWithM_ (\tails nextHead -> forM_ tails (\tailId -> addChild tailId nextHead)) blockTailIds (tail blockHeadIds)
+    zipWithM_ (\tails nextHead -> forM_ tails (`addChild` nextHead)) blockTailIds (tail blockHeadIds)
 
     -- Return toplevel block, and all bottom-level blocks
     firstOfSeq <- gets (M.! head blockHeadIds)

@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Analysis.Typecheck.ConstraintSolver where
-import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, prettyPrintMTT, prettyPrintCX, printTyping, printAllTyping)
+import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, printAllTyping)
 import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
 import qualified Data.Map as M

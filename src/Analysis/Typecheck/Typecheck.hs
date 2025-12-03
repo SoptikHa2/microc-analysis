@@ -8,7 +8,7 @@ import Control.Monad.Identity (runIdentity)
 import qualified Data.Map as M
 import Analysis.Typecheck.Constraints
 import Analysis.Typecheck.ConstraintSolver (solve)
-import Data.List (intercalate, nub)
+import Data.List (nub)
 import Data.Generics.Uniplate.Data (universeBi)
 import Analysis.Typecheck.ConstraintGenerator
 import Control.Monad.State

@@ -1,4 +1,4 @@
-module Analysis.Typecheck.ConstraintGenerator where
+module Analysis.Typecheck.ConstraintGenerator (TypeState(..), emptyState, newType, varType, registerFunction, lookupFunction, genConstraintsFun, genConstraintsExpr, genConstraintsStmt) where
 import Data.Data (Data)
 import Parse.AST
 import Control.Monad.State
