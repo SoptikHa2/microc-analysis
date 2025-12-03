@@ -30,8 +30,10 @@ formatLine maxLen nodeId nodeDesc resultLat =
 -- this is the source code
 formatNodeDescription :: CFGNode a -> String
 formatNodeDescription (Node _ _ _ stmt) = show stmt
-formatNodeDescription (FunEntry _ funName funVars _) =
-    "fun entry " ++ funName ++ " (" ++ intercalate ", " funVars ++ ")"
+formatNodeDescription (FunEntry _ funName funVars funArgs _) =
+    "fun entry " ++ funName ++ " (" ++ intercalate ", " funArgs ++ ")" ++ vars
+    where
+        vars = if null funVars then "" else " ; var " ++ intercalate ", " funVars
 formatNodeDescription (FunExit _ _ retVal _) =
     "return " ++ retVal ++ ";"
 

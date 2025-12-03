@@ -20,8 +20,9 @@ import Error
 import Analysis.Cfg.Builder as CFGBuilder
 import Analysis.Cfg.Cfg as CFG
 import Data.List (intercalate)
-import Analysis.Analysis (getDataflowAnalysis)
+import Analysis.Analysis (getConstAnalysis, getSignAnalysis)
 import qualified Analysis.Dataflow.Utils as DFUtils
+import Analysis.Dataflow.Analysis (ResultMap)
 
 -- CLI data types
 data Command
@@ -29,6 +30,7 @@ data Command
   | Type FilePath
   | Cfg FilePath
   | ConstAna FilePath
+  | SignAna FilePath
 
 -- Parser for command line arguments
 commandParser :: Parser Command
@@ -37,6 +39,7 @@ commandParser = hsubparser
     <> command "type" (info typeParser (progDesc "Type check a MicroC program"))
     <> command "cfg" (info cfgParser (progDesc "Generate CFG of a program"))
     <> command "const" (info constParser (progDesc "Run const propagation analysis of the program"))
+    <> command "sign" (info signParser (progDesc "Run sign propagation analysis of the program"))
     )
   where
     programArg = argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
@@ -47,6 +50,7 @@ commandParser = hsubparser
     typeParser = Type <$> programArg
     cfgParser = Cfg <$> programArg
     constParser = ConstAna <$> programArg
+    signParser = SignAna <$> programArg
 
 -- Main entry point
 main :: IO ()
@@ -57,6 +61,7 @@ main = do
     Type filepath -> typeCheckProgram filepath
     Cfg filepath -> generateCfg filepath
     ConstAna filepath -> runConsts filepath
+    SignAna filepath -> runSign filepath
   where
     opts = info (commandParser <**> helper)
       ( fullDesc
@@ -157,8 +162,8 @@ generateCfg filepath = go `catch` \e -> do
       where
         cfg = CFGBuilder.build fun
 
-runConsts :: FilePath -> IO ()
-runConsts filepath = go `catch` \e -> do
+runAna :: (Show a, Show l) => (Program SourcePos -> [(String, CFG a, ResultMap l)]) -> FilePath -> IO ()
+runAna op filepath = go `catch` \e -> do
     print (e :: MicroCError)
     exitWith $ ExitFailure 1
   where
@@ -169,12 +174,15 @@ runConsts filepath = go `catch` \e -> do
           putStrLn $ "Parse error: " ++ show err
           exitFailure
         Right prog -> do
-          let results = getDataflowAnalysis prog
+          let results = op prog
           forM_ results $ \(funName, cfg, resultMap) -> do
             putStrLn $ "Function: " ++ funName
             putStrLn $ DFUtils.prettyPrintAnalysis cfg resultMap
             putStrLn ""
 
+runConsts = runAna getConstAnalysis
+
+runSign = runAna getSignAnalysis
 
 -- Find a function by name in the program
 findFunction :: Identifier -> Program a -> Maybe (FunDecl a)

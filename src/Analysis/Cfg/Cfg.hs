@@ -24,6 +24,7 @@ data CFGNode a
         id :: CFGId,
         funName :: String,
         funVars :: [String],
+        funArgs :: [String],
         _next :: [CFGId]
       }
     | FunExit {
@@ -38,32 +39,32 @@ type CFGMap a = M.Map CFGId (CFGNode a)
 
 addToPrev :: CFGNode a -> CFGId -> CFGNode a
 addToPrev (Node id p n el) i = Node id (i:p) n el
-addToPrev n@(FunEntry _ _ _ _) _ = n
+addToPrev n@(FunEntry _ _ _ _ _) _ = n
 addToPrev (FunExit id s r p) i = FunExit id s r (i:p)
 
 addToNext :: CFGNode a -> CFGId -> CFGNode a
 addToNext (Node id p n el) i = Node id p (i:n) el
-addToNext (FunEntry id s v n) i = FunEntry id s v (i:n)
+addToNext (FunEntry id s v a n) i = FunEntry id s v a (i:n)
 addToNext n@(FunExit _ _ _ _) _ = n
 
 setId :: CFGNode a -> CFGId -> CFGNode a
 setId (Node _ a b c) i = Node i a b c
-setId (FunEntry _ a b c) i = FunEntry i a b c
+setId (FunEntry _ a b c d) i = FunEntry i a b c d
 setId (FunExit _ a b c) i = FunExit i a b c
 
 getId :: CFGNode a -> CFGId
 getId (Node i _ _ _) = i
-getId (FunEntry i _ _ _) = i
+getId (FunEntry i _ _ _ _) = i
 getId (FunExit i _ _ _) = i
 
 nextId :: CFGNode a -> [CFGId]
 nextId (Node _ _ n _) = n
-nextId (FunEntry _ _ _ n) = n
+nextId (FunEntry _ _ _ _ n) = n
 nextId (FunExit _ _ _ _) = []
 
 prevId :: CFGNode a -> [CFGId]
 prevId (Node _ p _ _) = p
-prevId (FunEntry _ _ _ _) = []
+prevId (FunEntry _ _ _ _ _) = []
 prevId (FunExit _ _ _ p) = p
 
 next :: CFGMap a -> CFGNode a -> [CFGNode a]
@@ -96,7 +97,7 @@ cfgshow digraphName (CFG m c) =
                 retLabel = printf "n_%d[label=\"return %s;\"]\n" i retVal
                 exitLabel = printf "n_exit[label=\"Fun %s exit\"]\n" el
                 retTransition = printf "n_%d -> n_exit\n" i
-        go m c@(FunEntry i label vars _) = do
+        go m c@(FunEntry i label vars args _) = do
             let nc = head (next m c)  -- fun entry -> just one child
             (child, ci) <- printCfg m nc
 

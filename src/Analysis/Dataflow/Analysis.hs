@@ -66,13 +66,14 @@ runStep next prev evalStmt toRun cfgMap = do
 -- Run a single CFG node. Update the 
 -- node values in the map if anything changed, and return whether so
 runCfg :: Lattice l => FnextIds a -> FprevIds a -> FevalStmt a l -> CFGNode a -> State (ResultMap l) Bool
-runCfg _next _prev _evalStmt (FunEntry nodeId _ vars _) = do
+runCfg _next _prev _evalStmt (FunEntry nodeId _ vars args _) = do
     -- The entry is always out-of-date only once
     m <- get
     case m M.!? nodeId of
         Nothing -> do
             let defVars = zip vars (repeat bottom)
-            let resLat = M.fromList defVars
+            let defArgs = zip args (repeat top)
+            let resLat = M.fromList (defVars ++ defArgs)
             modify (M.insert nodeId resLat)
             pure True
         Just _ -> pure False

@@ -1,12 +1,40 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
-module Analysis.Dataflow.Const (solve, ConstResultMap, ConstResultLat) where
+module Analysis.Dataflow.Const (solve, ConstResultMap, ConstResultLat, ConstLattice) where
 import Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysis)
 import qualified Data.Map as M
 import Parse.AST
-import Analysis.Dataflow.Lattices (ConstLattice (..))
 import Lattice (Lattice(..))
 import Data.Maybe
 import Analysis.Cfg.Cfg
+
+data ConstLattice
+    = Top
+    | Const Int
+    | Bottom
+    deriving (Eq)
+
+instance Show ConstLattice where
+    show Top = "⊤"
+    show Bottom = "⊥"
+    show (Const i) = show i
+
+instance Lattice ConstLattice where
+    top = Top
+    bottom = Bottom
+    
+    a <&> b | a == b = a
+    Top <&> x = x
+    x <&> Top = x
+    Bottom <&> _ = Bottom
+    _ <&> Bottom = Bottom
+    Const _ <&> Const _ = Bottom
+
+    a <|> b | a == b = a
+    Top <|> _ = Top
+    _ <|> Top = Top
+    Bottom <|> x = x
+    x <|> Bottom = x
+    Const _ <|> Const _ = Top
 
 type ConstResultMap = ResultMap ConstLattice
 type ConstResultLat = ResultLat ConstLattice
@@ -31,7 +59,7 @@ computeExpr (UnOp _ op e) lat = runUnOp op expr
     where
         expr = computeExpr e lat
 computeExpr (Input _) _ = top
-computeExpr (Null _) _ = top
+computeExpr (Null _) _ = bottom
 computeExpr (FieldAccess _ _ _) _ = top
 computeExpr (ArrayAccess _ _ _) _ = top
 computeExpr (Call _ _ _) _ = top

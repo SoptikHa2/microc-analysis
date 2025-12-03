@@ -11,7 +11,7 @@ build fun = evalState (buildFun fun) M.empty
 
 buildFun :: FunDecl a -> State (CFGMap a) (CFG a)
 buildFun fun = do
-    funStartNode <- genId $ FunEntry 0 fun.name fun.body.idDecl []
+    funStartNode <- genId $ FunEntry 0 fun.name fun.body.idDecl fun.args []
     (bodyFirst, bodyLast) <- buildStmt (Block fun.body.d fun.body.body)
     funEndNode <- genId $ FunExit 0 fun.name (show fun.body.return) []
 
