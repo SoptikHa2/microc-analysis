@@ -28,6 +28,7 @@ library
       Analysis.Analysis
       Analysis.Cfg.Builder
       Analysis.Cfg.Cfg
+      Analysis.Dataflow.Analysis
       Analysis.Dataflow.Const
       Analysis.Dataflow.Lattices
       Analysis.Dataflow.Utils

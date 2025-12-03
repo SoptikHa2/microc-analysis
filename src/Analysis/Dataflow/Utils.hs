@@ -1,12 +1,12 @@
-module Analysis.Dataflow.Utils (prettyPrintConstAnalysis) where
+module Analysis.Dataflow.Utils (prettyPrintAnalysis) where
 import Analysis.Cfg.Cfg (CFG(..), CFGNode(..), CFGId)
 import qualified Data.Map as M
-import qualified Analysis.Dataflow.Const as Const
+import Analysis.Dataflow.Analysis
 import Data.List (intercalate)
 import Text.Printf (printf)
 
-prettyPrintConstAnalysis :: CFG a -> Const.ResultMap -> String
-prettyPrintConstAnalysis (CFG nodeMap _root) resultMap =
+prettyPrintAnalysis :: Show l => CFG a -> ResultMap l -> String
+prettyPrintAnalysis (CFG nodeMap _root) resultMap =
     let
         nodeResults = M.toList resultMap
 
@@ -22,7 +22,7 @@ prettyPrintConstAnalysis (CFG nodeMap _root) resultMap =
     in
         intercalate "\n" formattedLines
 
-formatLine :: Int -> CFGId -> String -> Const.ResultLat -> String
+formatLine :: Show l => Int -> CFGId -> String -> ResultLat l -> String
 formatLine maxLen nodeId nodeDesc resultLat =
     let latStr = formatResultLat resultLat
     in printf "%2d: [ %-*s ]: %s" nodeId maxLen nodeDesc latStr
@@ -36,7 +36,7 @@ formatNodeDescription (FunExit _ _ retVal _) =
     "return " ++ retVal ++ ";"
 
 -- this is the list of variables
-formatResultLat :: Const.ResultLat -> String
+formatResultLat :: Show l => ResultLat l -> String
 formatResultLat latMap =
     let sortedEntries = M.toList latMap
         formattedEntries = map (\(var, val) -> var ++ " -> " ++ show val) sortedEntries

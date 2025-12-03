@@ -172,7 +172,7 @@ runConsts filepath = go `catch` \e -> do
           let results = getDataflowAnalysis prog
           forM_ results $ \(funName, cfg, resultMap) -> do
             putStrLn $ "Function: " ++ funName
-            putStrLn $ DFUtils.prettyPrintConstAnalysis cfg resultMap
+            putStrLn $ DFUtils.prettyPrintAnalysis cfg resultMap
             putStrLn ""
 
 

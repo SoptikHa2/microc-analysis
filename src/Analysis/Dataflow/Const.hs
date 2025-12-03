@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
-module Analysis.Dataflow.Const (solve, ResultMap, ResultLat) where
+module Analysis.Dataflow.Const (solve, ConstResultMap, ConstResultLat) where
 import Analysis.Cfg.Cfg (CFGMap, CFG(..), CFGId, CFGNode(..), next, getId)
+import Analysis.Dataflow.Analysis (ResultMap, ResultLat)
 import qualified Data.Map as M
 import Parse.AST
 import Analysis.Dataflow.Lattices (ConstLattice (..))
@@ -9,18 +10,18 @@ import Lattice (Lattice(..), (<||>))
 import Data.Maybe
 import Data.List (nub)
 
-type ResultMap = M.Map CFGId ResultLat
-type ResultLat = M.Map Identifier ConstLattice
+type ConstResultMap = ResultMap ConstLattice
+type ConstResultLat = ResultLat ConstLattice
 
 -- TODO: generalize
 
-solve :: Show a => CFG a -> ResultMap
+solve :: Show a => CFG a -> ConstResultMap
 solve (CFG cfgMap rootNode) = go cfgMap [rootNode.id] initialResult
     where
         -- Initialize the root node first
         (_, initialResult) = runState (runCfg rootNode) M.empty
 
-        go :: Show a => CFGMap a -> [CFGId] -> ResultMap -> ResultMap
+        go :: Show a => CFGMap a -> [CFGId] -> ConstResultMap -> ConstResultMap
         go theMap idxs resultMap =
             if null newChanged
                 then newResultMap
@@ -43,7 +44,7 @@ solve (CFG cfgMap rootNode) = go cfgMap [rootNode.id] initialResult
 --  Mapping from CFG Node -> (Variable -> Const value)
 -- Returns:
 --  List of affected CFG nodes
-runStep :: CFGId -> CFGMap a -> State ResultMap [Int]
+runStep :: CFGId -> CFGMap a -> State ConstResultMap [Int]
 runStep toRun cfgMap = do
     -- First, retrieve the CFG
     let cfg = cfgMap M.! toRun
@@ -58,7 +59,7 @@ runStep toRun cfgMap = do
 
 -- Run a single CFG node. Update the 
 -- node values in the map if anything changed, and return whether so
-runCfg :: CFGNode a -> State ResultMap Bool
+runCfg :: CFGNode a -> State ConstResultMap Bool
 runCfg (FunEntry nodeId _ vars _) = do
     -- The entry is always out-of-date only once
     m <- get
@@ -111,7 +112,7 @@ runCfg (FunExit nodeId _ _ prevs) = do
     pure changed
 
 
-computeStmt :: Stmt a -> ResultLat -> ResultLat
+computeStmt :: Stmt a -> ConstResultLat -> ConstResultLat
 -- The only one that matters is Assignment. Block should not appear (this is CFG!)
 computeStmt (Block _ _) _ = error "Block statement remained in CFG. This is illegal"
 computeStmt (AssignmentStmt _ (EIdentifier _ variable) rhs) lat = M.insert variable cRhs lat
@@ -119,7 +120,7 @@ computeStmt (AssignmentStmt _ (EIdentifier _ variable) rhs) lat = M.insert varia
         cRhs = computeExpr rhs lat
 computeStmt _ lat = lat
 
-computeExpr :: Expr a -> ResultLat -> ConstLattice
+computeExpr :: Expr a -> ConstResultLat -> ConstLattice
 computeExpr (BiOp _ op l r) lat = runBiOp op lhs rhs
     where
         lhs = computeExpr l lat

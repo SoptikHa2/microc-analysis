@@ -20,7 +20,7 @@ runAnalysis prog = if null errors
     where
         errors = (Semantic <$> Semantics.verify prog) <> (Type <$> Typecheck.verify prog)
 
-getDataflowAnalysis :: Show a => Program a -> [(String, CFG a, ConstAna.ResultMap)]
+getDataflowAnalysis :: Show a => Program a -> [(String, CFG a, ConstAna.ConstResultMap)]
 getDataflowAnalysis prog = constx
     where
         cfgx = zip (name <$> prog) (CFGBuilder.build <$> prog)
