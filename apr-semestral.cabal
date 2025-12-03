@@ -30,6 +30,7 @@ library
       Analysis.Cfg.Cfg
       Analysis.Dataflow.Const
       Analysis.Dataflow.Lattices
+      Analysis.Dataflow.Utils
       Analysis.Error
       Analysis.Semantics
       Analysis.Typecheck.ConstraintGenerator

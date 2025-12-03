@@ -20,12 +20,14 @@ import Error
 import Analysis.Cfg.Builder as CFGBuilder
 import Analysis.Cfg.Cfg as CFG
 import Data.List
+import Analysis.Analysis (getDataflowAnalysis)
 
 -- CLI data types
 data Command
   = Run FilePath [Int]
   | Type FilePath
   | Cfg FilePath
+  | ConstAna FilePath
 
 -- Parser for command line arguments
 commandParser :: Parser Command
@@ -33,15 +35,17 @@ commandParser = hsubparser
     (  command "run" (info runParser (progDesc "Run a MicroC program"))
     <> command "type" (info typeParser (progDesc "Type check a MicroC program"))
     <> command "cfg" (info cfgParser (progDesc "Generate CFG of a program"))
+    <> command "const" (info constParser (progDesc "Run const propagation analysis of the program"))
     )
   where
+    programArg = argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
+
     runParser = Run
-      <$> argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
+      <$> programArg
       <*> many (argument auto (metavar "ARGS..." <> help "Integer arguments to main function"))
-    typeParser = Type
-      <$> argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
-    cfgParser = Cfg
-      <$> argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
+    typeParser = Type <$> programArg
+    cfgParser = Cfg <$> programArg
+    constParser = ConstAna <$> programArg
 
 -- Main entry point
 main :: IO ()
@@ -51,6 +55,7 @@ main = do
     Run filepath args -> runProgram filepath args
     Type filepath -> typeCheckProgram filepath
     Cfg filepath -> generateCfg filepath
+    ConstAna filepath -> runConsts filepath
   where
     opts = info (commandParser <**> helper)
       ( fullDesc
@@ -150,6 +155,23 @@ generateCfg filepath = go `catch` \e -> do
     funToDot fun@(FunDecl _ name _ _) = CFG.cfgshow name cfg
       where
         cfg = CFGBuilder.build fun
+
+runConsts :: FilePath -> IO ()
+runConsts filepath = go `catch` \e -> do
+    print (e :: MicroCError)
+    exitWith $ ExitFailure 1
+  where
+    go = do
+      generateCfg filepath
+      source <- readFile filepath
+      case parse program filepath source of
+        Left err -> do
+          putStrLn $ "Parse error: " ++ show err
+          exitFailure
+        Right prog -> do
+          let consts = getDataflowAnalysis prog
+          print consts
+
 
 -- Find a function by name in the program
 findFunction :: Identifier -> Program a -> Maybe (FunDecl a)

@@ -8,6 +8,11 @@ data ConstLattice
     | Bottom
     deriving (Eq)
 
+instance Show ConstLattice where
+    show Top = "⊤"
+    show Bottom = "⊥"
+    show (Const i) = show i
+
 instance Lattice ConstLattice where
     top = Top
     bottom = Bottom

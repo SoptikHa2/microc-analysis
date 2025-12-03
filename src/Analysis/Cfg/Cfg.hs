@@ -32,6 +32,7 @@ data CFGNode a
         retVal :: String,
         _prev :: [CFGId]
       }
+      deriving (Show)
 
 type CFGMap a = M.Map CFGId (CFGNode a)
 

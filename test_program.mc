@@ -1,9 +1,16 @@
-ite(n) {
-  var f;
-  f = 1;
-  while (n > 0) {
-    f = f * n;
-    n = n - 1;
+f() {
+  var x,y,z;
+  x = 21;
+  y = input;
+  z = 2 * x - x - x;
+  z = x / z;
+  z = y / z;
+  if (x > 0) {
+    y = 12;
+  } else {
+    y = x - 3;
   }
-  return f;
+  output y;
+
+  return 0;
 }

@@ -7,17 +7,37 @@ import Analysis.Dataflow.Lattices (ConstLattice (..))
 import Control.Monad.State
 import Lattice (Lattice(..), (<&&>), (<||>))
 import Data.Maybe
+import Data.List
+import Debug.Trace
 
 type ResultMap = M.Map CFGId ResultLat
 type ResultLat = M.Map Identifier ConstLattice
 
 -- TODO: generalize
 
-solve :: CFG a -> ResultMap
-solve (CFG map root) = go map [root.id]
+solve :: Show a => CFG a -> ResultMap
+solve cfg@(CFG map root) = (trace ("With CFG:" ++ show map) (go map [root.id] M.empty))
     where
-        go :: CFGMap a -> [CFGId] -> ResultMap
-        go map idx = undefined
+        go :: Show a => CFGMap a -> [CFGId] -> ResultMap -> ResultMap
+        go map idxs result =
+            if null newChanged
+                then (trace ("Final result: " <> show newResultMap) newResultMap)
+                else go map (nub newChanged) newResultMap
+            where
+                (newChanged, newResultMap) = foldr
+                    (\id (changedIds,result) -> 
+                        let
+                            (newChangedIds, newResult) = runState (runStep (trace ("Running for " ++ show id ++ " with " ++ show result) id) map) result
+                        in
+                            (newChangedIds <> changedIds, newResult)
+                        )
+                    ([],result)
+                    idxs
+
+emptyResultMap :: CFG a -> ResultMap
+emptyResultMap (CFG map _root) = M.fromList (zip allKeys (repeat M.empty))
+    where
+        allKeys = M.keys map
 
 -- Args:
 --  id of previously changed CFG node (siblings will be rerun)
@@ -26,7 +46,7 @@ solve (CFG map root) = go map [root.id]
 --  Mapping from CFG Node -> (Variable -> Const value)
 -- Returns:
 --  List of affected CFG nodes
-runStep :: CFGId -> CFGMap a -> State ResultMap [Int]
+runStep :: Show a => CFGId -> CFGMap a -> State ResultMap [Int]
 runStep toRun cfgMap = do
     -- First, retrieve the CFG
     let cfg = cfgMap M.! toRun
@@ -53,14 +73,13 @@ runCfg (FunEntry id _ vars _) = do
             pure True
         Just _ -> pure False
 
-runCfg (Node id _ prevs stmt) = do
+runCfg (Node id prevs _ stmt) = do
     -- 1) get assignments of all previous ones
     -- 2) use the statement to compute new constraints
     -- 3) replace self with new ones
 
-    -- assumption: there is at least one child with the items
     prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> prevs)
-    let mergedPrev = foldr1 (<||>) prevAssignments
+    let mergedPrev = foldr (<||>) M.empty prevAssignments
 
     -- use the assumptions to compute self values
     let mine = computeStmt stmt mergedPrev
@@ -73,7 +92,7 @@ runCfg (Node id _ prevs stmt) = do
     
     modify (M.insert id mine)
     
-    pure changed
+    pure (trace ("For id " ++ show id ++ " prev: " ++ show mergedPrev ++ " because " ++ show prevs ++ ", new: " ++ show mine) changed)
 
 runCfg (FunExit id _ _ prevs) = do
     -- 1) get assignments of all previous ones
