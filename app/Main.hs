@@ -21,6 +21,7 @@ import Analysis.Cfg.Builder as CFGBuilder
 import Analysis.Cfg.Cfg as CFG
 import Data.List
 import Analysis.Analysis (getDataflowAnalysis)
+import qualified Analysis.Dataflow.Utils as DFUtils
 
 -- CLI data types
 data Command
@@ -169,8 +170,11 @@ runConsts filepath = go `catch` \e -> do
           putStrLn $ "Parse error: " ++ show err
           exitFailure
         Right prog -> do
-          let consts = getDataflowAnalysis prog
-          print consts
+          let results = getDataflowAnalysis prog
+          forM_ results $ \(funName, cfg, resultMap) -> do
+            putStrLn $ "Function: " ++ funName
+            putStrLn $ DFUtils.prettyPrintConstAnalysis cfg resultMap
+            putStrLn ""
 
 
 -- Find a function by name in the program

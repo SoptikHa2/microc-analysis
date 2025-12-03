@@ -9,6 +9,7 @@ import Analysis.Error
 import qualified Analysis.Typecheck.Typecheck as Typecheck
 import qualified Analysis.Dataflow.Const as ConstAna
 import qualified Analysis.Cfg.Builder as CFGBuilder
+import Analysis.Cfg.Cfg (CFG)
 
 runAnalysis :: (Show a, Data a, Ord a) => Program a -> IO ()
 runAnalysis prog = if null errors
@@ -19,8 +20,8 @@ runAnalysis prog = if null errors
     where
         errors = (Semantic <$> Semantics.verify prog) <> (Type <$> Typecheck.verify prog)
 
-getDataflowAnalysis :: Show a => Program a -> [(String, ConstAna.ResultMap)]
+getDataflowAnalysis :: Show a => Program a -> [(String, CFG a, ConstAna.ResultMap)]
 getDataflowAnalysis prog = constx
     where
         cfgx = zip (name <$> prog) (CFGBuilder.build <$> prog)
-        constx = (\(n, cfg) -> (n, ConstAna.solve cfg)) <$> cfgx
+        constx = (\(n, cfg) -> (n, cfg, ConstAna.solve cfg)) <$> cfgx
