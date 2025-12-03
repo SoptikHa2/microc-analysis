@@ -2,12 +2,12 @@
 test: sign suites/task-3/sign-1.uc
 ---
 Function: ite
- 0: [ fun entry ite (n) ; var f ]: { f -> ⊥, n -> ⊤ }
- 1: [ f = 1;                    ]: { f -> +, n -> ⊤ }
- 2: [ while (n > 0)             ]: { f -> ⊤, n -> ⊤ }
- 3: [ f = f * n;                ]: { f -> ⊤, n -> ⊤ }
- 4: [ n = n - 1;                ]: { f -> ⊤, n -> ⊤ }
- 5: [ return f;                 ]: { f -> ⊤, n -> ⊤ }
+ 0: [ fun entry ite (n) ; var f ]: { f -> ⊥, n -> T }
+ 1: [ f = 1;                    ]: { f -> +, n -> T }
+ 2: [ while (n > 0)             ]: { f -> T, n -> T }
+ 3: [ f = f * n;                ]: { f -> T, n -> T }
+ 4: [ n = n - 1;                ]: { f -> T, n -> T }
+ 5: [ return f;                 ]: { f -> T, n -> T }
 
 
 exit: 0

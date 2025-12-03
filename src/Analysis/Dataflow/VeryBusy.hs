@@ -44,6 +44,13 @@ containsId i e = i `elem` usedIds
     where
         usedIds = [i | EIdentifier (_loc :: a) i <- universeBi e]
 
+isInvalid :: forall a . (Data a) => Expr a -> Bool
+isInvalid e = any Prelude.id invalidSub
+    where
+        invalidSub = [
+                True | Input (_ :: a) <- universeBi e
+            ]
+
 runCfg :: (Data a, Ord a) => CFGNode a -> State (VeryBusyResultMap a) Bool
 runCfg (FunExit nodeId _ retExpr _) = do
     -- We are the first one.
@@ -76,7 +83,8 @@ runCfg n@(Node nodeId _ _ stmt) = do
     let Expr mergedPrev = foldr (<&>) top prevAssignments
     let afterRemoval = S.filter shouldKeep mergedPrev
     let afterAddition = S.union afterRemoval (S.fromList toAdd)
-    let mySolution = Expr afterAddition
+    let afterRemovingInvalid = S.filter (not . isInvalid) afterAddition
+    let mySolution = Expr afterRemovingInvalid
 
     existingSolution <- gets (M.!? nodeId)
 

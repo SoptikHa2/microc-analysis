@@ -41,7 +41,7 @@ commandParser = hsubparser
     <> command "cfg" (info cfgParser (progDesc "Generate CFG of a program"))
     <> command "const" (info constParser (progDesc "Run const propagation analysis of the program"))
     <> command "sign" (info signParser (progDesc "Run sign propagation analysis of the program"))
-    <> command "busy" (info veryBusyParser (progDesc "Run very busy analysis of the program"))
+    <> command "vbusy" (info veryBusyParser (progDesc "Run very busy analysis of the program"))
     )
   where
     programArg = argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
