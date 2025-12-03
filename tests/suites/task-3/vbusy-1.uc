@@ -1,0 +1,12 @@
+f() {
+  var x,a,b;
+  x = input;
+  a = x-1;
+  b = x-2;
+  while (x > 0) {
+    output a*b-x;
+    x = x-1;
+  }
+  output a*b;
+  return x-1;
+}

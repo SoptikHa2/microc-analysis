@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export LANG=en_US.UTF-8
+
 CURRENT_DIR="$(pwd)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 cd "$SCRIPT_DIR" || exit
@@ -180,6 +182,14 @@ suite_task_1() {
 suite_task_2() {
   for file in $(find "$SUITES_DIR/task-2" -name '*.uc' | sort); do
     test_file "$file" type "$stdin_input"
+  done
+}
+
+suite_task_3() {
+  for file in $(find "$SUITES_DIR/task-3" -name '*.uc' | sort); do
+    type=$(basename "$file")
+    type=${type%%-*}
+    test_file "$file" "$type"
   done
 }
 
