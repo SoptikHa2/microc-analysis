@@ -5,7 +5,7 @@ import Analysis.Dataflow.Analysis
 import Data.List (intercalate)
 import Text.Printf (printf)
 
-prettyPrintAnalysis :: Show l => CFG a -> ResultMap l -> String
+prettyPrintAnalysis :: Show l => CFG a -> ResultMap (ResultLat l) -> String
 prettyPrintAnalysis (CFG nodeMap _root) resultMap =
     let
         nodeResults = M.toList resultMap

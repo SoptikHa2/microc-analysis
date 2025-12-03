@@ -12,6 +12,8 @@ import qualified Analysis.Cfg.Builder as CFGBuilder
 import Analysis.Cfg.Cfg (CFG)
 import Analysis.Dataflow.Analysis (ResultMap)
 import qualified Analysis.Dataflow.Sign as SignAna
+import Analysis.Dataflow.Sign (SignResultMap)
+import Analysis.Dataflow.Const (ConstResultMap)
 
 runAnalysis :: (Show a, Data a, Ord a) => Program a -> IO ()
 runAnalysis prog = if null errors
@@ -28,8 +30,8 @@ getDataflowAnalysis solve prog = constx
         cfgx = zip (name <$> prog) (CFGBuilder.build <$> prog)
         constx = (\(n, cfg) -> (n, cfg, solve cfg)) <$> cfgx
 
-getConstAnalysis :: Program a -> [(String, CFG a, ResultMap ConstAna.ConstLattice)]
+getConstAnalysis :: Program a -> [(String, CFG a, ConstResultMap)]
 getConstAnalysis = getDataflowAnalysis ConstAna.solve
 
-getSignAnalysis :: Program a -> [(String, CFG a, ResultMap SignAna.SignLattice)]
+getSignAnalysis :: Program a -> [(String, CFG a, SignResultMap)]
 getSignAnalysis = getDataflowAnalysis SignAna.solve

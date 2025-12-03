@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Analysis.Dataflow.Const (solve, ConstResultMap, ConstResultLat, ConstLattice) where
-import Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysis)
+import Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysis, runAnalysisOnVars)
 import qualified Data.Map as M
 import Parse.AST
 import Lattice (Lattice(..))
@@ -36,11 +36,11 @@ instance Lattice ConstLattice where
     x <|> Bottom = x
     Const _ <|> Const _ = Top
 
-type ConstResultMap = ResultMap ConstLattice
+type ConstResultMap = ResultMap ConstResultLat
 type ConstResultLat = ResultLat ConstLattice
 
-solve :: CFG a -> ResultMap ConstLattice
-solve cfg = runAnalysis nextId prevId computeStmt cfg cfg.root.id
+solve :: CFG a -> ConstResultMap
+solve cfg = runAnalysisOnVars nextId prevId computeStmt cfg cfg.root.id
 
 computeStmt :: Stmt a -> ConstResultLat -> ConstResultLat
 -- The only one that matters is Assignment. Block should not appear (this is CFG!)

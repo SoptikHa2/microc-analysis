@@ -39,11 +39,11 @@ instance Lattice SignLattice where
     x <|> Bottom = x
     _ <|> _ = Top
 
-type SignResultMap = ResultMap SignLattice
+type SignResultMap = ResultMap SignResultLat
 type SignResultLat = ResultLat SignLattice
 
-solve :: CFG a -> ResultMap SignLattice
-solve cfg = runAnalysis nextId prevId computeStmt cfg cfg.root.id
+solve :: CFG a -> SignResultMap
+solve cfg = runAnalysisOnVars nextId prevId computeStmt cfg cfg.root.id
 
 computeStmt :: Stmt a -> SignResultLat -> SignResultLat
 -- The only one that matters is Assignment. Block should not appear (this is CFG!)

@@ -22,7 +22,7 @@ import Analysis.Cfg.Cfg as CFG
 import Data.List (intercalate)
 import Analysis.Analysis (getConstAnalysis, getSignAnalysis)
 import qualified Analysis.Dataflow.Utils as DFUtils
-import Analysis.Dataflow.Analysis (ResultMap)
+import Analysis.Dataflow.Analysis (ResultMap, ResultLat)
 
 -- CLI data types
 data Command
@@ -162,7 +162,7 @@ generateCfg filepath = go `catch` \e -> do
       where
         cfg = CFGBuilder.build fun
 
-runAna :: (Show a, Show l) => (Program SourcePos -> [(String, CFG a, ResultMap l)]) -> FilePath -> IO ()
+runAna :: Show l => (Program SourcePos -> [(String, CFG a, ResultMap (ResultLat l))]) -> String -> IO ()
 runAna op filepath = go `catch` \e -> do
     print (e :: MicroCError)
     exitWith $ ExitFailure 1

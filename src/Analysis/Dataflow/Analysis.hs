@@ -1,33 +1,41 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysis) where
+module Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysis, runAnalysisOnVars) where
 import qualified Data.Map as M
-import Parse.AST (Identifier, Stmt)
+import Parse.AST (Stmt, Identifier)
 import Analysis.Cfg.Cfg
 import Lattice (Lattice(..), (<||>))
 import Control.Monad.State
 import Data.List (nub)
 import Data.Maybe (catMaybes)
 
-type ResultMap a = M.Map CFGId (ResultLat a)
-type ResultLat a = M.Map Identifier a
+type ResultMap d = M.Map CFGId d
+type ResultLat l = M.Map Identifier l
 
 type FnextIds a = (CFGNode a -> [CFGId])
 type FprevIds a = (CFGNode a -> [CFGId])
-type FevalStmt a l = (Stmt a -> ResultLat l -> ResultLat l)
+type FevalStmt a d = (Stmt a -> d -> d)
+type FrunCfg a d = (CFGNode a -> State (ResultMap d) Bool)
+
+runAnalysisOnVars ::
+    forall a l .
+    Lattice l =>
+    FnextIds a ->
+    FprevIds a ->
+    FevalStmt a (ResultLat l) ->
+    CFG a -> CFGId -> ResultMap (ResultLat l)
+runAnalysisOnVars next prev eval = runAnalysis (runCfg next prev eval) next
 
 runAnalysis ::
-    forall a l .
-    (Lattice l) =>
-    FnextIds a -> -- Next elements in the CFG
-    FnextIds a -> -- Prev elements in the CFG
-    FevalStmt a l -> -- function to compute results out of a CFG line
-    CFG a -> CFGId -> ResultMap l -- CFG, first to run (usually root)
-runAnalysis next prev evalStmt (CFG cfgMap _) toRun = go cfgMap [toRun] initialResult
+    forall a d .
+    FrunCfg a d ->
+    FnextIds a ->
+    CFG a -> CFGId -> ResultMap d -- CFG, first to run (usually root)
+runAnalysis runCfg next (CFG cfgMap _) toRun = go cfgMap [toRun] initialResult
     where
         -- Initialize the root node first
-        (_, initialResult) = runState (runCfg next prev evalStmt (cfgMap M.! toRun)) M.empty
+        (_, initialResult) = runState (runCfg (cfgMap M.! toRun)) M.empty
 
-        go :: CFGMap a -> [CFGId] -> ResultMap l -> ResultMap l
+        go :: CFGMap a -> [CFGId] -> ResultMap d -> ResultMap d
         go theMap idxs resultMap =
             if null newChanged
                 then newResultMap
@@ -36,7 +44,7 @@ runAnalysis next prev evalStmt (CFG cfgMap _) toRun = go cfgMap [toRun] initialR
                 (newChanged, newResultMap) = foldr
                     (\nodeId (changedIds, res) ->
                         let
-                            (newChangedIds, newResult) = runState (runStep next prev evalStmt nodeId theMap) res
+                            (newChangedIds, newResult) = runState (runStep runCfg next nodeId theMap) res
                         in
                             (newChangedIds <> changedIds, newResult)
                         )
@@ -50,14 +58,14 @@ runAnalysis next prev evalStmt (CFG cfgMap _) toRun = go cfgMap [toRun] initialR
 --  Mapping from CFG Node -> (Variable -> lattice value)
 -- Returns:
 --  List of affected CFG nodes
-runStep :: Lattice l => FnextIds a -> FprevIds a -> FevalStmt a l -> CFGId -> CFGMap a -> State (ResultMap l) [Int]
-runStep next prev evalStmt toRun cfgMap = do
+runStep :: FrunCfg a d -> FnextIds a -> CFGId -> CFGMap a -> State (ResultMap d) [Int]
+runStep runCfg next toRun cfgMap = do
     -- First, retrieve the CFG
     let cfg = cfgMap M.! toRun
     -- This analysis will run for all children
     let children = (cfgMap M.!) <$> next cfg
 
-    childrenThatChanged <- traverse (runCfg next prev evalStmt) children
+    childrenThatChanged <- traverse runCfg children
 
     -- Return ids of nodes that changed
     let changedChildren = fst <$> filter snd (zip children childrenThatChanged)
@@ -65,7 +73,7 @@ runStep next prev evalStmt toRun cfgMap = do
 
 -- Run a single CFG node. Update the 
 -- node values in the map if anything changed, and return whether so
-runCfg :: Lattice l => FnextIds a -> FprevIds a -> FevalStmt a l -> CFGNode a -> State (ResultMap l) Bool
+runCfg :: Lattice l => FnextIds a -> FprevIds a -> FevalStmt a (ResultLat l) -> CFGNode a -> State (ResultMap (ResultLat l)) Bool
 runCfg _next _prev _evalStmt (FunEntry nodeId _ vars args _) = do
     -- The entry is always out-of-date only once
     m <- get

@@ -32,6 +32,7 @@ library
       Analysis.Dataflow.Const
       Analysis.Dataflow.Sign
       Analysis.Dataflow.Utils
+      Analysis.Dataflow.VeryBusy
       Analysis.Error
       Analysis.Semantics
       Analysis.Typecheck.ConstraintGenerator
