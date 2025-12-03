@@ -1,12 +1,12 @@
-module Analysis.Dataflow.Utils (prettyPrintAnalysis) where
+module Analysis.Dataflow.Utils (prettyPrintAnalysis, formatResultLat) where
 import Analysis.Cfg.Cfg (CFG(..), CFGNode(..), CFGId)
 import qualified Data.Map as M
 import Analysis.Dataflow.Analysis
 import Data.List (intercalate)
 import Text.Printf (printf)
 
-prettyPrintAnalysis :: Show l => CFG a -> ResultMap (ResultLat l) -> String
-prettyPrintAnalysis (CFG nodeMap _root) resultMap =
+prettyPrintAnalysis :: (d -> String) -> CFG a -> ResultMap d -> String
+prettyPrintAnalysis show (CFG nodeMap _root) resultMap =
     let
         nodeResults = M.toList resultMap
 
@@ -17,14 +17,14 @@ prettyPrintAnalysis (CFG nodeMap _root) resultMap =
         -- generate line given the target length
         maxLen = maximum $ length <$> nodeDescriptions
         formattedLines = zipWith (\(nodeId, resultLat) desc ->
-            formatLine maxLen nodeId desc resultLat
+            formatLine show maxLen nodeId desc resultLat
             ) nodeResults nodeDescriptions
     in
         intercalate "\n" formattedLines
 
-formatLine :: Show l => Int -> CFGId -> String -> ResultLat l -> String
-formatLine maxLen nodeId nodeDesc resultLat =
-    let latStr = formatResultLat resultLat
+formatLine :: (d -> String) -> Int -> CFGId -> String -> d -> String
+formatLine show maxLen nodeId nodeDesc resultLat =
+    let latStr = show resultLat
     in printf "%2d: [ %-*s ]: %s" nodeId maxLen nodeDesc latStr
 
 -- this is the source code

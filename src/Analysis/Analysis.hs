@@ -1,4 +1,4 @@
-module Analysis.Analysis (runAnalysis, getConstAnalysis, getSignAnalysis) where
+module Analysis.Analysis (runAnalysis, getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis) where
 import Parse.AST
 import qualified Analysis.Semantics as Semantics
 import Data.Data

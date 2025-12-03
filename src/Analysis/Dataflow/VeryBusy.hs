@@ -13,25 +13,31 @@ import Data.Generics.Uniplate.Data (universeBi)
 import Data.Data (Data)
 
 data VeryBusyLattice a
-    = Expr (S.Set (Expr a))
+    = Top
+    | Expr (S.Set (Expr a))
     deriving (Eq)
 
 instance Show (VeryBusyLattice a) where
+    show Top = "T"
     show (Expr exprs) = intercalate ", " (show <$> S.toList exprs)
 
 instance (Eq a, Ord a) => Lattice (VeryBusyLattice a) where
-    top = error "No way to get the set of all expressions"
+    top = Top
     bottom = Expr S.empty
 
+    Top <&> x = x
+    x <&> Top = x
     (Expr x) <&> (Expr y) = Expr $ S.intersection x y
 
+    Top <|> _ = Top
+    _ <|> Top = Top
     (Expr x) <|> (Expr y) = Expr $ S.union x y
     
 
 type VeryBusyResultMap a = ResultMap (VeryBusyLattice a)
 
 solve :: (Data a, Ord a) => CFG a -> VeryBusyResultMap a
-solve cfg = runAnalysis runCfg nextId cfg (fromJust $ findExit cfg.idmap).id
+solve cfg = runAnalysis runCfg prevId cfg (fromJust $ findExit cfg.idmap).id
 
 containsId :: forall a . (Data a) => Identifier -> Expr a -> Bool
 containsId i e = i `elem` usedIds
@@ -56,19 +62,19 @@ runCfg n@(Node nodeId _ _ stmt) = do
     -- HOWEVER:
     -- 1) If we are assignment, we DROP all expressions containing the variable assigned to
     -- 2) If we are if/while/output/assignemnt, we ADD the expression in question
-    let shouldDrop = case stmt of
-                    AssignmentStmt _ (EIdentifier _ var) _ -> containsId var
-                    _ -> const False
+    let shouldKeep = case stmt of
+                    AssignmentStmt _ (EIdentifier _ var) _ -> not . containsId var
+                    _ -> const True
     let toAdd = case stmt of
                     IfStmt _ cond _ _ -> [cond]
                     WhileStmt _ cond _ -> [cond]
                     OutputStmt _ e -> [e]
-                    AssignmentStmt _ l r -> [l, r]
+                    AssignmentStmt _ _l r -> [r]
                     _ -> []
     
     prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> nextId n)
-    let Expr mergedPrev = foldr (<|>) bottom prevAssignments
-    let afterRemoval = S.filter shouldDrop mergedPrev
+    let Expr mergedPrev = foldr (<&>) top prevAssignments
+    let afterRemoval = S.filter shouldKeep mergedPrev
     let afterAddition = S.union afterRemoval (S.fromList toAdd)
     let mySolution = Expr afterAddition
 
@@ -82,10 +88,10 @@ runCfg n@(Node nodeId _ _ stmt) = do
 
     pure changed
 
-runCfg n@(Node nodeId _ _ stmt) = do
+runCfg n@(FunEntry nodeId _ _ _ _) = do
     -- In this topmost group, just return whatever was below (it should be empty anyway)
     prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> (nextId n))
-    let mergedPrev = foldr (<|>) bottom prevAssignments
+    let mergedPrev = foldr (<&>) top prevAssignments
 
     existingSolution <- gets (M.!? nodeId)
 

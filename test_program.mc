@@ -1,16 +1,12 @@
 f() {
-  var x,y,z;
-  x = 21;
-  y = input;
-  z = 2 * x - x - x;
-  z = x / z;
-  z = y / z;
-  if (x > 0) {
-    y = 12;
-  } else {
-    y = x - 3;
+  var x,a,b;
+  x = input;
+  a = x-1;
+  b = x-2;
+  while (x > 0) {
+    output a*b-x;
+    x = x-1;
   }
-  output y;
-
-  return 0;
+  output a*b;
+  return x-1;
 }
