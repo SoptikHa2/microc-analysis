@@ -110,8 +110,8 @@ instance Show BiOp where
 
 instance Show (Stmt a) where
     show (OutputStmt _ e) = "output " <> show e <> ";"
-    show (WhileStmt _ c _b) = "(" <> show c <> ")" 
-    show (IfStmt _ c _t _f) = "(" <> show c <> ")" 
+    show (WhileStmt _ c _b) = "while (" <> show c <> ")" 
+    show (IfStmt _ c _t _f) = "if (" <> show c <> ")" 
     show (Block _ stmx) = "{\n" <> intercalate "\n" (show <$> stmx) <> "\n}"
     show (AssignmentStmt _ l r) = show l <> " = " <> show r <> ";"
 
