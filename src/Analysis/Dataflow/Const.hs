@@ -16,8 +16,11 @@ type ResultLat = M.Map Identifier ConstLattice
 -- TODO: generalize
 
 solve :: Show a => CFG a -> ResultMap
-solve cfg@(CFG map root) = (trace ("With CFG:" ++ show map) (go map [root.id] M.empty))
+solve cfg@(CFG map root) = (trace ("With CFG:" ++ show map) (go map [root.id] initialResult))
     where
+        -- Initialize the root node first
+        (_, initialResult) = runState (runCfg root) M.empty
+
         go :: Show a => CFGMap a -> [CFGId] -> ResultMap -> ResultMap
         go map idxs result =
             if null newChanged
@@ -25,7 +28,7 @@ solve cfg@(CFG map root) = (trace ("With CFG:" ++ show map) (go map [root.id] M.
                 else go map (nub newChanged) newResultMap
             where
                 (newChanged, newResultMap) = foldr
-                    (\id (changedIds,result) -> 
+                    (\id (changedIds,result) ->
                         let
                             (newChangedIds, newResult) = runState (runStep (trace ("Running for " ++ show id ++ " with " ++ show result) id) map) result
                         in
