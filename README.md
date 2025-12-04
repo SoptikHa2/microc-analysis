@@ -6,6 +6,7 @@ Intepreter, Static Analyzer, and hopefully soon a compiler of MicroC.
 
 - Interpretr
 - Semantic analysis: undefined/dup names, creating pointer to fun is forbidden, recursive records, accessing undefined fields of a record, assignments save to l-value.
+- Dataflow analysis: const & sign analysis, very busy and reaching definitions analysis
 
 
 # Language overview
