@@ -11,3 +11,13 @@ f() {
   output x;
   return 1;
 }
+
+ite(n) {
+  var f;
+  f = 1;
+  while (n > 0) {
+    f = f * n;
+    n = n - 1;
+  }
+  return f;
+}

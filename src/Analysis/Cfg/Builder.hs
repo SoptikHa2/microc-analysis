@@ -1,4 +1,4 @@
-module Analysis.Cfg.Builder (build) where
+module Analysis.Cfg.Builder (build, buildStmt) where
 import Analysis.Cfg.Cfg
 import Parse.AST
 import Control.Monad.State (State, get, modify, gets, evalState)
