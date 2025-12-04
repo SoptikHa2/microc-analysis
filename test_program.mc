@@ -1,12 +1,13 @@
 f() {
-  var x,a,b;
+  var x,y,z;
   x = input;
-  a = x-1;
-  b = x-2;
-  while (x > 0) {
-    output a*b-x;
-    x = x-1;
+  while (x > 1) {
+    y = x/2;
+    if (y>3) x = x-y;
+    z = x-4;
+    if (z>0) x = x/2;
+    z = z-1;
   }
-  output a*b;
-  return x-1;
+  output x;
+  return 1;
 }

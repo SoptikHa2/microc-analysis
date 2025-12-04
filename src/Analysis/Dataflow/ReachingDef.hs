@@ -37,7 +37,7 @@ instance (Eq a, Ord a) => Lattice (ReachingDefLattice a) where
 type ReachingDefResultMap a = ResultMap (ReachingDefLattice a)
 
 solve :: (Data a, Ord a) => CFG a -> ReachingDefResultMap a
-solve cfg = runAnalysis runCfg prevId cfg (fromJust $ findExit cfg.idmap).id
+solve cfg = runAnalysis runCfg nextId cfg cfg.root.id
 
 containsId :: forall a . (Data a) => Identifier -> Expr a -> Bool
 containsId i e = i `elem` usedIds
@@ -67,7 +67,7 @@ runCfg n@(Node nodeId _ _ stmt) = do
     -- 1) Previous values will be added using <|>
     -- 2) If we are assignment, drop assignments to the same variable from parents
     -- 3) Add together this assignment and the parents
-    prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> nextId n)
+    prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> prevId n)
     let Stmtx mergedPrev = foldr (<|>) bottom prevAssignments
     
     let (namesToDrop, assignments) = case stmt of
@@ -79,7 +79,7 @@ runCfg n@(Node nodeId _ _ stmt) = do
             _ -> False
     
     let prevAfterDrop = S.filter shouldKeep mergedPrev
-    let mySolution = Stmtx (prevAfterDrop) <|> Stmtx (S.fromList assignments)
+    let mySolution = Stmtx prevAfterDrop <|> Stmtx (S.fromList assignments)
 
     existingSolution <- gets (M.!? nodeId)
 
@@ -93,7 +93,7 @@ runCfg n@(Node nodeId _ _ stmt) = do
 
 runCfg n@(FunExit nodeId _ _ _) = do
     -- No change here, just return the previous ones
-    prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> (nextId n))
+    prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> (prevId n))
     let mergedPrev = foldr (<|>) bottom prevAssignments
 
     existingSolution <- gets (M.!? nodeId)

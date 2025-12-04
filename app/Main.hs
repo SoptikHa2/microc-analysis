@@ -20,7 +20,7 @@ import Error
 import Analysis.Cfg.Builder as CFGBuilder
 import Analysis.Cfg.Cfg as CFG
 import Data.List (intercalate)
-import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis)
+import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis)
 import qualified Analysis.Dataflow.Utils as DFUtils
 import Analysis.Dataflow.Analysis (ResultMap, ResultLat)
 
@@ -32,6 +32,7 @@ data Command
   | ConstAna FilePath
   | SignAna FilePath
   | VeryBusyAna FilePath
+  | ReachAna FilePath
 
 -- Parser for command line arguments
 commandParser :: Parser Command
@@ -42,6 +43,7 @@ commandParser = hsubparser
     <> command "const" (info constParser (progDesc "Run const propagation analysis of the program"))
     <> command "sign" (info signParser (progDesc "Run sign propagation analysis of the program"))
     <> command "vbusy" (info veryBusyParser (progDesc "Run very busy analysis of the program"))
+    <> command "reach" (info reachParser (progDesc "Run reaching definitions analysis of the program"))
     )
   where
     programArg = argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
@@ -54,6 +56,7 @@ commandParser = hsubparser
     constParser = ConstAna <$> programArg
     signParser = SignAna <$> programArg
     veryBusyParser = VeryBusyAna <$> programArg
+    reachParser = ReachAna <$> programArg
 
 -- Main entry point
 main :: IO ()
@@ -66,6 +69,7 @@ main = do
     ConstAna filepath -> runConsts filepath
     SignAna filepath -> runSign filepath
     VeryBusyAna filepath -> runVeryBusy filepath
+    ReachAna filepath -> runReach filepath
   where
     opts = info (commandParser <**> helper)
       ( fullDesc
@@ -189,6 +193,8 @@ runConsts = runAna DFUtils.formatResultLat getConstAnalysis
 runSign = runAna DFUtils.formatResultLat getSignAnalysis
 
 runVeryBusy = runAna show getVeryBusyAnalysis
+
+runReach = runAna show getReachingDefsAnalysis
 
 -- Find a function by name in the program
 findFunction :: Identifier -> Program a -> Maybe (FunDecl a)
