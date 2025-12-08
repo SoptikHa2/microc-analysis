@@ -2,16 +2,13 @@
 module IR.TacCompiler where
 import IR.Tac
 import IR.CompilerState
-import Control.Monad.Writer
 import IR.Emit
-import Control.Monad.State
 import Parse.AST
-import qualified Data.Map as M
 import Analysis.Typecheck.Type (Type(..))
 import Data.Foldable (traverse_)
 
 
-compile :: Program a -> TAC
+compile :: Program a -> ExtendedTAC
 compile funcs = ir
     where
         funcsIR = traverse emitFun funcs
@@ -35,7 +32,7 @@ emitFun f = do
     result <- emitExpr f.body.return
 
     emit_ $ Ret result
-    
+
 emitStmt :: Stmt a -> Emitter ()
 
 emitStmt (OutputStmt _ e) = do
@@ -69,7 +66,7 @@ emitStmt (IfStmt _ cond tru fals) = mdo
             emitStmt fals
             pure fStart
         Nothing -> emitL Nop
-    
+
     end <- emitL Nop
     pure ()
 
@@ -81,14 +78,38 @@ emitStmt (AssignmentStmt _ lhs rhs) = do
     rval <- emitExpr rhs
     -- TODO: type. Also, based on the type,
     -- decide between Mov and MovIntoPtr?
-    emit_ $ Mov Bottom target rval
+    emit_ $ Mov Bottom (Direct $ Register target) (dreg rval)
 
 emitExpr :: Expr a -> Emitter Reg
-emitExpr = undefined
+emitExpr (BiOp _ op lhs rhs) = undefined
 
+emitExpr (UnOp _ Parse.AST.Deref rhs) = do
+    val <- emitExpr rhs
+    -- todo: type
+    -- mov target [rhs]
+    emit (\r -> Mov Bottom (Direct $ Register r) (IR.Tac.Deref (Register val)))
+
+emitExpr (UnOp _ Ref rhs) = do
+    val <- emitExpr rhs
+    -- todo: type
+    -- lea
+    -- todo: verify
+    emit (\r -> Lea Bottom r (Register val))
+
+emitExpr (UnOp _ Alloc rhs) = do
+    val <- emitExpr rhs
+    -- todo: type
+    -- todo: resolve label of $alloc
+    -- todo: pass object size
+    -- call $alloc rhs
+    emit (IR.Tac.Call Bottom (-1) [dreg val] . dreg)
+
+emitExpr e = undefined
+
+-- TEST
 emitIf :: Emitter ()
 emitIf = mdo
-    compResult <- emit (Imm Int 0)
+    compResult <- emit (Immediate Int 0)
 
     emit_ $ Jz compResult fals
     emit_ $ Jmp tru

@@ -47,6 +47,7 @@ library
       Interpreter.State
       IR.CompilerState
       IR.Emit
+      IR.Stdlib
       IR.Tac
       IR.TacCompiler
       Lattice
