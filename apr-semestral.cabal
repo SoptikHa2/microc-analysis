@@ -83,6 +83,7 @@ library
 executable microc
   main-is: Main.hs
   other-modules:
+      Dbg
       Paths_apr_semestral
   autogen-modules:
       Paths_apr_semestral
