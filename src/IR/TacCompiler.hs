@@ -105,19 +105,3 @@ emitExpr (UnOp _ Alloc rhs) = do
     emit (IR.Tac.Call Bottom (-1) [dreg val] . dreg)
 
 emitExpr e = undefined
-
--- TEST
-emitIf :: Emitter ()
-emitIf = mdo
-    compResult <- emit (Immediate Int 0)
-
-    emit_ $ Jz compResult fals
-    emit_ $ Jmp tru
-
-    tru <- emitL Nop
-    emit_ $ Jmp end
-    fals <- emitL Halt
-
-    end <- emitL Nop
-
-    pure ()

@@ -33,6 +33,7 @@ data Command
   | SignAna FilePath
   | VeryBusyAna FilePath
   | ReachAna FilePath
+  | Compile FilePath
 
 -- Parser for command line arguments
 commandParser :: Parser Command
@@ -44,6 +45,7 @@ commandParser = hsubparser
     <> command "sign" (info signParser (progDesc "Run sign propagation analysis of the program"))
     <> command "vbusy" (info veryBusyParser (progDesc "Run very busy analysis of the program"))
     <> command "reach" (info reachParser (progDesc "Run reaching definitions analysis of the program"))
+    <> command "compile" (info compileParser (progDesc "Compile program into .t86"))
     )
   where
     programArg = argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
@@ -57,6 +59,7 @@ commandParser = hsubparser
     signParser = SignAna <$> programArg
     veryBusyParser = VeryBusyAna <$> programArg
     reachParser = ReachAna <$> programArg
+    compileParser = Compile <$> programArg
 
 -- Main entry point
 main :: IO ()
@@ -70,6 +73,7 @@ main = do
     SignAna filepath -> runSign filepath
     VeryBusyAna filepath -> runVeryBusy filepath
     ReachAna filepath -> runReach filepath
+    Compile filepath -> compile filepath
   where
     opts = info (commandParser <**> helper)
       ( fullDesc
@@ -169,6 +173,23 @@ generateCfg filepath = go `catch` \e -> do
     funToDot fun@(FunDecl _ name _ _) = CFG.cfgshow name cfg
       where
         cfg = CFGBuilder.build fun
+
+compile :: FilePath -> IO ()
+compile filepath = go `catch` \e -> do
+    print (e :: MicroCError)
+    exitWith $ ExitFailure 1
+  where
+    go = do
+      -- Read the source file
+      source <- readFile filepath
+
+      -- Parse the program
+      case parse program filepath source of
+        Left err -> do
+          putStrLn $ "Parse error: " ++ show err
+          exitFailure
+        Right prog -> do
+          undefined
 
 runAna :: (d -> String) -> (Program SourcePos -> [(String, CFG a, ResultMap d)]) -> String -> IO ()
 runAna show' op filepath = go `catch` \e -> do
