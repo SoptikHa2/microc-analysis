@@ -33,6 +33,7 @@ data ExtendedInstr
     | Ret Reg
     | Output Reg
     | Immediate Type Int Reg
+    deriving (Show, Eq)
 
 data TinyCInstr
     -- Return type if any; a [op]= b; first one is target
