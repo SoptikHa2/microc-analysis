@@ -79,13 +79,20 @@ emitStmt (AssignmentStmt _ lhs rhs) = do
     -- decide between Mov and MovIntoPtr?
     emit_ $ Mov Bottom (dreg target) (dreg rval)
 
+emitGenericBinOp :: (Type -> Reg -> AnyTarget -> TinyCInstr) -> Type -> Expr a -> Expr a -> Emitter Reg
+emitGenericBinOp op t l r = do
+    lreg <- emitExpr l
+    rreg <- emitExpr r
+    emit_ $ op t lreg (dreg rreg)
+    pure lreg
+
 emitExpr :: Expr a -> Emitter Reg
--- todo: binop generic handling
-emitExpr (BiOp _ Plus lhs rhs) = do
-    lreg <- emitExpr lhs
-    rreg <- emitExpr rhs
-    emit_ $ Add Int lreg (dreg rreg)
-    pure lreg 
+-- todo: types
+emitExpr (BiOp _ Plus lhs rhs) = emitGenericBinOp Add Int lhs rhs
+emitExpr (BiOp _ Minus lhs rhs) = emitGenericBinOp Sub Int lhs rhs
+emitExpr (BiOp _ Parse.AST.Mul lhs rhs) = emitGenericBinOp IR.Tac.Mul Int lhs rhs
+emitExpr (BiOp _ Parse.AST.Div lhs rhs) = emitGenericBinOp IR.Tac.Div Int lhs rhs
+-- TODO: eq, gt
 
 emitExpr (UnOp _ Parse.AST.Deref rhs) = do
     val <- emitExpr rhs
