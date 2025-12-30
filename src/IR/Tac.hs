@@ -6,22 +6,29 @@ import Control.Monad.State
 import Control.Monad.Fix
 import Control.Monad.Writer (WriterT, MonadWriter)
 import Analysis.Typecheck.Type (Type)
+import Data.List (intercalate)
 
 type NativeTAC = TAC TinyCInstr
 type ExtendedTAC = TAC ExtendedInstr
 
 newtype TAC a = TAC [(Label, a)]
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show a => Show (TAC a) where
+    show (TAC tx) = intercalate "\n" (show' <$> tx)
+        where
+            show' (label, row) = show label <> "\t\t" <> show row
+
 
 data AnySource
     = Register Reg
     | Imm Int
-    deriving (Show, Eq)
+    deriving (Eq)
 
 data AnyTarget
     = Direct AnySource
     | Deref AnySource
-    deriving (Show, Eq)
+    deriving (Eq)
 
 dreg :: Reg -> AnyTarget
 dreg = Direct . Register
@@ -33,7 +40,7 @@ data ExtendedInstr
     | Ret Reg
     | Output Reg
     | Immediate Type Int Reg
-    deriving (Show, Eq)
+    deriving (Eq)
 
 data TinyCInstr
     -- Return type if any; a [op]= b; first one is target
@@ -56,7 +63,7 @@ data TinyCInstr
     | PutChar Reg
     | PutNum Reg
     | GetChar Reg
-    deriving (Show, Eq)
+    deriving (Eq)
 
 instance Semigroup (TAC a) where
     TAC a <> TAC b = TAC (a <> b)

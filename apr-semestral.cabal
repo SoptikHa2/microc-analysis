@@ -50,6 +50,7 @@ library
       IR.Stdlib
       IR.Tac
       IR.TacCompiler
+      IR.TacPrint
       Lattice
       Lex.Comments
       Lex.Lexer
