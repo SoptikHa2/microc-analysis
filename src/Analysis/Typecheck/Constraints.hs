@@ -7,14 +7,14 @@ import Data.List (intercalate)
 import qualified Data.Map as M
 
 data Typeable a
-    = CExpr String (Expr a)
-    | CFun String (FunDecl a)
+    = CExpr (Expr a)
+    | CFun (FunDecl a)
     | CId String Identifier
     deriving (Show, Eq, Ord)
 
-typeableLoc :: Typeable a -> String
-typeableLoc (CExpr l _) = l
-typeableLoc (CFun l _) = l
+typeableLoc :: Show a => Typeable a -> String
+typeableLoc (CExpr e) = show $ exprLoc e
+typeableLoc (CFun f) = show f.d
 typeableLoc (CId l _) = l
 
 type Constraints a = [(Typeable a, Type)]
@@ -37,8 +37,8 @@ printAllTyping = printTyping' True
 printTyping' :: forall a . (Show a) => Bool -> (M.Map (Typeable a) Type) -> String
 printTyping' includeExpr m = intercalate "\n" (filter (/= "") (M.elems $ M.mapWithKey go m))
     where
-        go :: Typeable a -> Type -> String
-        go (CExpr l _) t | includeExpr = "[Expression at " ++ l ++ "] = " ++ show t
-        go (CExpr _ _) _ | not includeExpr = ""
-        go (CFun l f) t = "[" ++ f.name ++ "() :: " ++ l ++ "] = " ++ show t
+        go :: Show a => Typeable a -> Type -> String
+        go ty@(CExpr _) t | includeExpr = "[Expression at " ++ typeableLoc ty ++ "] = " ++ show t
+        go (CExpr _) _ | not includeExpr = ""
+        go ty@(CFun f) t = "[" ++ f.name ++ "() :: " ++ typeableLoc ty ++ "] = " ++ show t
         go (CId l i) t = "[" ++ i ++ " :: " ++ l ++ "] = " ++ show t

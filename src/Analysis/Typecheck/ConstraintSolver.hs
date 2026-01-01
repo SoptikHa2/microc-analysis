@@ -101,7 +101,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                     isInvalid Bottom = True
 
 
-            finalizeType :: (Typeable a) -> [Type] -> Either TypeError Type
+            finalizeType :: Show a => (Typeable a) -> [Type] -> Either TypeError Type
             finalizeType _ [] = Left "No types for typeable"
             finalizeType _ [t] = Right t
             finalizeType typ types =
@@ -192,12 +192,12 @@ replaceBoundVar from to = transform f
     f x = x
 
 -- Find substitutions by merging types for each typeable
-findSubstitutions :: M.Map (Typeable a) [Type] -> Either TypeError Resolutions
+findSubstitutions :: Show a => M.Map (Typeable a) [Type] -> Either TypeError Resolutions
 findSubstitutions tpt = do
     substitutions <- M.traverseWithKey processTypeable tpt
     return $ M.unions substitutions
   where
-    processTypeable :: (Typeable a) -> [Type] -> Either TypeError Resolutions
+    processTypeable :: Show a => (Typeable a) -> [Type] -> Either TypeError Resolutions
     processTypeable _ [] = Right M.empty
     processTypeable _ [_] = Right M.empty
     processTypeable typ types = do

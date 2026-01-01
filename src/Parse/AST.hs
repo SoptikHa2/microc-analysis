@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
+{-# LANGUAGE DeriveFunctor #-}
 module Parse.AST where
 import Data.Data
 import Data.List (intercalate)
@@ -13,7 +14,7 @@ data FunDecl a = FunDecl {
         args :: [Identifier],
         body :: FunBlock a
     }
-    deriving (Show, Eq, Ord, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable, Functor)
 
 type Identifier = String
 
@@ -23,7 +24,7 @@ data FunBlock a = FunBlock {
         body :: [Stmt a],
         return :: Expr a
     }
-    deriving (Show, Eq, Ord, Data, Typeable)
+    deriving (Show, Eq, Ord, Data, Typeable, Functor)
 
 data Stmt a
     = OutputStmt a (Expr a)
@@ -40,7 +41,7 @@ data Stmt a
     }
     | Block a [Stmt a]
     | AssignmentStmt a (Expr a) (Expr a)
-    deriving (Eq, Ord, Data, Typeable)
+    deriving (Eq, Ord, Data, Typeable, Functor)
 
 data UnOp
     = Deref
@@ -77,10 +78,10 @@ data Expr a
     | Array a [Expr a]
     | Number a Int
     | EIdentifier a Identifier
-    deriving (Eq, Ord, Data, Typeable)
+    deriving (Eq, Ord, Data, Typeable, Functor)
 
 newtype Record a = Fields [(Identifier, Expr a)]
-    deriving (Eq, Ord, Data, Typeable)
+    deriving (Eq, Ord, Data, Typeable, Functor)
 
 exprLoc :: Expr a -> a
 exprLoc (BiOp l _ _ _) = l
