@@ -41,6 +41,7 @@ library
       Analysis.Typecheck.ConstraintSolver
       Analysis.Typecheck.Type
       Analysis.Typecheck.Typecheck
+      Compile.Compile
       Error
       Interpreter.Data
       Interpreter.Interpret

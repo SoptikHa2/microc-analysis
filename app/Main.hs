@@ -23,6 +23,7 @@ import Data.List (intercalate)
 import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis)
 import qualified Analysis.Dataflow.Utils as DFUtils
 import Analysis.Dataflow.Analysis (ResultMap, ResultLat)
+import qualified Compile.Compile as C
 
 -- CLI data types
 data Command
@@ -189,7 +190,12 @@ compile filepath = go `catch` \e -> do
           putStrLn $ "Parse error: " ++ show err
           exitFailure
         Right prog -> do
-          undefined
+          case C.compile prog of
+            Left err -> do
+              putStrLn $ "Error: " ++ err
+              exitFailure
+            Right asm -> do
+              writeFile (filepath ++ ".out") asm
 
 runAna :: (d -> String) -> (Program SourcePos -> [(String, CFG a, ResultMap d)]) -> String -> IO ()
 runAna show' op filepath = go `catch` \e -> do

@@ -8,13 +8,13 @@ import Analysis.Typecheck.Type (Type(..))
 import Data.Foldable (traverse_)
 
 
-compile :: Program a -> ExtendedTAC
+compile :: Program Type -> ExtendedTAC
 compile funcs = ir
     where
         funcsIR = traverse emitFun funcs
         (_, ir) = runEmitter funcsIR
 
-emitFun :: FunDecl a -> Emitter ()
+emitFun :: FunDecl Type -> Emitter ()
 emitFun f = do
     -- get args and vars
     let argVars = f.args <> f.body.idDecl
@@ -33,7 +33,7 @@ emitFun f = do
 
     emit_ $ Ret result
 
-emitStmt :: Stmt a -> Emitter ()
+emitStmt :: Stmt Type -> Emitter ()
 
 emitStmt (OutputStmt _ e) = do
     r <- emitExpr e
@@ -72,21 +72,21 @@ emitStmt (IfStmt _ cond tru fals) = mdo
 
 emitStmt (Block _ stmx) = traverse_ emitStmt stmx
 
-emitStmt (AssignmentStmt _ lhs rhs) = do
+emitStmt (AssignmentStmt t lhs rhs) = do
     target <- emitExpr lhs
     rval <- emitExpr rhs
-    -- TODO: type. Also, based on the type,
+    -- TODO: Based on the type,
     -- decide between Mov and MovIntoPtr?
-    emit_ $ Mov Bottom (dreg target) (dreg rval)
+    emit_ $ Mov t (dreg target) (dreg rval)
 
-emitGenericBinOp :: (Type -> Reg -> AnyTarget -> TinyCInstr) -> Type -> Expr a -> Expr a -> Emitter Reg
+emitGenericBinOp :: (Type -> Reg -> AnyTarget -> TinyCInstr) -> Type -> Expr Type -> Expr Type -> Emitter Reg
 emitGenericBinOp op t l r = do
     lreg <- emitExpr l
     rreg <- emitExpr r
     emit_ $ op t lreg (dreg rreg)
     pure lreg
 
-emitExpr :: Expr a -> Emitter Reg
+emitExpr :: Expr Type -> Emitter Reg
 -- todo: types
 emitExpr (BiOp _ Plus lhs rhs) = emitGenericBinOp Add Int lhs rhs
 emitExpr (BiOp _ Minus lhs rhs) = emitGenericBinOp Sub Int lhs rhs
@@ -94,29 +94,29 @@ emitExpr (BiOp _ Parse.AST.Mul lhs rhs) = emitGenericBinOp IR.Tac.Mul Int lhs rh
 emitExpr (BiOp _ Parse.AST.Div lhs rhs) = emitGenericBinOp IR.Tac.Div Int lhs rhs
 -- TODO: eq, gt
 
-emitExpr (UnOp _ Parse.AST.Deref rhs) = do
+emitExpr (UnOp t Parse.AST.Deref rhs) = do
     val <- emitExpr rhs
     -- todo: type
     -- mov target [rhs]
-    emit (\r -> Mov Bottom (dreg r) (IR.Tac.Deref (Register val)))
+    emit (\r -> Mov t (dreg r) (IR.Tac.Deref (Register val)))
 
-emitExpr (UnOp _ Ref rhs) = do
+emitExpr (UnOp t Ref rhs) = do
     val <- emitExpr rhs
     -- todo: type
     -- lea
     -- todo: verify
-    emit (\r -> Lea Bottom r (Register val))
+    emit (\r -> Lea t r (Register val))
 
-emitExpr (UnOp _ Alloc rhs) = do
+emitExpr (UnOp t Alloc rhs) = do
     val <- emitExpr rhs
     -- todo: type
     -- todo: resolve label of $alloc
     -- todo: pass object size
     -- call $alloc rhs
-    emit (IR.Tac.Call Bottom (-1) [dreg val] . dreg)
+    emit (IR.Tac.Call t (-1) [dreg val] . dreg)
 
-emitExpr (Number _ i) = do
-    emit (\r -> Mov Int (Direct $ Register r) (Direct $ Imm i))
+emitExpr (Number t i) = do
+    emit (\r -> Mov t (Direct $ Register r) (Direct $ Imm i))
 
 emitExpr (EIdentifier _ e) = do
     run $ getVarReg e
