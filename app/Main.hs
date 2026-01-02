@@ -186,6 +186,8 @@ compile filepath target = go `catch` \e -> do
     print (e :: MicroCError)
     exitWith $ ExitFailure 1
   where
+    -- TODO: test for semantic issues, etc.
+    -- make the whole verify run common for everything
     go = do
       -- Read the source file
       source <- readFile filepath
