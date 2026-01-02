@@ -42,7 +42,6 @@ library
       Analysis.Typecheck.Type
       Analysis.Typecheck.Typecheck
       Compile.Compile
-      Compile.Emit
       Error
       Interpreter.Data
       Interpreter.Interpret

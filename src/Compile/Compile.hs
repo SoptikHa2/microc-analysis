@@ -26,5 +26,4 @@ compile prog = do
     -- TODO: register allocation
 
     -- Emit ASM
-
-    undefined
+    Right $ show rawIR

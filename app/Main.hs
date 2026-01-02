@@ -35,6 +35,7 @@ data Command
   | VeryBusyAna FilePath
   | ReachAna FilePath
   | Compile FilePath
+  | Asm FilePath
 
 -- Parser for command line arguments
 commandParser :: Parser Command
@@ -47,6 +48,7 @@ commandParser = hsubparser
     <> command "vbusy" (info veryBusyParser (progDesc "Run very busy analysis of the program"))
     <> command "reach" (info reachParser (progDesc "Run reaching definitions analysis of the program"))
     <> command "compile" (info compileParser (progDesc "Compile program into .t86"))
+    <> command "asm" (info asmParser (progDesc "Compile program into .t86 and output the assembly"))
     )
   where
     programArg = argument str (metavar "PROGRAM" <> help "Path to the MicroC source file")
@@ -61,6 +63,7 @@ commandParser = hsubparser
     veryBusyParser = VeryBusyAna <$> programArg
     reachParser = ReachAna <$> programArg
     compileParser = Compile <$> programArg
+    asmParser = Asm <$> programArg
 
 -- Main entry point
 main :: IO ()
@@ -74,7 +77,8 @@ main = do
     SignAna filepath -> runSign filepath
     VeryBusyAna filepath -> runVeryBusy filepath
     ReachAna filepath -> runReach filepath
-    Compile filepath -> compile filepath
+    Compile filepath -> compile filepath (Just $ filepath <> ".out")
+    Asm filepath -> compile filepath Nothing
   where
     opts = info (commandParser <**> helper)
       ( fullDesc
@@ -177,8 +181,8 @@ generateCfg filepath = go `catch` \e -> do
       where
         cfg = CFGBuilder.build fun
 
-compile :: FilePath -> IO ()
-compile filepath = go `catch` \e -> do
+compile :: FilePath -> Maybe FilePath -> IO ()
+compile filepath target = go `catch` \e -> do
     print (e :: MicroCError)
     exitWith $ ExitFailure 1
   where
@@ -197,7 +201,9 @@ compile filepath = go `catch` \e -> do
               putStrLn $ "Error: " ++ err
               exitFailure
             Right asm -> do
-              writeFile (filepath ++ ".out") asm
+              case target of
+                Just target -> writeFile target asm
+                Nothing -> putStrLn asm
 
 runAna :: (d -> String) -> (Program SourcePos -> [(String, CFG a, ResultMap d)]) -> String -> IO ()
 runAna show' op filepath = go `catch` \e -> do

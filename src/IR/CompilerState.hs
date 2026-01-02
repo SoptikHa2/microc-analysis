@@ -24,7 +24,7 @@ data CState = CState {
 }
 
 empty :: CState
-empty = CState { nextRegister = 0, nextLabel = 0, funBodies = M.empty, funRegsForVars = M.empty }
+empty = CState { nextRegister = 1, nextLabel = 0, funBodies = M.empty, funRegsForVars = M.empty }
 
 reg :: State CState Reg
 reg = do
