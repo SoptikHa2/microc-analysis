@@ -81,6 +81,8 @@ main = do
      <> progDesc "MicroC interpreter - run MicroC programs"
      <> header "microc - A simple interpreter for the MicroC language" )
 
+-- TODO: the rest of this file is a disaster and should be rewritten
+
 -- Run a MicroC program
 runProgram :: FilePath -> [Int] -> IO ()
 runProgram filepath args = go `catch` \e -> do

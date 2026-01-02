@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Analysis.Typecheck.Typecheck (verify, getTyping) where
+{-# LANGUAGE TupleSections #-}
+module Analysis.Typecheck.Typecheck (verify, getTyping, typeAST) where
 import Data.Data (Data)
 import Parse.AST
 import Analysis.Typecheck.Type
@@ -36,3 +37,14 @@ getTyping funcs = do
     let fn = nub $ concat $ getAllFieldsNames <$> funcs
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
     solve (concat cx)
+
+typeAST :: Program a -> M.Map (Typeable a) Type -> Program (a, Type)
+typeAST ast typemap = astWithType
+    where
+        astWithBotType = (, Bottom) <$$> ast :: Program (a, Type)
+        astWithType = transformBi (annotateExpr typemap) astWithBotType
+
+        annotateExpr :: M.Map (Typeable a) Type -> Expr (a, Type) -> Expr (a, Type)
+        annotateExpr typingmap expr = (\(s,_) -> (s,dstType)) <$> expr
+            where
+                dstType = typingmap M.! CExpr (fst <$> expr)

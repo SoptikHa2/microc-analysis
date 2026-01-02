@@ -1,5 +1,24 @@
 module Compile.Compile where
 import Parse.AST (Program)
+import Analysis.Typecheck.Typecheck (getTyping, typeAST)
+import Text.Parsec (SourcePos)
+import qualified IR.TacCompiler as IRCompiler
+import Utils ((<$$>))
 
-compile :: Program a -> Either String String
-compile prog = Left "not impl"
+compile :: Program SourcePos -> Either String String
+compile prog = do
+    typing <- getTyping prog
+
+    -- TODO: optimize on AST
+
+    -- Generate IR
+    let progWithTypes = typeAST prog typing
+    let richIR = IRCompiler.compile (snd <$$> progWithTypes)
+
+    -- TODO: optimize on IR
+
+    -- Desugar IR to instructions supported by the underlying machine
+
+    -- Emit ASM
+
+    undefined
