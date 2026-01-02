@@ -98,7 +98,7 @@ emitExpr (UnOp t Parse.AST.Deref rhs) = do
     val <- emitExpr rhs
     -- todo: type
     -- mov target [rhs]
-    emit (\r -> Mov t (dreg r) (IR.Tac.Deref (Register val)))
+    emit (\r -> Mov t (dreg r) (IR.Tac.Deref (Register val) 0))
 
 emitExpr (UnOp t Ref rhs) = do
     val <- emitExpr rhs

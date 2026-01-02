@@ -10,9 +10,10 @@ import qualified Data.Map as M
 import Analysis.Typecheck.Constraints
 import Analysis.Typecheck.ConstraintSolver (solve)
 import Data.List (nub)
-import Data.Generics.Uniplate.Data (universeBi)
+import Data.Generics.Uniplate.Data (universeBi, transformBi)
 import Analysis.Typecheck.ConstraintGenerator
 import Control.Monad.State
+import Utils ((<$$>))
 
 
 getAllFieldsNames :: forall a . (Data a) => FunDecl a -> [Identifier]
@@ -38,13 +39,13 @@ getTyping funcs = do
     let (cx, _state) = runIdentity (runStateT (traverse genConstraintsFun funcs) (emptyState fn))
     solve (concat cx)
 
-typeAST :: Program a -> M.Map (Typeable a) Type -> Program (a, Type)
+typeAST :: (Data a, Ord a) => Program a -> M.Map (Typeable a) Type -> Program (a, Type)
 typeAST ast typemap = astWithType
     where
-        astWithBotType = (, Bottom) <$$> ast :: Program (a, Type)
+        astWithBotType = (, Bottom) <$$> ast
         astWithType = transformBi (annotateExpr typemap) astWithBotType
 
-        annotateExpr :: M.Map (Typeable a) Type -> Expr (a, Type) -> Expr (a, Type)
+        annotateExpr :: Ord a => M.Map (Typeable a) Type -> Expr (a, Type) -> Expr (a, Type)
         annotateExpr typingmap expr = (\(s,_) -> (s,dstType)) <$> expr
             where
                 dstType = typingmap M.! CExpr (fst <$> expr)

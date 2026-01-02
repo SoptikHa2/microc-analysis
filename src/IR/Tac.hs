@@ -28,7 +28,7 @@ data AnySource
 
 data AnyTarget
     = Direct AnySource
-    | Deref AnySource
+    | Deref AnySource Int  -- register + offset
     deriving (Eq)
 
 dreg :: Reg -> AnyTarget

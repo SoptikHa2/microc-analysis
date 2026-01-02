@@ -1,14 +1,18 @@
-module IR.CompilerState (CState(..), Reg, Label, empty, reg, label, getFun, saveFun, getVarReg) where
+module IR.CompilerState (CState(..), Reg(..), Label, empty, reg, label, getFun, saveFun, getVarReg) where
 
 import Control.Monad.State
 import qualified Data.Map as M
 import Parse.AST (Identifier)
 
 type Label = Int
-type Reg = Int
+data Reg
+    = BP
+    | SP
+    | R Int
+    deriving (Eq)
 
 data CState = CState {
-    nextRegister :: Reg,
+    nextRegister :: Int,
     nextLabel :: Label,
     currentFunction :: Identifier,
     -- Where each function begins.
@@ -26,7 +30,7 @@ reg :: State CState Reg
 reg = do
     reg <- gets nextRegister
     modify (\s -> s { nextRegister = reg + 1 })
-    pure reg
+    pure $ R reg
 
 setVar :: Identifier -> Reg -> State CState ()
 setVar var reg = do
