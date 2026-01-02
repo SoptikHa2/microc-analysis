@@ -42,11 +42,13 @@ library
       Analysis.Typecheck.Type
       Analysis.Typecheck.Typecheck
       Compile.Compile
+      Compile.Emit
       Error
       Interpreter.Data
       Interpreter.Interpret
       Interpreter.State
       IR.CompilerState
+      IR.Desugar
       IR.Emit
       IR.Stdlib
       IR.Tac

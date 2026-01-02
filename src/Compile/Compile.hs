@@ -4,6 +4,7 @@ import Analysis.Typecheck.Typecheck (getTyping, typeAST)
 import Text.Parsec (SourcePos)
 import qualified IR.TacCompiler as IRCompiler
 import Utils ((<$$>))
+import IR.Desugar (desugar)
 
 compile :: Program SourcePos -> Either String String
 compile prog = do
@@ -18,6 +19,11 @@ compile prog = do
     -- TODO: optimize on IR
 
     -- Desugar IR to instructions supported by the underlying machine
+    let rawIR = desugar <$> richIR
+
+    -- TODO: optimize on IR
+
+    -- TODO: register allocation
 
     -- Emit ASM
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
 module IR.Tac where
 
 import IR.CompilerState
@@ -12,7 +13,7 @@ type NativeTAC = TAC TinyCInstr
 type ExtendedTAC = TAC ExtendedInstr
 
 newtype TAC a = TAC [(Label, a)]
-    deriving (Eq)
+    deriving (Eq, Functor)
 
 instance Show a => Show (TAC a) where
     show (TAC tx) = intercalate "\n" (show' <$> tx)
