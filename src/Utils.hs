@@ -1,4 +1,4 @@
-module Utils ((<+>), (<||>), (!?), (<$$>)) where
+module Utils ((<+>), (<||>), (!?), (<$$>), (<!>)) where
 
 
 infixl 4 <+>
@@ -13,6 +13,11 @@ infixl 4 <||>
 (<||>) :: Either a b -> Either a b -> Either a b
 (<||>) (Left _) b = b
 (<||>) a@(Right _) _ = a
+
+infixl 4 <!>
+(<!>) :: Either a b -> (a -> c) -> Either c b
+Left l  <!> f = Left $ f l
+Right r <!> _ = Right r
 
 -- Taken from newer base https://hackage.haskell.org/package/ghc-internal-9.1201.0/docs/src/GHC.Internal.List.html#%21%3F
 infixl 4 !?

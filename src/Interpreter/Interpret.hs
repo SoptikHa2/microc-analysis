@@ -5,13 +5,15 @@ import Parse.AST hiding (target, body, args, name)
 import Interpreter.State
 import Interpreter.Data
 import Control.Monad.Identity (Identity(runIdentity))
-import Control.Monad.State (StateT, mapStateT, MonadTrans (lift), MonadIO (liftIO))
+import Control.Monad.State (StateT, mapStateT, MonadTrans (lift), MonadIO (liftIO), execStateT, evalStateT)
 import Control.Monad (forM, forM_, when)
 import Data.Foldable (traverse_)
 import Text.Parsec (SourcePos)
 import Error (MicroCError(EInterpreter))
 import Control.Exception (throw)
 import Utils
+import qualified Interpreter.State as IS
+import System.Exit (exitFailure)
 
 runId :: StateT State Identity a -> StateT State IO a
 runId = mapStateT (pure . runIdentity)

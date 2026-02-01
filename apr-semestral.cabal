@@ -45,6 +45,7 @@ library
       Error
       Interpreter.Data
       Interpreter.Interpret
+      Interpreter.InterpretRun
       Interpreter.State
       IR.CompilerState
       IR.Desugar
@@ -87,6 +88,7 @@ executable microc
   main-is: Main.hs
   other-modules:
       Dbg
+      Workflow
       Paths_apr_semestral
   autogen-modules:
       Paths_apr_semestral

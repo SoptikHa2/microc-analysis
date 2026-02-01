@@ -14,7 +14,7 @@ data Type
     | BoundTypeVar Int
     | TypeVarBinding Int Type
     | Bottom
-    deriving (Eq, Data)
+    deriving (Eq, Data, Ord)
 
 instance Show Type where
   show :: Type -> String

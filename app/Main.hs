@@ -1,29 +1,26 @@
 module Main (main) where
 
 import Options.Applicative hiding (empty)
-import Control.Monad.State (StateT, evalStateT, execStateT, mapStateT)
 import Control.Monad (forM_)
-import Control.Monad.Identity (Identity, runIdentity)
 import System.Exit (exitFailure, exitWith, ExitCode (ExitFailure), exitSuccess)
 import Text.Parsec (parse, SourcePos)
 
 import Parse.DeclParser (program)
 import Parse.AST hiding (name, args)
-import qualified Interpreter.State as IS
-import Interpreter.Interpret (evalFun)
 import Interpreter.Data (Value(..))
-import Analysis.Analysis (runAnalysis)
-import Analysis.Typecheck.Typecheck (getTyping)
 import Analysis.Typecheck.Constraints (printTyping)
 import Control.Exception
 import Error
-import Analysis.Cfg.Builder as CFGBuilder
 import Analysis.Cfg.Cfg as CFG
 import Data.List (intercalate)
 import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis)
 import qualified Analysis.Dataflow.Utils as DFUtils
-import Analysis.Dataflow.Analysis (ResultMap, ResultLat)
+import Analysis.Dataflow.Analysis (ResultMap)
 import qualified Compile.Compile as C
+import Workflow (getSource, ast, SourceData (typing), getAna, cfg)
+import Interpreter.InterpretRun (interpretIO)
+import Utils ((<$$>))
+import qualified Data.Map as M
 
 -- CLI data types
 data Command
@@ -34,7 +31,7 @@ data Command
   | SignAna FilePath
   | VeryBusyAna FilePath
   | ReachAna FilePath
-  | Compile FilePath
+  | Compile FilePath (Maybe FilePath)
   | Asm FilePath
 
 -- Parser for command line arguments
@@ -62,7 +59,7 @@ commandParser = hsubparser
     signParser = SignAna <$> programArg
     veryBusyParser = VeryBusyAna <$> programArg
     reachParser = ReachAna <$> programArg
-    compileParser = Compile <$> programArg
+    compileParser = Compile <$> programArg <*> optional (argument str (metavar "TARGET" <> help "Target output file (- for stdout; default: <input>.out)"))
     asmParser = Asm <$> programArg
 
 -- Main entry point
@@ -77,7 +74,12 @@ main = do
     SignAna filepath -> runSign filepath
     VeryBusyAna filepath -> runVeryBusy filepath
     ReachAna filepath -> runReach filepath
-    Compile filepath -> compile filepath (Just $ filepath <> ".out")
+    Compile filepath targetFile -> compile filepath outFile
+      where
+        outFile = case targetFile of
+          Just "-" -> Nothing
+          Just a -> Just a
+          Nothing -> Just $ filepath <> ".out"
     Asm filepath -> compile filepath Nothing
   where
     opts = info (commandParser <**> helper)
@@ -87,143 +89,65 @@ main = do
 
 -- TODO: the rest of this file is a disaster and should be rewritten
 
--- Run a MicroC program
+_resIntoIO :: Show e => Either e a -> IO a
+_resIntoIO (Right result) = pure result
+_resIntoIO (Left e) = do
+  print e
+  exitWith $ ExitFailure 1
+
 runProgram :: FilePath -> [Int] -> IO ()
 runProgram filepath args = go `catch` \e -> do
     print (e :: MicroCError)
     exitWith $ ExitFailure 1
   where
     go = do
-      -- Read the source file
-      source <- readFile filepath
-
-      -- Parse the program
-      case parse program filepath source of
-        Left err -> do
-          putStrLn $ "Parse error: " ++ show err
-          exitFailure
-        Right prog -> do
-          -- First of all, analyse it
-          _ <- runAnalysis prog
-
-          -- Find the main function
-          case findFunction "main" prog of
-            Nothing -> do
-              putStrLn "Error: No 'main' function found in program"
-              exitFailure
-            Just mainFun -> do
-              -- Check argument count matches
-              let FunDecl loc _ funArgs _ = mainFun
-              let expectedArgs = length funArgs
-              let providedArgs = length args
-              if expectedArgs /= providedArgs
-                then do
-                  putStrLn $ "Error: main function expects " ++ show expectedArgs
-                          ++ " arguments, but " ++ show providedArgs ++ " were provided"
-                  exitFailure
-                else do
-                  -- Initialize state with all functions in global scope
-                  initialState <- initializeState prog
-
-                  -- Run the main function with provided arguments
-                  result <- evalStateT (evalFun mainFun loc (fmap VNumber args)) initialState
-
-                  -- Exit with the status of main
-                  case result of
-                    (VNumber exitCode) | (exitCode `mod` 256) == 0 -> exitSuccess
-                    (VNumber exitCode) -> exitWith (ExitFailure (exitCode `mod` 256))
-                    _ -> do
-                      putStrLn $ "Unknown return value from main: " <> show result
-                      exitWith (ExitFailure 1)
+      code <- readFile filepath
+      source <- _resIntoIO $ getSource code filepath
+      resultVal <- interpretIO (fst <$$> source.ast) args
+      -- Exit with the status of main
+      case resultVal of
+        (VNumber exitCode) | (exitCode `mod` 256) == 0 -> exitSuccess
+        (VNumber exitCode) -> exitWith (ExitFailure (exitCode `mod` 256))
+        _ -> do
+          putStrLn $ "Unknown return value from main: " <> show resultVal
+          exitWith (ExitFailure 1)
 
 -- Type check a MicroC program
 typeCheckProgram :: FilePath -> IO ()
-typeCheckProgram filepath = go `catch` \e -> do
-    print (e :: MicroCError)
-    exitWith $ ExitFailure 1
-  where
-    go = do
-      -- Read the source file
-      source <- readFile filepath
-
-      -- Parse the program
-      case parse program filepath source of
-        Left err -> do
-          putStrLn $ "Parse error: " ++ show err
-          exitFailure
-        Right prog -> do
-          -- Run type analysis
-          case getTyping prog of
-            Right typing -> do
-              putStrLn $ printTyping typing
-              exitSuccess
-            Left e -> do
-              putStrLn e
-              exitWith $ ExitFailure 1
+typeCheckProgram filepath = do
+  code <- readFile filepath
+  source <- _resIntoIO $ getSource code filepath
+  putStrLn $ printTyping source.typing
+  exitSuccess
 
 generateCfg :: FilePath -> IO ()
-generateCfg filepath = go `catch` \e -> do
-    print (e :: MicroCError)
-    exitWith $ ExitFailure 1
-  where
-    go = do
-      source <- readFile filepath
-      case parse program filepath source of
-        Left err -> do
-          putStrLn $ "Parse error: " ++ show err
-          exitFailure
-        Right prog -> do
-          let dots = funToDot <$> prog
-          putStrLn (intercalate "\n\n" dots)
-
-    funToDot :: FunDecl a -> String
-    funToDot fun@(FunDecl _ name _ _) = CFG.cfgshow name cfg
-      where
-        cfg = CFGBuilder.build fun
+generateCfg filepath = do
+  code <- readFile filepath
+  source <- _resIntoIO $ getSource code filepath
+  let ana = getAna source.ast
+  let nameAndCfg = M.toList $ cfg <$> ana
+  let dots = uncurry CFG.cfgshow <$> nameAndCfg
+  putStrLn (intercalate "\n\n" dots)
 
 compile :: FilePath -> Maybe FilePath -> IO ()
-compile filepath target = go `catch` \e -> do
-    print (e :: MicroCError)
-    exitWith $ ExitFailure 1
-  where
-    -- TODO: test for semantic issues, etc.
-    -- make the whole verify run common for everything
-    go = do
-      -- Read the source file
-      source <- readFile filepath
-
-      -- Parse the program
-      case parse program filepath source of
-        Left err -> do
-          putStrLn $ "Parse error: " ++ show err
-          exitFailure
-        Right prog -> do
-          case C.compile prog of
-            Left err -> do
-              putStrLn $ "Error: " ++ err
-              exitFailure
-            Right asm -> do
-              case target of
-                Just target -> writeFile target asm
-                Nothing -> putStrLn asm
+compile filepath target = do
+  code <- readFile filepath
+  source <- _resIntoIO $ getSource code filepath
+  asm <- _resIntoIO $ C.compile source.ast
+  case target of
+    Just target -> writeFile target asm
+    Nothing -> putStrLn asm
 
 runAna :: (d -> String) -> (Program SourcePos -> [(String, CFG a, ResultMap d)]) -> String -> IO ()
-runAna show' op filepath = go `catch` \e -> do
-    print (e :: MicroCError)
-    exitWith $ ExitFailure 1
-  where
-    go = do
-      source <- readFile filepath
-      case parse program filepath source of
-        Left err -> do
-          putStrLn $ "Parse error: " ++ show err
-          exitFailure
-        Right prog -> do
-          let results = op prog
-          forM_ results $ \(funName, cfg, resultMap) -> do
-            putStrLn $ "Function: " ++ funName
-            putStrLn $ DFUtils.prettyPrintAnalysis show' cfg resultMap
-            putStrLn ""
+runAna show' op filepath = do
+  -- TODO: refactor to use analysis workflow
+  code <- readFile filepath
+  source <- _resIntoIO $ getSource code filepath
+  let results = op (fst <$$> source.ast)
+  forM_ results $ \(funName, cfg, resultMap) -> do
+    putStrLn $ "Function: " ++ funName
+    putStrLn $ DFUtils.prettyPrintAnalysis show' cfg resultMap
+    putStrLn ""
 
 runConsts = runAna DFUtils.formatResultLat getConstAnalysis
 
@@ -233,22 +157,3 @@ runVeryBusy = runAna show getVeryBusyAnalysis
 
 runReach = runAna show getReachingDefsAnalysis
 
--- Find a function by name in the program
-findFunction :: Identifier -> Program a -> Maybe (FunDecl a)
-findFunction name = foldr go Nothing
-  where
-    go f@(FunDecl _ fname _ _) acc
-      | fname == name = Just f
-      | otherwise = acc
-
--- Initialize the interpreter state with all functions in global scope
-initializeState :: Program SourcePos -> IO IS.State
-initializeState prog = do
-  -- Start with empty state and add all functions to global scope
-  let addFunctionsAction :: StateT IS.State IO ()
-      addFunctionsAction = forM_ prog $ \f@(FunDecl _ fname _ _) ->
-        liftIdentityToIO $ IS.putsGlobal fname (Function f)
-  execStateT addFunctionsAction IS.empty
-  where
-    liftIdentityToIO :: StateT IS.State Identity a -> StateT IS.State IO a
-    liftIdentityToIO = mapStateT (pure . runIdentity)

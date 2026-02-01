@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE InstanceSigs #-}
-module Analysis.Semantics (SemanticError(..), verify) where
+module Analysis.Semantics (SemanticError(..), verify, verifyM) where
 import Prelude hiding (id)
 import Parse.AST hiding (target)
 import Data.Generics.Uniplate.Data
@@ -39,6 +39,12 @@ eFromFun fun loc = case loc of
             InvalidAssignment s -> InvalidAssignment (prefix ++ s)
             InvalidRecordField s -> InvalidRecordField (prefix ++ s)
             NestedRecord s -> NestedRecord (prefix ++ s)
+
+verifyM :: (Show a, Data a) => [FunDecl a] -> Either [SemanticError] ()
+verifyM = assertEmpty . verify
+    where
+        assertEmpty [] = Right ()
+        assertEmpty xs = Left xs
 
 verify :: (Show a, Data a) => [FunDecl a] -> [SemanticError]
 verify funcs = concat (
