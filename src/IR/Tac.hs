@@ -12,14 +12,21 @@ import Data.List (intercalate)
 type NativeTAC = TAC TinyCInstr
 type ExtendedTAC = TAC ExtendedInstr
 
-newtype TAC a = TAC [(Label, a)]
+newtype TAC a = TAC [(Maybe Label, a)]
     deriving (Eq, Functor)
 
 instance Show a => Show (TAC a) where
     show (TAC tx) = intercalate "\n" (show' <$> tx)
         where
-            show' (label, row) = show label <> "\t\t" <> show row
+            show' (Just label, row) = show label <> "\t\t" <> show row
+            show' (Nothing, row) = "\t\t" <> show row
 
+concatTAC :: TAC [TinyCInstr] -> TAC TinyCInstr
+concatTAC (TAC ix) = TAC (concatMap flatten ix)
+    where
+        flatten :: (Maybe Label, [TinyCInstr]) -> [(Maybe Label, TinyCInstr)]
+        flatten (_, []) = []
+        flatten (l, c:cx) = (l, c) : flatten (Nothing, cx)
 
 data AnySource
     = Register Reg
@@ -38,7 +45,7 @@ data ExtendedInstr
     = Native TinyCInstr
     | Call Type Label [AnyTarget] AnyTarget
     | GetNthArg Type Int AnyTarget
-    | Ret Reg
+    | Return Reg
     | Output Reg
     | Immediate Type Int Reg
     deriving (Eq)
@@ -60,6 +67,7 @@ data TinyCInstr
     | Push AnySource
     | Pop Type Reg
     | Halt
+    | Ret
     | Nop
     | PutChar Reg
     | PutNum Reg

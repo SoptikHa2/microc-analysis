@@ -31,7 +31,7 @@ emitFun f = do
     -- emit the return into reg
     result <- emitExpr f.body.return
 
-    emit_ $ Ret result
+    emit_ $ Return result
 
 emitStmt :: Stmt Type -> Emitter ()
 

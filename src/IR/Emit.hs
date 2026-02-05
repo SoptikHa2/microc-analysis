@@ -12,13 +12,13 @@ class AnyTACEmit a where
     emit i = do
         resReg <- run reg
         l <- run label
-        tell (TAC [(l, _constructEInstr $ i resReg)])
+        tell (TAC [(Just l, _constructEInstr $ i resReg)])
         pure resReg
 
     emitL :: a -> Emitter Label
     emitL i = do
         l <- run label
-        tell (TAC [(l, _constructEInstr i)])
+        tell (TAC [(Just l, _constructEInstr i)])
         pure l
     
     emit_ :: a -> Emitter ()

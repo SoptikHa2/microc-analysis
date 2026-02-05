@@ -40,6 +40,7 @@ instance Show TinyCInstr where
     show (Pop t r) = "POP " <> show (Register r) <> " # " <> show t
     show Halt = "HALT"
     show Nop = "NOP"
+    show Ret = "RET"
     show (PutChar r) = "PUTCHAR " <> show (Register r)
     show (PutNum r) = "PUTNUM " <> show (Register r)
     show (GetChar r) = "GETCHAR " <> show (Register r)
@@ -50,6 +51,6 @@ instance Show ExtendedInstr where
         "CALL " <> show n <> " (" <> 
             intercalate ", " (show <$> argx)
             <> ") -> " <> show rx <> " # " <> show t
-    show (Ret reg) = "RET " <> show (Register reg)
+    show (Return reg) = "RET " <> show (Register reg)
     show (Output reg) = "PRINT " <> show (Register reg)
     show (Immediate t i r) = showBinInstr "MOV" t (Imm i) (Register r)

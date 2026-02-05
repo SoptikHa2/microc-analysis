@@ -29,4 +29,4 @@ alloc = mdo
     emit_ (Mov Bottom (Deref (Register nextAvailableAddr) 0) (Deref (Register obj) 0))
 
     -- return the address
-    emit_ $ Ret nextAvailableAddr
+    emit_ $ Return nextAvailableAddr
