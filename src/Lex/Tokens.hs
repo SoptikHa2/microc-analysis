@@ -21,7 +21,12 @@ data Token
     | Colon
     | Number Int
     | Gt
+    | Lt
+    | Gte
+    | Lte
     | Eq
+    | Neq
+    | Not
     deriving (Show, Eq)
 
 data Keyword

@@ -155,6 +155,10 @@ genConstraintsExpr f e@(UnOp l Alloc target) = do
 
     pure $ (CExpr target, targetT) : (CExpr e, Ptr targetT) : targetC
 
+genConstraintsExpr f e@(UnOp l Not target) = do
+    targetC <- genConstraintsExpr f target
+    pure $ (CExpr target, Int) : (CExpr e, Int) : targetC
+
 -- input only works for integers
 genConstraintsExpr _ e@(Input l) = pure [(CExpr e, Int)]
 

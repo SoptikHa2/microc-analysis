@@ -105,12 +105,13 @@ prefix p = E.Prefix . chainl1 p $ pure (.)
 
 arithmTable :: SourcePos -> [[E.Operator String () Identity (Expr SourcePos)]]
 arithmTable l = [
-        -- *, &, alloc; and chain
+        -- *, &, alloc, !; and chain
         [
             prefix $ choice [
                 try $ UnOp l Deref <$ Lexer.star,
                 try $ UnOp l Ref <$ Lexer.and,
-                try $ UnOp l Alloc <$ Lexer.keyword L.Alloc
+                try $ UnOp l Alloc <$ Lexer.keyword L.Alloc,
+                try $ UnOp l Not <$ Lexer.notOp
             ]
         ],
         -- _ * _, /
@@ -123,12 +124,17 @@ arithmTable l = [
             E.Infix (try $ BiOp l Plus <$ Lexer.plus) E.AssocLeft,
             E.Infix (try $ BiOp l Minus <$ Lexer.minus) E.AssocLeft
         ],
-        -- <, ==
+        -- comparisons (desugared to > and !)
         [
-            E.Infix (try $ BiOp l Gt <$ Lexer.gt) E.AssocLeft
+            E.Infix (try $ BiOp l Gt <$ Lexer.gt) E.AssocLeft,
+            E.Infix (try $ flip (BiOp l Gt) <$ Lexer.lt) E.AssocLeft,  -- a < b -> b > a
+            E.Infix (try $ (\a b -> UnOp l Not (BiOp l Gt a b)) <$ Lexer.lte) E.AssocLeft,  -- a <= b -> !(a > b)
+            E.Infix (try $ (\a b -> UnOp l Not (BiOp l Gt b a)) <$ Lexer.gte) E.AssocLeft   -- a >= b -> !(b > a)
         ],
+        -- equality (desugared)
         [
-            E.Infix (try $ BiOp l Eq <$ Lexer.eq) E.AssocLeft
+            E.Infix (try $ BiOp l Eq <$ Lexer.eq) E.AssocLeft,
+            E.Infix (try $ (\a b -> UnOp l Not (BiOp l Eq a b)) <$ Lexer.neq) E.AssocLeft  -- a != b -> !(a == b)
         ]
     ]
 

@@ -74,10 +74,25 @@ colon :: Parsec String () Token
 colon = ws >> char ':' >> return Colon
 
 gt :: Parsec String () Token
-gt = ws >> char '>' >> return Gt
+gt = ws >> char '>' >> notFollowedBy (char '=') >> return Gt
+
+lt :: Parsec String () Token
+lt = ws >> char '<' >> notFollowedBy (char '=') >> return Lt
+
+gte :: Parsec String () Token
+gte = ws >> string ">=" >> return Gte
+
+lte :: Parsec String () Token
+lte = ws >> string "<=" >> return Lte
 
 eq :: Parsec String () Token
 eq = ws >> string "==" >> return Eq
+
+neq :: Parsec String () Token
+neq = ws >> string "!=" >> return Neq
+
+notOp :: Parsec String () Token
+notOp = ws >> char '!' >> notFollowedBy (char '=') >> return Not
 
 numLiteral :: Parsec String () Token
 numLiteral = do

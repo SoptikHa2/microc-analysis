@@ -47,6 +47,7 @@ data UnOp
     = Deref
     | Ref
     | Alloc
+    | Not
     deriving (Eq, Ord, Data, Typeable)
 
 data BiOp
@@ -100,6 +101,7 @@ instance Show UnOp where
     show Deref = "*"
     show Ref = "&"
     show Alloc = "alloc"
+    show Not = "!"
 
 instance Show BiOp where
     show Eq = "=="

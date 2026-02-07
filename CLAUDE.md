@@ -22,15 +22,11 @@ This project uses **Stack** (Haskell build tool):
 # Build the project
 stack build
 
-# Run the executable (with CLI options)
-stack run microc -- run <program.mc> [args...]
-stack run microc -- type <program.mc>
+# Run the executable
+stack run microc -- <command> <program.mc> [args...]
 
 # Run tests
 stack test
-
-# Run a specific test suite
-stack test apr-semestral:apr-semestral-test
 
 # Run a single test (use -m pattern matching)
 stack test --test-arguments "-m \"specific test name\""
@@ -42,26 +38,28 @@ stack ghci
 stack clean
 ```
 
-## CLI Usage
+## CLI Commands
 
-The `microc` executable provides two main commands:
-
-**Run a program:**
 ```bash
+# Run a program (executes main() with args, returns exit code)
 stack run microc -- run <program.mc> [args...]
-```
-- Parses the source file
-- Runs semantic analysis (undefined/duplicate names, lvalue checks, etc.)
-- Executes the `main()` function with provided integer arguments
-- Returns exit code from `main()`
 
-**Type check a program:**
-```bash
+# Type check (constraint-based inference)
 stack run microc -- type <program.mc>
+
+# Generate Control Flow Graph (DOT format)
+stack run microc -- cfg <program.mc>
+
+# Dataflow analyses
+stack run microc -- const <program.mc>   # Constant propagation
+stack run microc -- sign <program.mc>    # Sign analysis
+stack run microc -- vbusy <program.mc>   # Very busy expressions
+stack run microc -- reach <program.mc>   # Reaching definitions
+
+# Compilation to .t86 assembly
+stack run microc -- compile <program.mc> [output]  # Default: <input>.s
+stack run microc -- asm <program.mc>               # Output to stdout
 ```
-- Parses the source file
-- Performs constraint-based type inference
-- Prints inferred types for functions and identifiers
 
 ## Language Features
 
@@ -100,142 +98,116 @@ main() {
 
 ### Multi-Stage Pipeline
 
-The codebase follows a classic interpreter/compiler architecture:
+```
+Source -> Lex -> Parse -> Analysis -> Interpret/Compile
+                    |
+                    +-> CFG -> Dataflow Analysis
+```
 
-1. **Lexing** (Lex/): Tokenizes source code into tokens
-2. **Parsing** (Parse/): Builds an Abstract Syntax Tree (AST)
-3. **Analysis** (Analysis/): Semantic analysis and type checking
-4. **Interpretation** (Interpreter/): Evaluates the AST
-5. **Compilation** (IR/): Three-Address Code (TAC) generation (in progress)
-6. **Control Flow** (Analysis/Cfg/): Control Flow Graph construction (in progress)
+1. **Lexing** (`Lex/`): Tokenizes source code
+2. **Parsing** (`Parse/`): Builds Abstract Syntax Tree
+3. **Analysis** (`Analysis/`): Semantic analysis, type inference, CFG, dataflow
+4. **Interpretation** (`Interpreter/`): Direct AST evaluation
+5. **Compilation** (`IR/`, `Compile/`): TAC generation and .t86 assembly output
 
 ### Module Structure
 
 **Lex/** - Lexical Analysis
-- `Tokens.hs`: Token definitions including bilingual keywords (English/Czech)
-- `Lexer.hs`: Parsec-based lexer functions for tokenizing
+- `Tokens.hs`: Token definitions with bilingual keywords (English/Czech)
+- `Lexer.hs`: Parsec-based lexer
 
 **Parse/** - Syntax Analysis
-- `AST.hs`: Complete AST data types (Program, FunDecl, FunBlock, Stmt, Expr, BiOp, UnOp)
-- `ExprParser.hs`: Expression parser with operator precedence (uses Parsec.Expr)
-  - Handles postfix operations (field access, function calls)
-  - Arithmetic with proper precedence
-  - Unary operators (*, &, alloc)
-- `DeclParser.hs`: Top-level parser for function declarations and variable statements
-- `StmtParser.hs`: Statement parsers (output, while, if/else, blocks, assignments)
+- `AST.hs`: AST data types (Program, FunDecl, FunBlock, Stmt, Expr)
+- `ExprParser.hs`: Expression parser with operator precedence (uses `buildExpressionParser`)
+- `DeclParser.hs`: Function declarations and variable statements
+- `StmtParser.hs`: Statement parsers
 
-**Interpreter/** - Execution (Work in Progress)
+**Interpreter/** - Execution
 - `Data.hs`: Runtime value types (VNumber, Pointer, Function, Record)
-- `State.hs`: Interpreter state management
-  - Stack-based variable scoping (stack of Maps)
-  - Heap memory model (Map Address Value)
-  - Functions: `getsVar`, `putsVar`, `getsAddr`, `putsAddr`, `newFrame`, `dropFrame`
+- `State.hs`: Interpreter state (stack of variable frames, heap)
 - `Interpret.hs`: Expression and statement evaluation
+- `InterpretRun.hs`: Top-level interpretation entry point
 
 **Analysis/** - Static Analysis
-- `Analysis.hs`: Entry point for running semantic analysis (combines Semantics and Typecheck)
-- `Semantics.hs`: Semantic checks including:
-  - Undefined/duplicate identifiers
-  - Taking address of functions
-  - Invalid assignments (must be lvalues)
-  - Record field validation
-  - Recursive record detection
-- `Typecheck/`: Constraint-based type inference system
-  - `Type.hs`: Type representation (Int, Ptr, Fun, Record, type variables)
-  - `Constraints.hs`: Constraint types (Typeable wrapper for AST nodes)
-  - `ConstraintGenerator.hs`: Generates type constraints from AST
-  - `ConstraintSolver.hs`: Solves constraint system via unification
-  - `Typecheck.hs`: Main entry point for type checking
-- `Cfg/`: Control Flow Graph construction (Work in Progress)
-  - `Cfg.hs`: CFG data structures (CFGNode, CFGMap) with FunEntry/FunExit/Node
-  - `Builder.hs`: State monad-based CFG builder for statements and functions
+- `Semantics.hs`: Semantic checks (undefined names, lvalue validation, etc.)
+- `Typecheck/`: Constraint-based type inference
+  - `ConstraintGenerator.hs`: Generates constraints from AST
+  - `ConstraintSolver.hs`: Unification-based constraint solving
+- `Cfg/`: Control Flow Graph construction
+  - `Cfg.hs`: CFG data structures (CFGNode with FunEntry/FunExit/Node)
+  - `Builder.hs`: State monad-based CFG builder
+- `Dataflow/`: Dataflow analysis framework
+  - `Analysis.hs`: Generic worklist algorithm for lattice-based analysis
+  - `Const.hs`, `Sign.hs`: Forward analyses (constant/sign propagation)
+  - `VeryBusy.hs`, `ReachingDef.hs`: Backward/forward analyses
 
-**IR/** - Intermediate Representation (Work in Progress)
-- `Tac.hs`: Three-Address Code (TAC) instruction set and Emitter monad
-  - Instructions: arithmetic ops, jumps, calls, memory operations
-  - Uses Writer monad pattern for code generation
-- `TacCompiler.hs`: Compiles AST to TAC format
-- `CompilerState.hs`: State management for TAC generation (registers, labels)
-- `Emit.hs`: Helper functions for emitting TAC instructions
+**IR/** - Intermediate Representation
+- `Tac.hs`: Three-Address Code instruction set
+- `TacCompiler.hs`: AST to TAC compilation
+- `Desugar.hs`: Desugars high-level TAC to machine instructions
+- `TacPrint.hs`: Assembly output formatting
+- `Stdlib.hs`: Built-in runtime functions
+
+**Compile/** - Assembly Generation
+- `Compile.hs`: Orchestrates IR generation, desugaring, and emission
+
+**app/** - CLI
+- `Main.hs`: CLI with optparse-applicative
+- `Workflow.hs`: Orchestrates parsing, typing, and analysis passes
 
 ### Key Design Decisions
 
-**Everything Lives on the Heap**: All values (including variables) are stored on the heap and referenced by addresses. This simplifies pointer semantics but differs from typical stack/heap separation.
+**Everything Lives on the Heap**: Variables are stored on the heap and referenced by addresses. Each stack frame is a `Map Identifier Address`. This simplifies pointer semantics.
 
-**Stack Contains Addresses**: Each stack frame is a `Map Identifier Address` that maps variable names to heap addresses. This enables easy pointer manipulation.
+**Bilingual Support**: Keywords support both English and Czech (e.g., "var"/"pro", "return"/"vrať"). See `strToKw` mapping in `Tokens.hs`.
 
-**Bilingual Support**: Keywords support both English and Czech (e.g., "var"/"pro", "return"/"vrať", "output"/"vypiš"). The lexer handles this via the `strToKw` mapping in `Tokens.hs`.
+**Constraint-Based Type System**: Type checking generates constraints from AST nodes, then unifies them. Supports recursive types via μ notation.
 
-**Parsec-Based Parsing**: Uses Text.Parsec for both lexing and parsing. Expression parsing uses `Text.Parsec.Expr.buildExpressionParser` for operator precedence.
-
-**Constraint-Based Type System**: Type checking uses a constraint generation and solving approach:
-- Each AST node generates type constraints
-- Constraints are unified to infer types
-- Supports recursive types via type variable bindings (μ notation)
+**Lattice-Based Dataflow**: `Lattice.hs` provides the typeclass for dataflow abstractions. Analyses define `top`, `bottom`, and lattice operators `<&>` (meet) / `<|>` (join). The generic worklist algorithm in `Analysis/Dataflow/Analysis.hs` handles fixed-point iteration.
 
 ### AST Structure Notes
 
-- `FunBlock` contains three parts: variable declarations (`idDecl`), statements (`body`), and a return expression
-- `Stmt` includes `AssignmentStmt Expr Expr` (left-hand side can be any lvalue expression)
-- `Expr` supports postfix operations: `Call` for function calls, `FieldAccess` for record fields
-- Records use `newtype Record = Fields [(Identifier, Expr)]`
+- `FunBlock` contains: variable declarations (`idDecl`), statements (`body`), return expression
+- `Stmt` includes `AssignmentStmt Expr Expr` (LHS can be any lvalue)
+- `Expr` supports postfix operations: `Call`, `FieldAccess`
+- Records: `newtype Record = Fields [(Identifier, Expr)]`
 
 ## Testing
 
-Tests are written using HSpec and located in `test/`:
-
-**Parser Tests:**
-- `ExprParserSpec.hs`: Comprehensive expression parser tests
-- `StmtParserSpec.hs`: Statement parser tests
-- `DeclParserSpec.hs`: Declaration parser tests
-
-**Interpreter Tests:**
-- `StateSpec.hs`: Interpreter state management tests
-- `InterpretExprSpec.hs`: Expression evaluation tests
-- `InterpretStmtSpec.hs`: Statement execution tests
-
-**Analysis Tests:**
-- `TypecheckSpec.hs`: Type inference system tests
-- `ConstraintSolverSpec.hs`: Constraint unification tests
-- `CfgSpec.hs`: Control Flow Graph tests
-
-**Test Utilities:**
-- `TestUtils.hs`: Shared helper functions for tests
+Tests use HSpec in `test/`. Run a single test with:
+```bash
+stack test --test-arguments "-m \"test name pattern\""
+```
 
 Test files follow the pattern: parse/execute input and compare against expected results.
 
 ## Common Development Workflows
 
-When adding new language features:
-1. Add tokens to `Lex/Tokens.hs` if needed (including bilingual support)
-2. Add lexer functions to `Lex/Lexer.hs`
-3. Update AST types in `Parse/AST.hs` (ensure Data and Typeable instances)
-4. Implement parser in appropriate `Parse/*Parser.hs` file
-5. Add test cases in corresponding `test/*Spec.hs` file
-6. Update `Analysis/Typecheck/ConstraintGenerator.hs` if needed
-7. Implement interpreter logic in `Interpreter/Interpret.hs`
+**Adding new language features:**
+1. Add tokens to `Lex/Tokens.hs` (include bilingual support)
+2. Update AST types in `Parse/AST.hs` (ensure Data and Typeable instances)
+3. Implement parser in appropriate `Parse/*Parser.hs` file
+4. Add test cases in corresponding `test/*Spec.hs` file
+5. Update `Analysis/Typecheck/ConstraintGenerator.hs`
+6. Implement interpreter logic in `Interpreter/Interpret.hs`
+7. If compiling: update `IR/TacCompiler.hs`
 
-When working on the interpreter:
-- Follow the state monad pattern using `StateT State IO`
-- Use helper functions from `Interpreter/State.hs` for state manipulation
-- Remember that all values go through the heap (use `putsVar`, not direct map insertion)
-- Functions are stored in global scope during initialization (see `Main.hs:initializeState`)
+**Interpreter notes:**
+- Uses `StateT State IO` monad
+- All values go through the heap (use `putsVar`, not direct map insertion)
 
-When working on type checking:
-- Constraint generation happens in `ConstraintGenerator.hs` via `genConstraintsFun`
-- Constraints are solved via unification in `ConstraintSolver.hs`
-- Type variables use `Unknown Int` for fresh variables and `BoundTypeVar Int` for recursive types
-- The `Typeable` wrapper tags AST nodes with their location for better error messages
+**Type checking notes:**
+- Constraint generation: `ConstraintGenerator.hs` via `genConstraintsFun`
+- Type variables: `Unknown Int` for fresh, `BoundTypeVar Int` for recursive types
+- `Typeable` wrapper tags AST nodes with source location
 
-When working on TAC compilation:
-- The `Emitter` monad combines `WriterT TAC (State CState)` for code generation
-- Use `emit_` to emit instructions, `emitL` to emit labeled instructions
-- `emitExpr` and `emitStmt` recursively compile AST nodes to TAC
-- Registers are allocated via the state monad in `CompilerState.hs`
-- Use `RecursiveDo` extension (`mdo`) for forward references in control flow
+**TAC compilation notes:**
+- `Emitter` monad: `WriterT TAC (State CState)`
+- `emit_` for unlabeled instructions, `emitL` for labeled
+- Use `RecursiveDo` (`mdo`) for forward references in control flow
 
-When working on CFG construction:
-- CFG nodes have unique IDs and track predecessors/successors
-- Use the State monad pattern with `CFGMap` to build graphs incrementally
-- `buildStmt` returns (first node, list of last nodes) for proper edge connections
-- Functions have explicit FunEntry and FunExit nodes for graph boundaries
+**Adding dataflow analyses:**
+1. Define a lattice type implementing the `Lattice` typeclass
+2. Implement `evalStmt` to transfer function state through statements
+3. Use `runAnalysisOnVars` or `runAnalysis` from `Analysis/Dataflow/Analysis.hs`
+4. See `Const.hs` or `Sign.hs` for forward analysis examples

@@ -115,6 +115,8 @@ emitExpr (UnOp t Ref rhs) = do
 
 emitExpr (UnOp t Alloc rhs) = undefined
 
+emitExpr (UnOp t Parse.AST.Not rhs) = undefined
+
 emitExpr (Number t i) = do
     emit (\r -> Mov t (Direct $ Register r) (Direct $ Imm i))
 

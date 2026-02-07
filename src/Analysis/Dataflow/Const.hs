@@ -69,6 +69,9 @@ computeExpr (Number _ i) _ = Const i
 computeExpr (EIdentifier _ varId) lat = fromMaybe bottom (lat M.!? varId)
 
 runUnOp :: UnOp -> ConstLattice -> ConstLattice
+runUnOp Not (Const 0) = Const 1
+runUnOp Not (Const _) = Const 0
+runUnOp Not Top = Top
 runUnOp _ _ = bottom
 
 runBiOp :: BiOp -> ConstLattice -> ConstLattice -> ConstLattice

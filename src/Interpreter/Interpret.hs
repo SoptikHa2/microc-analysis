@@ -84,6 +84,10 @@ evalExpr (UnOp _ Alloc e1) = do
     addr <- runId $ putsValue valueToStore
     pure $ Pointer addr
 
+evalExpr (UnOp _ Not e1) = do
+    VNumber v <- evalExpr e1
+    pure $ VNumber (if v == 0 then 1 else 0)
+
 evalExpr (Input _) = do
     -- Maybe more datatypes?
     num <- lift (readLn :: IO Int)

@@ -254,7 +254,7 @@ spec = do
       case getTypingForProgram progStr of
         Left err -> expectationFailure $ "Type checking failed: " ++ err
         Right typing -> do
-          let funTypes = [t | (CFun _ f, t) <- M.toList typing, f.name == "getNumber"]
+          let funTypes = [t | (CFun f, t) <- M.toList typing, f.name == "getNumber"]
           case funTypes of
             [] -> expectationFailure "Function getNumber not found in typing"
             (Fun [] Int:_) -> pure () -- Success!
@@ -273,7 +273,7 @@ spec = do
       case getTypingForProgram progStr of
         Left err -> expectationFailure $ "Type checking failed: " ++ err
         Right typing -> do
-          let funTypes = [t | (CFun _ f, t) <- M.toList typing, f.name == "compute"]
+          let funTypes = [t | (CFun f, t) <- M.toList typing, f.name == "compute"]
           case funTypes of
             [] -> expectationFailure "Function compute not found in typing"
             (Fun [] Int:_) -> pure () -- Success!
@@ -290,7 +290,7 @@ spec = do
       case getTypingForProgram progStr of
         Left err -> expectationFailure $ "Type checking failed: " ++ err
         Right typing -> do
-          let funTypes = [t | (CFun _ f, t) <- M.toList typing, f.name == "identity"]
+          let funTypes = [t | (CFun f, t) <- M.toList typing, f.name == "identity"]
           case funTypes of
             [] -> expectationFailure "Function identity not found in typing"
             (Fun [argT] retT:_) -> do

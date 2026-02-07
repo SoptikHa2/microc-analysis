@@ -68,11 +68,16 @@ computeExpr (ArrayAccess _ _ _) _ = top
 computeExpr (Call _ _ _) _ = top
 computeExpr (Record _ _) _ = bottom
 computeExpr (Array _ _) _ = bottom
-computeExpr (Number _ i) _ | i >= 0 = Pos
+computeExpr (Number _ 0) _ = Zer
+computeExpr (Number _ i) _ | i > 0 = Pos
 computeExpr (Number _ i) _ | i < 0 = Neg
 computeExpr (EIdentifier _ varId) lat = fromMaybe bottom (lat M.!? varId)
 
 runUnOp :: UnOp -> SignLattice -> SignLattice
+runUnOp Not Zer = Pos   -- !0 = 1
+runUnOp Not Pos = Zer   -- !positive = 0
+runUnOp Not Neg = Zer   -- !negative = 0
+runUnOp Not Top = Top   -- could be 0 or 1
 runUnOp _ _ = bottom
 
 runBiOp :: BiOp -> SignLattice -> SignLattice -> SignLattice
