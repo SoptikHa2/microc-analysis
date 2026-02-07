@@ -27,7 +27,7 @@ compile prog = do
     -- TODO: register allocation
 
     -- Emit ASM
-    Right $ ".text\n" <> show (relabel rawIR)
+    Right $ ".text\n" <> show (relabel rawIR) <> "\n"
 
 relabel :: TAC TinyCInstr -> TAC TinyCInstr
 relabel (TAC li) =

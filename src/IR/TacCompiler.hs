@@ -9,7 +9,7 @@ import Data.Foldable (traverse_)
 
 entrypoint :: ExtendedTAC
 entrypoint = TAC $
-    (Nothing, IR.Tac.Call Int "main" [] (dreg $ R 0)) :
+    (Nothing, IR.Tac.Call Int "main" []) :
     (Nothing, Native $ IR.Tac.PutNum (R 0)) :
     [(Nothing, Native IR.Tac.Halt)]
 
@@ -116,6 +116,11 @@ emitExpr (UnOp t Ref rhs) = do
 emitExpr (UnOp t Alloc rhs) = undefined
 
 emitExpr (UnOp t Parse.AST.Not rhs) = undefined
+
+emitExpr (Parse.AST.Call t (EIdentifier _ target) args) = mdo
+    ex <- traverse emitExpr args
+    emit_ $ IR.Tac.Call t target (dreg <$> ex)
+    pure (R 0)
 
 emitExpr (Number t i) = do
     emit (\r -> Mov t (Direct $ Register r) (Direct $ Imm i))

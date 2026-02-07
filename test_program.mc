@@ -1,5 +1,10 @@
+foo(x) {
+  return x + 1;
+}
+
 main() {
-  var f;
-  f = 1 + 2;
-  return f;
+  var a;
+  a = 1;
+  a = foo(a);
+  return a;
 }

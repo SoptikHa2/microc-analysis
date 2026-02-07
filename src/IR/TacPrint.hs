@@ -49,10 +49,10 @@ instance Show TinyCInstr where
 
 instance Show ExtendedInstr where
     show (Native i) = show i
-    show (Call t n argx rx) = 
+    show (Call t n argx) = 
         "CALL " <> show n <> " (" <> 
             intercalate ", " (show <$> argx)
-            <> ") -> " <> show rx <> " # " <> show t
+            <> ") # " <> show t
     show (Return reg) = "RET " <> show (Register reg)
     show (Output reg) = "PRINT " <> show (Register reg)
     show (Immediate t i r) = showBinInstr "MOV" t (Imm i) (Register r)

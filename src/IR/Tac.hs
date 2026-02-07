@@ -44,7 +44,8 @@ dreg = Direct . Register
 
 data ExtendedInstr
     = Native TinyCInstr
-    | Call Type Identifier [AnyTarget] AnyTarget
+    | Call Type Identifier [AnyTarget]
+    | RegCall Type Reg [AnyTarget]
     | GetNthArg Type Int AnyTarget
     | Return Reg
     | Output Reg

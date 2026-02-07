@@ -9,11 +9,9 @@ import Parse.AST (Identifier)
 desugar :: M.Map Identifier Label -> ExtendedInstr -> [TinyCInstr]
 desugar _ (Native i) = [i]
 desugar _ (Return r) = [Mov Bottom (dreg $ R 0) (dreg r), Ret]
-desugar funmap (Call t target args ret) =
+desugar funmap (Call t target args) =
     [
         -- TODO: pass args correctly
-        RCall (Imm (funmap M.! target)),
-        Mov t (dreg $ R 0) ret
-        
+        RCall (Imm (funmap M.! target))
     ]
 desugar _ i = error $ "Unknown instruction to desugar: " <> show i
