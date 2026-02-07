@@ -59,7 +59,7 @@ commandParser = hsubparser
     signParser = SignAna <$> programArg
     veryBusyParser = VeryBusyAna <$> programArg
     reachParser = ReachAna <$> programArg
-    compileParser = Compile <$> programArg <*> optional (argument str (metavar "TARGET" <> help "Target output file (- for stdout; default: <input>.out)"))
+    compileParser = Compile <$> programArg <*> optional (argument str (metavar "TARGET" <> help "Target output file (- for stdout; default: <input>.s)"))
     asmParser = Asm <$> programArg
 
 -- Main entry point
@@ -79,7 +79,7 @@ main = do
         outFile = case targetFile of
           Just "-" -> Nothing
           Just a -> Just a
-          Nothing -> Just $ filepath <> ".out"
+          Nothing -> Just $ filepath <> ".s"
     Asm filepath -> compile filepath Nothing
   where
     opts = info (commandParser <**> helper)
