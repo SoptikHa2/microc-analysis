@@ -8,6 +8,7 @@ import Control.Monad.Fix
 import Control.Monad.Writer (WriterT, MonadWriter)
 import Analysis.Typecheck.Type (Type)
 import Data.List (intercalate)
+import Parse.AST (Identifier)
 
 type NativeTAC = TAC TinyCInstr
 type ExtendedTAC = TAC ExtendedInstr
@@ -43,7 +44,7 @@ dreg = Direct . Register
 
 data ExtendedInstr
     = Native TinyCInstr
-    | Call Type Label [AnyTarget] AnyTarget
+    | Call Type Identifier [AnyTarget] AnyTarget
     | GetNthArg Type Int AnyTarget
     | Return Reg
     | Output Reg
@@ -64,6 +65,7 @@ data TinyCInstr
     | Lea Type Reg AnySource
     | Jmp Label
     | Jz Reg Label
+    | RCall AnySource
     | Push AnySource
     | Pop Type Reg
     | Halt

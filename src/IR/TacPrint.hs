@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module IR.TacPrint where
 import IR.Tac
 import Data.List (intercalate)
@@ -36,6 +37,7 @@ instance Show TinyCInstr where
     show (Lea t l r) = showBinInstr "LEA" t (Register l) r
     show (Jmp label) = "JMP " <> show label
     show (Jz reg label) = "JZ " <> show label <> ", " <> show (Register reg)
+    show (RCall target) = "CALL " <> show target
     show (Push val) = "PUSH " <> show val
     show (Pop t r) = "POP " <> show (Register r) <> " # " <> show t
     show Halt = "HALT"

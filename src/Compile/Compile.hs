@@ -1,11 +1,14 @@
-module Compile.Compile where
+module Compile.Compile (compile) where
 import Parse.AST (Program)
 import Text.Parsec (SourcePos)
 import qualified IR.TacCompiler as IRCompiler
 import Utils ((<$$>))
 import IR.Desugar (desugar)
 import Analysis.Typecheck.Type (Type)
-import IR.Tac (concatTAC)
+import IR.Tac (concatTAC, TAC (..), TinyCInstr (..))
+import qualified Data.Map as M
+import IR.CompilerState
+import Data.Maybe (fromMaybe)
 
 compile :: Program (SourcePos, Type) -> Either String String
 compile prog = do
@@ -23,5 +26,39 @@ compile prog = do
 
     -- TODO: register allocation
 
+    -- Renumber the IR: we need consecutive labels everywhere
+
     -- Emit ASM
-    Right $ ".text\n\t\tCALL 0 # main is always first function\n\t\tPUTNUM R0\n\t\tHALT\n" <> show rawIR
+    Right $ ".text\n" <> show (relabel rawIR)
+
+relabel :: TAC TinyCInstr -> TAC TinyCInstr
+relabel (TAC li) =
+    let
+        (relabelled, mapping) = relabel' li 0
+        fixed = applySnd (fixupJumps (M.fromList mapping)) <$> relabelled
+    in
+        TAC fixed
+    where
+        -- change labels to be consecutive and return mapping needed to fix calls
+        relabel' :: [(Maybe Label, a)] -> Label -> ([(Maybe Label, a)], [(Label, Label)])
+        relabel' [] _ = ([], [])
+        relabel' ((Just l, a):xs) next = (
+                (Just next, a) : tailXs,
+                (l, next) : tailMapping
+            )
+            where
+                (tailXs, tailMapping) = relabel' xs (next + 1)
+        relabel' ((Nothing, a):xs) next = (
+                (Just next, a) : tailXs,
+                tailMapping
+            )
+            where
+                (tailXs, tailMapping) = relabel' xs (next + 1)
+
+        fixupJumps :: M.Map Label Label -> TinyCInstr -> TinyCInstr
+        fixupJumps m (Jmp l) = Jmp (l `fromMaybe` (m M.!? l))
+        fixupJumps m (Jz r l) = Jz r (l `fromMaybe` (m M.!? l))
+        fixupJumps _ i = i
+
+        applySnd :: (a -> b) -> (Maybe Label, a) -> (Maybe Label, b)
+        applySnd f (ml, a) = (ml, f a)

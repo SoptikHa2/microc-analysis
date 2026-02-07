@@ -7,9 +7,14 @@ import Parse.AST
 import Analysis.Typecheck.Type (Type(..))
 import Data.Foldable (traverse_)
 
+entrypoint :: ExtendedTAC
+entrypoint = TAC $
+    (Nothing, IR.Tac.Call Int "main" [] (dreg $ R 0)) :
+    (Nothing, Native $ IR.Tac.PutNum (R 0)) :
+    [(Nothing, Native IR.Tac.Halt)]
 
 compile :: Program Type -> ExtendedTAC
-compile funcs = ir
+compile funcs = entrypoint <> ir
     where
         funcsIR = traverse emitFun funcs
         (_, ir) = runEmitter funcsIR
@@ -107,13 +112,7 @@ emitExpr (UnOp t Ref rhs) = do
     -- todo: verify
     emit (\r -> Lea t r (Register val))
 
-emitExpr (UnOp t Alloc rhs) = do
-    val <- emitExpr rhs
-    -- todo: type
-    -- todo: resolve label of $alloc
-    -- todo: pass object size
-    -- call $alloc rhs
-    emit (IR.Tac.Call t (-1) [dreg val] . dreg)
+emitExpr (UnOp t Alloc rhs) = undefined
 
 emitExpr (Number t i) = do
     emit (\r -> Mov t (Direct $ Register r) (Direct $ Imm i))
