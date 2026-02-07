@@ -126,8 +126,6 @@ emitExpr (BiOp _ Plus lhs rhs) = emitGenericBinOp Add Int lhs rhs
 emitExpr (BiOp _ Minus lhs rhs) = emitGenericBinOp Sub Int lhs rhs
 emitExpr (BiOp _ Parse.AST.Mul lhs rhs) = emitGenericBinOp IR.Tac.Mul Int lhs rhs
 emitExpr (BiOp _ Parse.AST.Div lhs rhs) = emitGenericBinOp IR.Tac.Div Int lhs rhs
-emitExpr (BiOp _ Eq lhs rhs) = emitGenericBinOp IR.Tac.Sub Int lhs rhs
-emitExpr (BiOp _ Gt lhs rhs) = emitGenericBinOp IR.Tac.Sub Int lhs rhs
 -- TODO: eq, gt
 
 emitExpr (UnOp t Parse.AST.Deref rhs) = do
@@ -142,6 +140,8 @@ emitExpr (UnOp t Ref rhs) = do
     -- lea
     -- todo: verify
     emit (\r -> Lea t r (Register val))
+
+-- TODO: Not
 
 emitExpr (UnOp t Alloc rhs) = undefined
 
