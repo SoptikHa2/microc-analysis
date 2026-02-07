@@ -5,7 +5,7 @@ import IR.CompilerState
 import IR.Emit
 import Parse.AST
 import Analysis.Typecheck.Type (Type(..))
-import Data.Foldable (traverse_)
+import Data.Foldable (traverse_, for_)
 
 entrypoint :: ExtendedTAC
 entrypoint = TAC $
@@ -27,6 +27,15 @@ emitFun f = do
     varRegs <- traverse (const $ run reg) argVars
     -- generate nop and label it
     funLabel <- emitL Nop
+
+    -- save call into r0 (its a special register for returns, so nothing important can be there)
+    emit_ $ Pop Int (R 0)
+    -- first N args correspond to first N regs
+    let argRegs = take (length f.args) varRegs
+    -- in reverse, pop into the correct reg
+    traverse_ (emit_ . Pop Bottom) argRegs
+    -- restore the return address
+    emit_ $ Push (Register $ R 0)
 
     run $ saveFun f.name funLabel (zip argVars varRegs)
 
@@ -119,7 +128,7 @@ emitExpr (UnOp t Parse.AST.Not rhs) = undefined
 
 emitExpr (Parse.AST.Call t (EIdentifier _ target) args) = mdo
     ex <- traverse emitExpr args
-    emit_ $ IR.Tac.Call t target (dreg <$> ex)
+    emit_ $ IR.Tac.Call t target (Register <$> ex)
     pure (R 0)
 
 emitExpr (Number t i) = do
