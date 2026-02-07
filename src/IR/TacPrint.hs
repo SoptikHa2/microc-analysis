@@ -57,5 +57,4 @@ instance Show ExtendedInstr where
             intercalate ", " (show <$> argx)
             <> ") # " <> show t
     show (Return reg) = "RET " <> show (Register reg)
-    show (Output reg) = "PRINT " <> show (Register reg)
     show (Immediate t i r) = showBinInstr "MOV" t (Imm i) (Register r)

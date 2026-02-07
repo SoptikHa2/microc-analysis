@@ -48,7 +48,6 @@ data ExtendedInstr
     | RegCall Type Reg [AnyTarget]
     | GetNthArg Type Int AnyTarget
     | Return Reg
-    | Output Reg
     | Immediate Type Int Reg
     deriving (Eq)
 

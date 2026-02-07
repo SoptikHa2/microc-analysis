@@ -53,7 +53,7 @@ emitStmt :: Stmt Type -> Emitter ()
 
 emitStmt (OutputStmt _ e) = do
     r <- emitExpr e
-    emit_ $ Output r
+    emit_ $ PutNum r
 
 emitStmt (WhileStmt _ cond body) = mdo
     loopBegin <- emitL Nop

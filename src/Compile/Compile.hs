@@ -57,6 +57,8 @@ relabel (TAC li) =
         fixupJumps m (RCall (Imm i)) = RCall (Imm (i `fromMaybe` (m M.!? i)))
         fixupJumps m (Jmp l) = Jmp (l `fromMaybe` (m M.!? l))
         fixupJumps m (Jz l) = Jz (l `fromMaybe` (m M.!? l))
+        fixupJumps m (Jnz l) = Jnz (l `fromMaybe` (m M.!? l))
+        fixupJumps m (Jle l) = Jle (l `fromMaybe` (m M.!? l))
         fixupJumps _ i = i
 
         applySnd :: (a -> b) -> (Maybe Label, a) -> (Maybe Label, b)

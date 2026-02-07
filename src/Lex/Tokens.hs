@@ -55,6 +55,7 @@ strToKw = [
     ("dokavaď", While),
     ("dokud", While),
     ("output", Output),
+    ("print", Output),
     ("vypiš", Output),
     ("input", Input),
     ("načti", Input),
