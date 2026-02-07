@@ -16,7 +16,6 @@ data CState = CState {
     nextLabel :: Label,
     currentFunction :: Identifier,
     -- Where each function begins.
-    -- Impl detail: at first, this is Halt, and is replaced by jump to real body later when the function is actually compiled.
     funBodies :: M.Map Identifier Label,
     -- Each function saves its arguments into a set of registers. This remembers which 
     -- argument (and variable!) corresponds to which register

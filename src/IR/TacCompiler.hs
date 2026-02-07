@@ -13,19 +13,19 @@ entrypoint = TAC $
     (Nothing, Native $ IR.Tac.PutNum (R 0)) :
     [(Nothing, Native IR.Tac.Halt)]
 
-compile :: Program Type -> ExtendedTAC
-compile funcs = entrypoint <> ir
+compile :: Program Type -> (ExtendedTAC, [(Identifier, Label)])
+compile funcs = (entrypoint <> ir, funinfo)
     where
         funcsIR = traverse emitFun funcs
-        (_, ir) = runEmitter funcsIR
+        (funinfo, ir) = runEmitter funcsIR
 
-emitFun :: FunDecl Type -> Emitter ()
+emitFun :: FunDecl Type -> Emitter (Identifier, Label)
 emitFun f = do
     -- get args and vars
     let argVars = f.args <> f.body.idDecl
     -- generate registers for them
     varRegs <- traverse (const $ run reg) argVars
-    -- generate nop and label it (TODO: label first el of body instead)
+    -- generate nop and label it
     funLabel <- emitL Nop
 
     run $ saveFun f.name funLabel (zip argVars varRegs)
@@ -37,6 +37,7 @@ emitFun f = do
     result <- emitExpr f.body.return
 
     emit_ $ Return result
+    pure (f.name, funLabel)
 
 emitStmt :: Stmt Type -> Emitter ()
 

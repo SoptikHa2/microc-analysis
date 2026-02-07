@@ -5,7 +5,7 @@ import qualified IR.TacCompiler as IRCompiler
 import Utils ((<$$>))
 import IR.Desugar (desugar)
 import Analysis.Typecheck.Type (Type)
-import IR.Tac (concatTAC, TAC (..), TinyCInstr (..))
+import IR.Tac (concatTAC, TAC (..), TinyCInstr (..), AnySource (..))
 import qualified Data.Map as M
 import IR.CompilerState
 import Data.Maybe (fromMaybe)
@@ -15,18 +15,16 @@ compile prog = do
     -- TODO: optimize on AST
 
     -- Generate IR
-    let richIR = IRCompiler.compile (snd <$$> prog)
+    let (richIR, funInfo) = IRCompiler.compile (snd <$$> prog)
 
     -- TODO: optimize on IR
 
     -- Desugar IR to instructions supported by the underlying machine
-    let rawIR = concatTAC $ desugar <$> richIR
+    let rawIR = concatTAC $ desugar (M.fromList funInfo) <$> richIR
 
     -- TODO: optimize on IR
 
     -- TODO: register allocation
-
-    -- Renumber the IR: we need consecutive labels everywhere
 
     -- Emit ASM
     Right $ ".text\n" <> show (relabel rawIR)
@@ -56,6 +54,7 @@ relabel (TAC li) =
                 (tailXs, tailMapping) = relabel' xs (next + 1)
 
         fixupJumps :: M.Map Label Label -> TinyCInstr -> TinyCInstr
+        fixupJumps m (RCall (Imm i)) = RCall (Imm (i `fromMaybe` (m M.!? i)))
         fixupJumps m (Jmp l) = Jmp (l `fromMaybe` (m M.!? l))
         fixupJumps m (Jz r l) = Jz r (l `fromMaybe` (m M.!? l))
         fixupJumps _ i = i
