@@ -24,6 +24,7 @@ emitFun f = do
     -- get args and vars
     let argVars = f.args <> f.body.idDecl
     -- generate registers for them
+    -- TODO: both variables and args should live on stack
     varRegs <- traverse (const $ run reg) argVars
     -- generate nop and label it
     funLabel <- emitL Nop
@@ -56,9 +57,9 @@ emitStmt (OutputStmt _ e) = do
 
 emitStmt (WhileStmt _ cond body) = mdo
     loopBegin <- emitL Nop
-    condResult <- emitExpr cond
+    jmp <- emitCondition cond
 
-    emit_ $ Jz condResult end
+    emit_ $ jmp end
     -- body
     emitStmt body
     -- jmp to cond again
@@ -68,9 +69,8 @@ emitStmt (WhileStmt _ cond body) = mdo
     pure ()
 
 emitStmt (IfStmt _ cond tru fals) = mdo
-    condResult <- emitExpr cond
-
-    emit_ $ Jz condResult falsLabel
+    jmp <- emitCondition cond
+    emit_ $ jmp falsLabel
 
     emitStmt tru
     emit_ $ Jmp end
@@ -94,6 +94,25 @@ emitStmt (AssignmentStmt t lhs rhs) = do
     -- decide between Mov and MovIntoPtr?
     emit_ $ Mov t (dreg target) (dreg rval)
 
+-- Emit an expression, but we don't care about the result - just about the flags.
+-- Returns the jump that should be used to get to False branch (NOT successful (it's more convenient))
+emitCondition :: Expr Type -> Emitter (Label -> TinyCInstr)
+emitCondition (BiOp t Eq lhs rhs) = do
+    _ <- emitGenericBinOp (const Cmp) t lhs rhs
+    pure Jnz
+emitCondition (BiOp t Gt lhs rhs) = do
+    _ <- emitGenericBinOp (const Cmp) t lhs rhs
+    pure Jle
+-- If the expression is not == or >; compare it with equality to non-zero (or zero if prefixed with Not)
+emitCondition (UnOp t Parse.AST.Not expr) = do
+    r <- emitExpr expr
+    emit_ $ Cmp r (Direct $ Imm 0)
+    pure Jnz
+emitCondition expr = do
+    r <- emitExpr expr
+    emit_ $ Cmp r (Direct $ Imm 0)
+    pure Jz
+
 emitGenericBinOp :: (Type -> Reg -> AnyTarget -> TinyCInstr) -> Type -> Expr Type -> Expr Type -> Emitter Reg
 emitGenericBinOp op t l r = do
     lreg <- emitExpr l
@@ -107,6 +126,8 @@ emitExpr (BiOp _ Plus lhs rhs) = emitGenericBinOp Add Int lhs rhs
 emitExpr (BiOp _ Minus lhs rhs) = emitGenericBinOp Sub Int lhs rhs
 emitExpr (BiOp _ Parse.AST.Mul lhs rhs) = emitGenericBinOp IR.Tac.Mul Int lhs rhs
 emitExpr (BiOp _ Parse.AST.Div lhs rhs) = emitGenericBinOp IR.Tac.Div Int lhs rhs
+emitExpr (BiOp _ Eq lhs rhs) = emitGenericBinOp IR.Tac.Sub Int lhs rhs
+emitExpr (BiOp _ Gt lhs rhs) = emitGenericBinOp IR.Tac.Sub Int lhs rhs
 -- TODO: eq, gt
 
 emitExpr (UnOp t Parse.AST.Deref rhs) = do

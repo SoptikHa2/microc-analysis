@@ -65,7 +65,10 @@ data TinyCInstr
     | Mov Type AnyTarget AnyTarget
     | Lea Type Reg AnySource
     | Jmp Label
-    | Jz Reg Label
+    | Jz Label
+    | Jnz Label
+    | Jle Label
+    | Cmp Reg AnyTarget
     | RCall AnySource
     | Push AnySource
     | Pop Type Reg

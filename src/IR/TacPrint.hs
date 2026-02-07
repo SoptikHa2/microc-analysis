@@ -36,7 +36,10 @@ instance Show TinyCInstr where
     show (Mov t l r) = showBinInstr "MOV" t l r
     show (Lea t l r) = showBinInstr "LEA" t (Register l) r
     show (Jmp label) = "JMP " <> show label
-    show (Jz reg label) = "JZ " <> show label <> ", " <> show (Register reg)
+    show (Jz label) = "JZ " <> show label
+    show (Jnz label) = "JNZ " <> show label
+    show (Jle label) = "JLE " <> show label
+    show (Cmp l r) = "CMP " <> show l <> ", " <> show r 
     show (RCall target) = "CALL " <> show target
     show (Push val) = "PUSH " <> show val
     show (Pop t r) = "POP " <> show (Register r) <> " # " <> show t
