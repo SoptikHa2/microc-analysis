@@ -16,7 +16,7 @@ import qualified Analysis.Dataflow.Const as ConstAna
 import qualified Data.Map as M
 import qualified Analysis.Dataflow.VeryBusy as VeryBusyAna
 import qualified Analysis.Dataflow.ReachingDef as ReachingDefsAna
-import Data.List (intercalate)
+import Data.List (intercalate, zipWith4)
 import Analysis.Typecheck.Constraints (Typeable)
 
 data SourceData = SourceData {
@@ -49,12 +49,11 @@ getSource sourceCode filePath = do
     pure $ SourceData (typeAST ast typeinfo) typeinfo
 
 getAna :: (Program (SourcePos, Type)) -> M.Map Identifier AnalysisData
-getAna ast = 
+getAna ast =
     let
         cfg = CFGBuilder.build <$> ast
         const = ConstAna.solve <$> cfg
         rdefs = ReachingDefsAna.solve <$> cfg
         vbusy = VeryBusyAna.solve <$> cfg
-        adata = AnalysisData <$> cfg <*> const <*> rdefs <*> vbusy
     in
-        M.fromList $ zip (name <$> ast) adata
+        M.fromList $ zip (name <$> ast) (zipWith4 AnalysisData cfg const rdefs vbusy)
