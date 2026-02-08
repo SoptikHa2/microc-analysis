@@ -1,9 +1,12 @@
 {-# LANGUAGE RecursiveDo #-}
-module IR.Stdlib where
+module IR.Stdlib (
+    funcs
+) where
 import IR.Tac
 import Analysis.Typecheck.Type
 import IR.Emit
 
+funcs :: [Emitter ()]
 funcs = [
     start,
     alloc

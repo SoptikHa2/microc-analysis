@@ -1,16 +1,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Analysis.Dataflow.ReachingDef where
+module Analysis.Dataflow.ReachingDef (
+    -- * Reaching definitions analysis
+    solve,
+    ReachingDefLattice(..),
+    ReachingDefResultMap
+) where
 import Analysis.Dataflow.Analysis (ResultMap, runAnalysis)
 import qualified Data.Set as S
-import Parse.AST (Expr (..), Stmt (..), Identifier)
+import Parse.AST (Expr(EIdentifier), Stmt (..))
 import Analysis.Cfg.Cfg
-import Data.Maybe (fromJust, catMaybes)
+import Data.Maybe (catMaybes)
 import Control.Monad.State
 import Data.List (intercalate)
 import Lattice (Lattice(..))
 import qualified Data.Map as M
-import Data.Generics.Uniplate.Data (universeBi)
-import Data.Data (Data)
 
 data ReachingDefLattice a
     = Top
@@ -36,22 +39,10 @@ instance (Eq a, Ord a) => Lattice (ReachingDefLattice a) where
 
 type ReachingDefResultMap a = ResultMap (ReachingDefLattice a)
 
-solve :: (Data a, Ord a) => CFG a -> ReachingDefResultMap a
+solve :: Ord a => CFG a -> ReachingDefResultMap a
 solve cfg = runAnalysis runCfg nextId cfg cfg.root.id
 
-containsId :: forall a . (Data a) => Identifier -> Expr a -> Bool
-containsId i e = i `elem` usedIds
-    where
-        usedIds = [i | EIdentifier (_loc :: a) i <- universeBi e]
-
-isInvalid :: forall a . (Data a) => Expr a -> Bool
-isInvalid e = any Prelude.id invalidSub
-    where
-        invalidSub = [
-                True | Input (_ :: a) <- universeBi e
-            ]
-
-runCfg :: (Data a, Ord a) => CFGNode a -> State (ReachingDefResultMap a) Bool
+runCfg :: Ord a => CFGNode a -> State (ReachingDefResultMap a) Bool
 runCfg (FunEntry nodeId _ _ _ _) = do
     -- We are the first one.
     -- At the beginning, there are no assignments. So nothing to have here

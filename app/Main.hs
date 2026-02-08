@@ -2,10 +2,9 @@ module Main (main) where
 
 import Options.Applicative hiding (empty)
 import Control.Monad (forM_)
-import System.Exit (exitFailure, exitWith, ExitCode (ExitFailure), exitSuccess)
-import Text.Parsec (parse, SourcePos)
+import System.Exit (exitWith, ExitCode (ExitFailure), exitSuccess)
+import Text.Parsec (SourcePos)
 
-import Parse.DeclParser (program)
 import Parse.AST hiding (name, args)
 import Interpreter.Data (Value(..))
 import Analysis.Typecheck.Constraints (printTyping)
@@ -149,11 +148,15 @@ runAna show' op filepath = do
     putStrLn $ DFUtils.prettyPrintAnalysis show' cfg resultMap
     putStrLn ""
 
+runConsts :: String -> IO ()
 runConsts = runAna DFUtils.formatResultLat getConstAnalysis
 
+runSign :: String -> IO ()
 runSign = runAna DFUtils.formatResultLat getSignAnalysis
 
+runVeryBusy :: String -> IO ()
 runVeryBusy = runAna show getVeryBusyAnalysis
 
+runReach :: String -> IO ()
 runReach = runAna show getReachingDefsAnalysis
 

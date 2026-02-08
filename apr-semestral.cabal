@@ -74,7 +74,7 @@ library
   default-extensions:
       OverloadedRecordDot
       DuplicateRecordFields
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wredundant-constraints -Wno-name-shadowing -Wno-partial-fields
   build-depends:
       base >=4.7 && <5
     , containers
@@ -97,7 +97,7 @@ executable microc
   default-extensions:
       OverloadedRecordDot
       DuplicateRecordFields
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wredundant-constraints -Wno-name-shadowing -Wno-partial-fields -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       apr-semestral
     , base >=4.7 && <5
@@ -130,7 +130,7 @@ test-suite apr-semestral-test
   default-extensions:
       OverloadedRecordDot
       DuplicateRecordFields
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wredundant-constraints -Wno-name-shadowing -Wno-partial-fields -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       apr-semestral
     , base >=4.7 && <5

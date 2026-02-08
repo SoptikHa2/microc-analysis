@@ -107,7 +107,7 @@ emitCondition (BiOp t Gt lhs rhs) = do
     _ <- emitGenericBinOp (const Cmp) t lhs rhs
     pure Jle
 -- If the expression is not == or >; compare it with equality to non-zero (or zero if prefixed with Not)
-emitCondition (UnOp t Parse.AST.Not expr) = do
+emitCondition (UnOp _ Parse.AST.Not expr) = do
     r <- emitExpr expr
     emit_ $ Cmp r (Direct $ Imm 0)
     pure Jnz
@@ -164,7 +164,7 @@ emitExpr (UnOp t Ref rhs) = do
     -- todo: verify
     emit (\r -> Lea t r (Register val))
 
-emitExpr (UnOp t Alloc rhs) = undefined
+emitExpr (UnOp _ Alloc _) = undefined
 
 -- !x: returns 1 if x == 0, 0 otherwise
 emitExpr (UnOp t Parse.AST.Not rhs) = mdo

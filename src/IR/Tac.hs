@@ -1,6 +1,22 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
-module IR.Tac where
+module IR.Tac (
+    -- * TAC types
+    TAC(..),
+    NativeTAC,
+    ExtendedTAC,
+    -- * Instructions
+    TinyCInstr(..),
+    ExtendedInstr(..),
+    -- * Operands
+    AnySource(..),
+    AnyTarget(..),
+    dreg,
+    -- * Compiler monad
+    Emitter(..),
+    -- * Utilities
+    concatTAC
+) where
 
 import IR.CompilerState
 import Control.Monad.State

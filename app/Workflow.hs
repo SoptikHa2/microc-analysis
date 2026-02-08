@@ -4,7 +4,7 @@ import Text.Parsec (SourcePos, parse)
 import Analysis.Typecheck.Type (Type, TypeError)
 import Analysis.Dataflow.ReachingDef (ReachingDefResultMap)
 import Analysis.Dataflow.Const (ConstResultMap)
-import Analysis.Cfg.Cfg (CFG, CFGWithMap, StmtCfgMap)
+import Analysis.Cfg.Cfg (CFG, StmtCfgMap)
 import qualified Analysis.Cfg.Cfg as Cfg
 import Analysis.Dataflow.VeryBusy (VeryBusyResultMap)
 import Text.Parsec.Error (ParseError)

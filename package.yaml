@@ -35,8 +35,9 @@ ghc-options:
 - -Wincomplete-uni-patterns
 - -Wmissing-export-lists
 - -Wmissing-home-modules
-- -Wpartial-fields
 - -Wredundant-constraints
+- -Wno-name-shadowing
+- -Wno-partial-fields
 
 default-extensions:
   - OverloadedRecordDot

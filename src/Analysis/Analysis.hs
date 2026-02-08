@@ -43,5 +43,5 @@ getSignAnalysis = getDataflowAnalysis SignAna.solve
 getVeryBusyAnalysis :: (Data a, Ord a) => Program a -> [(String, CFG a, VeryBusyResultMap a)]
 getVeryBusyAnalysis = getDataflowAnalysis VeryBusyAna.solve
 
-getReachingDefsAnalysis :: (Data a, Ord a) => Program a -> [(String, CFG a, ReachingDefResultMap a)]
+getReachingDefsAnalysis :: Ord a => Program a -> [(String, CFG a, ReachingDefResultMap a)]
 getReachingDefsAnalysis = getDataflowAnalysis ReachingDefsAna.solve

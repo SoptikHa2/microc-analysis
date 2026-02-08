@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Analysis.Typecheck.ConstraintSolver where
+module Analysis.Typecheck.ConstraintSolver (
+    solve
+) where
 import Analysis.Typecheck.Constraints (Constraints, Typeable, typeableLoc, printAllTyping)
 import Analysis.Typecheck.Type (TypeError, Type(..))
 import Control.Monad (zipWithM)
@@ -101,7 +103,7 @@ solve ctx = go typesPerTypable >>= resolveResult
                     isInvalid Bottom = True
 
 
-            finalizeType :: Show a => (Typeable a) -> [Type] -> Either TypeError Type
+            finalizeType :: Typeable a -> [Type] -> Either TypeError Type
             finalizeType _ [] = Left "No types for typeable"
             finalizeType _ [t] = Right t
             finalizeType typ types =

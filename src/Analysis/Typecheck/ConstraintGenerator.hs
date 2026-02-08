@@ -122,7 +122,7 @@ genConstraintsStmt f (AssignmentStmt _ lhs rhs) = do
 
 genConstraintsExpr :: (Show a, Data a) => FunDecl a -> Expr a -> State TypeState (Constraints a)
 
-genConstraintsExpr f e@(BiOp l Eq lhs rhs) = do
+genConstraintsExpr f e@(BiOp _ Eq lhs rhs) = do
     -- lhs, rhs must have equal type; we have type int
     lhsC <- genConstraintsExpr f lhs
     rhsC <- genConstraintsExpr f rhs
@@ -131,38 +131,38 @@ genConstraintsExpr f e@(BiOp l Eq lhs rhs) = do
     pure $ (CExpr e, Int) : (CExpr lhs, commonType) : (CExpr rhs, commonType) : (lhsC <> rhsC)
 
 -- gt, plus, minus, mul, div -- all require ints
-genConstraintsExpr f e@(BiOp l _ lhs rhs) = do
+genConstraintsExpr f e@(BiOp _ _ lhs rhs) = do
     lhsC <- genConstraintsExpr f lhs
     rhsC <- genConstraintsExpr f rhs
 
     pure $ (CExpr e, Int) : (CExpr lhs, Int) : (CExpr rhs, Int) : (lhsC <> rhsC)
 
-genConstraintsExpr f e@(UnOp l Deref target) = do
+genConstraintsExpr f e@(UnOp _ Deref target) = do
     targetC <- genConstraintsExpr f target
     underlyingTargetT <- newType
 
     pure $ (CExpr target, Ptr underlyingTargetT) : (CExpr e, underlyingTargetT) : targetC
 
-genConstraintsExpr f e@(UnOp l Ref target) = do
+genConstraintsExpr f e@(UnOp _ Ref target) = do
     targetC <- genConstraintsExpr f target
     targetT <- newType
 
     pure $ (CExpr target, targetT) : (CExpr e, Ptr targetT) : targetC
 
-genConstraintsExpr f e@(UnOp l Alloc target) = do
+genConstraintsExpr f e@(UnOp _ Alloc target) = do
     targetC <- genConstraintsExpr f target
     targetT <- newType
 
     pure $ (CExpr target, targetT) : (CExpr e, Ptr targetT) : targetC
 
-genConstraintsExpr f e@(UnOp l Not target) = do
+genConstraintsExpr f e@(UnOp _ Not target) = do
     targetC <- genConstraintsExpr f target
     pure $ (CExpr target, Int) : (CExpr e, Int) : targetC
 
 -- input only works for integers
-genConstraintsExpr _ e@(Input l) = pure [(CExpr e, Int)]
+genConstraintsExpr _ e@(Input _) = pure [(CExpr e, Int)]
 
-genConstraintsExpr _ e@(Null l) = do
+genConstraintsExpr _ e@(Null _) = do
     whatever <- newType
     pure [(CExpr e, Ptr whatever)]
 
@@ -201,7 +201,7 @@ genConstraintsExpr f e@(ArrayAccess _ target idx) = do
         (CExpr e, arrayInnerType)
         ] <> targetC <> idxC
 
-genConstraintsExpr f e@(Call l target args) = do
+genConstraintsExpr f e@(Call _ target args) = do
     targetC <- genConstraintsExpr f target
     retT <- newType
 
@@ -214,7 +214,7 @@ genConstraintsExpr f e@(Call l target args) = do
         (CExpr e, retT)
         ] <> argConstraints <> targetC <> concat argsCx
 
-genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
+genConstraintsExpr f e@(Parse.AST.Record _ (Fields fields)) = do
     -- This is a record constructor/definition. Generate new unknown for each field.
     fieldTypes <- traverse (const newType) fields
     let recTypes = zip (fst <$> fields) fieldTypes
@@ -233,7 +233,7 @@ genConstraintsExpr f e@(Parse.AST.Record l (Fields fields)) = do
         (CExpr e, recordType)
         ] <> typeableTypes <> concat nestedCtx
 
-genConstraintsExpr f e@(Parse.AST.Array l items) = do
+genConstraintsExpr f e@(Parse.AST.Array _ items) = do
     -- 1) All underlying items have to be of the same type X
     -- 2) This is of type [X]
     itemsC <- traverse (genConstraintsExpr f) items
@@ -245,9 +245,9 @@ genConstraintsExpr f e@(Parse.AST.Array l items) = do
         (CExpr e, Type.Array innerArrayType)
         ] <> concat itemsC <> itemTypes
 
-genConstraintsExpr _ e@(Number l _) = pure [(CExpr e, Int)]
+genConstraintsExpr _ e@(Number _ _) = pure [(CExpr e, Int)]
 
-genConstraintsExpr f e@(EIdentifier l name) = do
+genConstraintsExpr f e@(EIdentifier _ name) = do
     -- Check if it's a global function first
     maybeFunType <- lookupFunction name
     typ <- case maybeFunType of

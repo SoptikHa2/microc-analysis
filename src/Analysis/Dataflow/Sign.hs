@@ -1,4 +1,9 @@
-module Analysis.Dataflow.Sign where
+module Analysis.Dataflow.Sign (
+    -- * Sign analysis
+    solve,
+    SignLattice(..),
+    SignResultMap
+) where
 import Lattice (Lattice(..))
 import Analysis.Dataflow.Analysis
 import Parse.AST

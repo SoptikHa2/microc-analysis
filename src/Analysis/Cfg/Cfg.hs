@@ -1,5 +1,26 @@
 {-# LANGUAGE LambdaCase #-}
-module Analysis.Cfg.Cfg where
+module Analysis.Cfg.Cfg (
+    -- * Types
+    CFGId,
+    CFG(..),
+    CFGNode(..),
+    CFGMap,
+    CFGWithMap(..),
+    StmtCfgMap,
+    -- * Node manipulation
+    addToPrev,
+    addToNext,
+    setId,
+    getId,
+    nextId,
+    prevId,
+    -- * Traversal
+    next,
+    prev,
+    findExit,
+    -- * Printing
+    cfgshow
+) where
 import qualified Data.Map as M
 import Text.Printf (printf)
 import Parse.AST
@@ -114,11 +135,11 @@ cfgshow digraphName (CFG m c) =
                 retLabel = printf "n_%d[label=\"return %s;\"]\n" i (show retVal)
                 exitLabel = printf "n_exit[label=\"Fun %s exit\"]\n" el
                 retTransition = printf "n_%d -> n_exit\n" i
-        go m c@(FunEntry i label vars args _) = do
+        go m c@(FunEntry i label vars _args _) = do
             let nc = head (next m c)  -- fun entry -> just one child
             (child, ci) <- printCfg m nc
 
-            let varIds = (++"var") . show <$> take (length vars) [1..]
+            let varIds = (++"var") . show <$> take (length vars) ([1..] :: [Int])
 
             let s = printf "n_%d[label=\"Fun %s entry\"]\n" i label
                     <> genVars (zip vars varIds) i ci
@@ -136,7 +157,7 @@ cfgshow digraphName (CFG m c) =
         genVars :: [(String, String)] -> CFGId -> CFGId -> String
         genVars varsZ startId endId = intercalate "\n" (nodes <> transitionsStr)
             where
-                (vars, varIds) = unzip varsZ
+                (_vars, varIds) = unzip varsZ
                 idLine = show startId : varIds ++ [show endId]
                 transitions = zip idLine (tail idLine)
                 transitionsStr =

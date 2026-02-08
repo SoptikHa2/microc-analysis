@@ -1,5 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Analysis.Dataflow.VeryBusy where
+module Analysis.Dataflow.VeryBusy (
+    -- * Very busy expressions analysis
+    solve,
+    VeryBusyLattice(..),
+    VeryBusyResultMap
+) where
 import Analysis.Dataflow.Analysis (ResultMap, runAnalysis)
 import qualified Data.Set as S
 import Parse.AST (Expr (..), Stmt (..), Identifier)

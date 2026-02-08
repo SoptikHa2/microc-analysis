@@ -1,4 +1,10 @@
-module IR.Emit where
+module IR.Emit (
+    -- * Emission typeclass
+    AnyTACEmit(..),
+    -- * Running the emitter
+    run,
+    runEmitter
+) where
 import IR.CompilerState
 import Control.Monad.State
 import IR.Tac

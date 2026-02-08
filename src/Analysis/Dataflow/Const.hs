@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Analysis.Dataflow.Const (solve, ConstResultMap, ConstResultLat, ConstLattice) where
-import Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysis, runAnalysisOnVars)
+import Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysisOnVars)
 import qualified Data.Map as M
 import Parse.AST
 import Lattice (Lattice(..))
