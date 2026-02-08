@@ -97,6 +97,20 @@ exprData (Array l _) = l
 exprData (Number l _) = l
 exprData (EIdentifier l _) = l
 
+-- Set only the top-level annotation without recursing into sub-expressions
+setExprData :: a -> Expr a -> Expr a
+setExprData d (BiOp _ op l r) = BiOp d op l r
+setExprData d (UnOp _ op e) = UnOp d op e
+setExprData d (Input _) = Input d
+setExprData d (Null _) = Null d
+setExprData d (FieldAccess _ e f) = FieldAccess d e f
+setExprData d (ArrayAccess _ t i) = ArrayAccess d t i
+setExprData d (Call _ t a) = Call d t a
+setExprData d (Parse.AST.Record _ r) = Parse.AST.Record d r
+setExprData d (Array _ e) = Array d e
+setExprData d (Number _ i) = Number d i
+setExprData d (EIdentifier _ i) = EIdentifier d i
+
 instance Show UnOp where
     show Deref = "*"
     show Ref = "&"

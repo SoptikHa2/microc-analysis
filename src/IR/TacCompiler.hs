@@ -177,7 +177,7 @@ emitExpr (UnOp t Parse.AST.Not rhs) = mdo
     pure result
 
 emitExpr (Parse.AST.Call t (EIdentifier _ target) args) = mdo
-    ex <- traverse emitExpr args
+    ex <- traverse emitRValExpr args
 
     -- if the target is a variable, treat it as a function pointer instead
     funPtr <- run $ getVarMaybe target

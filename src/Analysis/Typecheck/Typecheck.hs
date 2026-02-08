@@ -46,6 +46,8 @@ typeAST ast typemap = astWithType
         astWithType = transformBi (annotateExpr typemap) astWithBotType
 
         annotateExpr :: Ord a => M.Map (Typeable a) Type -> Expr (a, Type) -> Expr (a, Type)
-        annotateExpr typingmap expr = (\(s,_) -> (s,dstType)) <$> expr
+        annotateExpr typingmap expr = setExprData (srcPos, dstType) expr
             where
-                dstType = typingmap M.! CExpr (fst <$> expr)
+                key = CExpr (fst <$> expr)
+                dstType = typingmap M.! key
+                (srcPos, _) = exprData expr
