@@ -121,12 +121,32 @@ emitGenericBinOp op t l r = do
     pure lreg
 
 emitExpr :: Expr Type -> Emitter Reg
--- todo: types
 emitExpr (BiOp _ Plus lhs rhs) = emitGenericBinOp Add Int lhs rhs
 emitExpr (BiOp _ Minus lhs rhs) = emitGenericBinOp Sub Int lhs rhs
 emitExpr (BiOp _ Parse.AST.Mul lhs rhs) = emitGenericBinOp IR.Tac.Mul Int lhs rhs
 emitExpr (BiOp _ Parse.AST.Div lhs rhs) = emitGenericBinOp IR.Tac.Div Int lhs rhs
--- TODO: eq, gt
+
+-- a == b: returns 1 if equal, 0 otherwise
+emitExpr (BiOp t Eq lhs rhs) = mdo
+    lreg <- emitExpr lhs
+    rreg <- emitExpr rhs
+    result <- emit (\r -> Mov t (dreg r) (Direct $ Imm 0))
+    emit_ $ Cmp lreg (dreg rreg)
+    emit_ $ Jnz end
+    emit_ $ Mov t (dreg result) (Direct $ Imm 1)
+    end <- emitL Nop
+    pure result
+
+-- a > b: returns 1 if greater, 0 otherwise
+emitExpr (BiOp t Gt lhs rhs) = mdo
+    lreg <- emitExpr lhs
+    rreg <- emitExpr rhs
+    result <- emit (\r -> Mov t (dreg r) (Direct $ Imm 0))
+    emit_ $ Cmp lreg (dreg rreg)
+    emit_ $ Jle end
+    emit_ $ Mov t (dreg result) (Direct $ Imm 1)
+    end <- emitL Nop
+    pure result
 
 emitExpr (UnOp t Parse.AST.Deref rhs) = do
     val <- emitExpr rhs
@@ -141,11 +161,17 @@ emitExpr (UnOp t Ref rhs) = do
     -- todo: verify
     emit (\r -> Lea t r (Register val))
 
--- TODO: Not
-
 emitExpr (UnOp t Alloc rhs) = undefined
 
-emitExpr (UnOp t Parse.AST.Not rhs) = undefined
+-- !x: returns 1 if x == 0, 0 otherwise
+emitExpr (UnOp t Parse.AST.Not rhs) = mdo
+    val <- emitExpr rhs
+    result <- emit (\r -> Mov t (dreg r) (Direct $ Imm 0))
+    emit_ $ Cmp val (Direct $ Imm 0)
+    emit_ $ Jnz end
+    emit_ $ Mov t (dreg result) (Direct $ Imm 1)
+    end <- emitL Nop
+    pure result
 
 emitExpr (Parse.AST.Call t (EIdentifier _ target) args) = mdo
     ex <- traverse emitExpr args
