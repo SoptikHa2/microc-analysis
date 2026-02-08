@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: hspec-golden-0.2.2.0@sha256:8ab5c0e2aaac43a9ef2eb933da7d656e99973508a415bb849f4ab180b177c11e,2857
+    pantry-tree:
+      sha256: 7d6f1f51f7994ea60a0c0a123b7692e38d1a823b309bee57f4bc600756e81b4f
+      size: 495
+  original:
+    hackage: hspec-golden-0.2.2.0@sha256:8ab5c0e2aaac43a9ef2eb933da7d656e99973508a415bb849f4ab180b177c11e,2857
+- completed:
     hackage: HUnit-1.6.2.0@sha256:1a79174e8af616117ad39464cac9de205ca923da6582825e97c10786fda933a4,1588
     pantry-tree:
       sha256: 4f20a5a33866171260d0ee1e256c27f53cc84d37a68d498c3e12347f4e3d05b4

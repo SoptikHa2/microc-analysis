@@ -1,0 +1,31 @@
+.text
+0		CALL 20
+1		PUTNUM R0
+2		HALT
+3		NOP
+4		POP R0 # Int
+5		POP R1 # ◇
+6		PUSH R0
+7		MOV R2, 1 # Int
+8		ADD R1, R2 # Int
+9		MOV R0, R1 # ◇
+10		RET
+11		NOP
+12		POP R0 # Int
+13		POP R3 # ◇
+14		PUSH R0
+15		MOV R4, 42 # Int
+16		PUSH R4
+17		CALL R3
+18		MOV R0, R0 # ◇
+19		RET
+20		NOP
+21		POP R0 # Int
+22		PUSH R0
+23		MOV R6, 11 # ((Int) -> Int) -> Int # fun ptr
+24		MOV R5, R6 # ((Int) -> Int) -> Int # fun ptr
+25		MOV R7, 3 # (Int) -> Int # fun ptr
+26		PUSH R7
+27		CALL R5
+28		MOV R0, R0 # ◇
+29		RET

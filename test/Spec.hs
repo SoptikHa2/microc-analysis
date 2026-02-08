@@ -9,6 +9,7 @@ import InterpretStmtSpec
 import ConstraintSolverSpec
 import TypecheckSpec
 import CfgSpec
+import GoldenSpec
 
 main :: IO ()
 main = hspec $ do
@@ -21,3 +22,4 @@ main = hspec $ do
   describe "Constraint Solver" ConstraintSolverSpec.spec
   describe "Type Checker (End-to-End)" TypecheckSpec.spec
   describe "CFG generator" CfgSpec.spec
+  describe "Golden Tests" GoldenSpec.spec

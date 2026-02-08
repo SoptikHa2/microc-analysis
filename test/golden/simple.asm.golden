@@ -1,0 +1,13 @@
+.text
+0		CALL 3
+1		PUTNUM R0
+2		HALT
+3		NOP
+4		POP R0 # Int
+5		PUSH R0
+6		MOV R2, 42 # Int
+7		MOV R1, R2 # Int
+8		PUTNUM R1
+9		MOV R3, 0 # Int
+10		MOV R0, R3 # ◇
+11		RET

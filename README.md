@@ -7,6 +7,7 @@ Intepreter, Static Analyzer, and hopefully soon a compiler of MicroC.
 - Interpreter
 - Semantic analysis: undefined/dup names, creating pointer to fun is forbidden, recursive records, accessing undefined fields of a record, assignments save to l-value.
 - Dataflow analysis: const & sign analysis, very busy and reaching definitions analysis
+- Compiler to [ostorc vm](https://gitlab.fit.cvut.cz:storcond-thesis/vm)
 
 
 # Language overview
@@ -47,3 +48,11 @@ main() {
     return 0;
 }
 ```
+
+## Tests
+
+Test uses combination of standard unit tests, and Golden.
+```sh
+stack exec hgold -- -u test/golden
+```
+

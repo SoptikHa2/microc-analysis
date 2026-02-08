@@ -1,0 +1,5 @@
+Function: main
+ 0: [ fun entry main () ; var x ]: { x -> ⊥ }
+ 1: [ return 0;                 ]: { x -> 42 }
+ 2: [ x = 42;                   ]: { x -> 42 }
+ 3: [ output x;                 ]: { x -> 42 }

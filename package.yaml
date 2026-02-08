@@ -68,3 +68,6 @@ tests:
     dependencies:
     - apr-semestral
     - hspec >= 2.11 && < 3
+    - hspec-golden
+    - directory
+    - filepath

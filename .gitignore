@@ -1,4 +1,6 @@
 .stack-work/
 *~
 build/
-tests/actual
+test/golden/*.actual
+# output assembly files
+*.s

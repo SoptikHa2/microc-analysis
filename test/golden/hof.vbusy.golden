@@ -1,0 +1,12 @@
+Function: inc
+ 0: [ fun entry inc (a) ]: a + 1
+ 1: [ return a + 1;     ]: a + 1
+
+Function: map
+ 0: [ fun entry map (f) ]: f(42)
+ 1: [ return f(42);     ]: f(42)
+
+Function: main
+ 0: [ fun entry main () ; var a ]: map
+ 1: [ return a(inc);            ]: a(inc)
+ 2: [ a = map;                  ]: map

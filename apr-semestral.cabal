@@ -65,6 +65,7 @@ library
       Parse.Location
       Parse.StmtParser
       Utils
+      Workflow
   other-modules:
       Paths_apr_semestral
   autogen-modules:
@@ -88,7 +89,6 @@ executable microc
   main-is: Main.hs
   other-modules:
       Dbg
-      Workflow
       Paths_apr_semestral
   autogen-modules:
       Paths_apr_semestral
@@ -116,6 +116,7 @@ test-suite apr-semestral-test
       ConstraintSolverSpec
       DeclParserSpec
       ExprParserSpec
+      GoldenSpec
       InterpretExprSpec
       InterpretStmtSpec
       StateSpec
@@ -135,7 +136,10 @@ test-suite apr-semestral-test
       apr-semestral
     , base >=4.7 && <5
     , containers
+    , directory
+    , filepath
     , hspec >=2.11 && <3
+    , hspec-golden
     , mtl
     , optparse-applicative
     , parsec >=3.1 && <4

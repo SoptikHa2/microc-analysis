@@ -1,0 +1,2 @@
+[main() :: "examples/simple.mc" (line 1, column 1)] = () -> Int
+[x :: main:"examples/simple.mc" (line 1, column 1)] = Int

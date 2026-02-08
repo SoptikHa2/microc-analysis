@@ -1,0 +1,12 @@
+Function: inc
+ 0: [ fun entry inc (a) ]: { a -> T }
+ 1: [ return a + 1;     ]: { a -> T }
+
+Function: map
+ 0: [ fun entry map (f) ]: { f -> T }
+ 1: [ return f(42);     ]: { f -> T }
+
+Function: main
+ 0: [ fun entry main () ; var a ]: { a -> ⊥ }
+ 1: [ return a(inc);            ]: { a -> ⊥ }
+ 2: [ a = map;                  ]: { a -> ⊥ }

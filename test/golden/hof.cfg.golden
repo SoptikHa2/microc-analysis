@@ -1,0 +1,29 @@
+digraph inc {
+n_0[label="Fun inc entry"]
+n_0 -> n_1
+n_1[label="return a + 1;"]
+n_exit[label="Fun inc exit"]
+n_1 -> n_exit
+}
+
+digraph main {
+n_0[label="Fun main entry"]
+n_1var[label="var a;"]
+
+n_0 -> n_1var
+
+n_1var -> n_2
+n_2[label="a = map;"]
+n_1[label="return a(inc);"]
+n_exit[label="Fun main exit"]
+n_1 -> n_exit
+n_2 -> n_1
+}
+
+digraph map {
+n_0[label="Fun map entry"]
+n_0 -> n_1
+n_1[label="return f(42);"]
+n_exit[label="Fun map exit"]
+n_1 -> n_exit
+}

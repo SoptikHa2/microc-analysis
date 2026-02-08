@@ -1,0 +1,6 @@
+[inc() :: "examples/hof.mc" (line 1, column 1)] = (Int) -> Int
+[map() :: "examples/hof.mc" (line 3, column 2)] = ((Int) -> Int) -> Int
+[main() :: "examples/hof.mc" (line 7, column 2)] = () -> Int
+[a :: "examples/hof.mc" (line 1, column 1)] = Int
+[f :: "examples/hof.mc" (line 3, column 2)] = (Int) -> Int
+[a :: main:"examples/hof.mc" (line 7, column 2)] = ((Int) -> Int) -> Int
