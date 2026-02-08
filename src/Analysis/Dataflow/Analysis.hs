@@ -113,7 +113,7 @@ runCfg _next prev _evalStmt n@(FunExit nodeId _ _ _) = do
     -- 3) insert into map, return if was equialent
 
     prevAssignments <- catMaybes <$> gets (\m -> (m M.!?) <$> (prev n))
-    let mergedPrev = foldr1 (<||>) prevAssignments
+    let mergedPrev = foldr (<||>) M.empty prevAssignments
 
     existingSolution <- gets (M.!? nodeId)
 

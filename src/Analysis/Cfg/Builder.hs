@@ -55,6 +55,7 @@ newNode = Node 0 [] []
 buildStmt :: Stmt a -> State (CFGMap a) (CFGNode a, [CFGNode a])
 buildStmt s@(OutputStmt _ _) = asSingleCfgNode <$> genId (newNode s)
 buildStmt s@(AssignmentStmt _ _ _) = asSingleCfgNode <$> genId (newNode s)
+buildStmt s@(Block _ []) = asSingleCfgNode <$> genId (newNode s)  -- empty block
 buildStmt _s@(Block _ stmx) = do
     basicBlocks <- traverse buildStmt stmx
 
