@@ -44,6 +44,8 @@ data CFG a = CFG {
     idmap :: CFGMap a,
     root :: CFGNode a
 }
+instance Show (CFG a) where
+    show = cfgshow "debug (?)"
 
 data CFGNode a
     = Node {

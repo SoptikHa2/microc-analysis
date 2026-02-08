@@ -24,7 +24,7 @@ import Analysis.Typecheck.Constraints (Typeable)
 data SourceData = SourceData {
     ast :: Program (SourcePos, Type),
     typing :: M.Map (Typeable SourcePos) Type
-}
+} deriving (Show)
 
 data AnalysisData = AnalysisData {
     cfg :: CFG (SourcePos, Type),
@@ -32,7 +32,7 @@ data AnalysisData = AnalysisData {
     consts :: ConstResultMap,
     reachingDefs :: ReachingDefResultMap (SourcePos, Type),
     veryBusy :: VeryBusyResultMap (SourcePos, Type)
-}
+} deriving (Show)
 
 data AnyError
     = Parsing ParseError

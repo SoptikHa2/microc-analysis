@@ -24,11 +24,14 @@ buildWithMap fun = evalState (buildFun fun) emptyState
 buildFun :: Ord a => FunDecl a -> State (BuilderState a) (CFGWithMap a)
 buildFun fun = do
     funStartNode <- genId $ FunEntry 0 fun.name fun.body.idDecl fun.args []
-    (bodyFirst, bodyLast) <- buildStmt (Block fun.body.d fun.body.body)
     funEndNode <- genId $ FunExit 0 fun.name fun.body.return []
 
-    addChild funStartNode.id bodyFirst.id
-    traverse_ (\p -> addChild p.id funEndNode.id) bodyLast
+    case fun.body.body of
+        [] -> addChild funStartNode.id funEndNode.id  -- empty body: entry -> exit
+        stmts -> do
+            (bodyFirst, bodyLast) <- buildStmt (Block fun.body.d stmts)
+            addChild funStartNode.id bodyFirst.id
+            traverse_ (\p -> addChild p.id funEndNode.id) bodyLast
 
     rootNode <- refresh funStartNode
     st <- get
