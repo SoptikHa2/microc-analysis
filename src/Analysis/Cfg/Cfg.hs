@@ -9,6 +9,15 @@ import Data.Maybe (listToMaybe)
 
 type CFGId = Int
 
+-- Mapping from AST node annotation to CFG node ID
+type StmtCfgMap a = M.Map a CFGId
+
+-- CFG of a single function, with mapping from stmt annotations to CFG IDs
+data CFGWithMap a = CFGWithMap {
+    cfg :: CFG a,
+    stmtMap :: StmtCfgMap a
+}
+
 -- CFG of a single function
 data CFG a = CFG {
     idmap :: CFGMap a,

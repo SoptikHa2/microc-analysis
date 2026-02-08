@@ -11,13 +11,13 @@ import Interpreter.Data (Value(..))
 import Analysis.Typecheck.Constraints (printTyping)
 import Control.Exception
 import Error
-import Analysis.Cfg.Cfg as CFG
+import qualified Analysis.Cfg.Cfg as CFG
 import Data.List (intercalate)
 import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis)
 import qualified Analysis.Dataflow.Utils as DFUtils
 import Analysis.Dataflow.Analysis (ResultMap)
 import qualified Compile.Compile as C
-import Workflow (getSource, ast, SourceData (typing), getAna, cfg)
+import Workflow (getSource, ast, SourceData (typing), getAna, AnalysisData(..))
 import Interpreter.InterpretRun (interpretIO)
 import Utils ((<$$>))
 import qualified Data.Map as M
@@ -138,7 +138,7 @@ compile filepath target = do
     Just target -> writeFile target asm
     Nothing -> putStrLn asm
 
-runAna :: (d -> String) -> (Program SourcePos -> [(String, CFG a, ResultMap d)]) -> String -> IO ()
+runAna :: (d -> String) -> (Program SourcePos -> [(String, CFG.CFG a, ResultMap d)]) -> String -> IO ()
 runAna show' op filepath = do
   -- TODO: refactor to use analysis workflow
   code <- readFile filepath

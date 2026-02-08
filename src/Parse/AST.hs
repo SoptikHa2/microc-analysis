@@ -84,6 +84,13 @@ data Expr a
 newtype Record a = Fields [(Identifier, Expr a)]
     deriving (Eq, Ord, Data, Typeable, Functor)
 
+stmtData :: Stmt a -> a
+stmtData (OutputStmt d _) = d
+stmtData (WhileStmt d _ _) = d
+stmtData (IfStmt d _ _ _) = d
+stmtData (Block d _) = d
+stmtData (AssignmentStmt d _ _) = d
+
 exprData :: Expr a -> a
 exprData (BiOp l _ _ _) = l
 exprData (UnOp l _ _) = l

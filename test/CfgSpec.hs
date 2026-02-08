@@ -15,11 +15,11 @@ testPos = newPos "test" 0 0
 
 -- Helper to build CFG from a single statement
 buildCfgFromStmt :: Stmt SourcePos -> (CFGNode SourcePos, [CFGNode SourcePos], CFGMap SourcePos)
-buildCfgFromStmt stmt = (root, ends, cfgMap)
+buildCfgFromStmt stmt = (root, ends, cfgMap state)
   where
     (root, ends) = fst result
-    cfgMap = snd result
-    result = runState (buildStmt stmt) M.empty
+    state = snd result
+    result = runState (buildStmt stmt) emptyState
 
 -- Helper to get a node by ID from the map
 getNode :: Int -> CFGMap a -> CFGNode a

@@ -4,7 +4,8 @@ import Text.Parsec (SourcePos, parse)
 import Analysis.Typecheck.Type (Type, TypeError)
 import Analysis.Dataflow.ReachingDef (ReachingDefResultMap)
 import Analysis.Dataflow.Const (ConstResultMap)
-import Analysis.Cfg.Cfg (CFG)
+import Analysis.Cfg.Cfg (CFG, CFGWithMap, StmtCfgMap)
+import qualified Analysis.Cfg.Cfg as Cfg
 import Analysis.Dataflow.VeryBusy (VeryBusyResultMap)
 import Text.Parsec.Error (ParseError)
 import Analysis.Semantics (SemanticError, verifyM)
@@ -16,7 +17,8 @@ import qualified Analysis.Dataflow.Const as ConstAna
 import qualified Data.Map as M
 import qualified Analysis.Dataflow.VeryBusy as VeryBusyAna
 import qualified Analysis.Dataflow.ReachingDef as ReachingDefsAna
-import Data.List (intercalate, zipWith4)
+import Data.List (intercalate)
+import Control.Applicative (ZipList(..))
 import Analysis.Typecheck.Constraints (Typeable)
 
 data SourceData = SourceData {
@@ -26,9 +28,10 @@ data SourceData = SourceData {
 
 data AnalysisData = AnalysisData {
     cfg :: CFG (SourcePos, Type),
+    stmtToCfg :: StmtCfgMap (SourcePos, Type),
     consts :: ConstResultMap,
     reachingDefs :: ReachingDefResultMap (SourcePos, Type),
-    veryBusy ::  VeryBusyResultMap (SourcePos, Type)
+    veryBusy :: VeryBusyResultMap (SourcePos, Type)
 }
 
 data AnyError
@@ -48,12 +51,15 @@ getSource sourceCode filePath = do
     _        <- Analysis.Semantics.verifyM ast     <!> Check
     pure $ SourceData (typeAST ast typeinfo) typeinfo
 
-getAna :: (Program (SourcePos, Type)) -> M.Map Identifier AnalysisData
+getAna :: Program (SourcePos, Type) -> M.Map Identifier AnalysisData
 getAna ast =
     let
-        cfg = CFGBuilder.build <$> ast
-        const = ConstAna.solve <$> cfg
-        rdefs = ReachingDefsAna.solve <$> cfg
-        vbusy = VeryBusyAna.solve <$> cfg
+        cfgWithMaps = ZipList $ CFGBuilder.buildWithMap <$> ast
+        cfgs = Cfg.cfg <$> cfgWithMaps
+        stmtMaps = Cfg.stmtMap <$> cfgWithMaps
+        consts = ConstAna.solve <$> cfgs
+        rdefs = ReachingDefsAna.solve <$> cfgs
+        vbusys = VeryBusyAna.solve <$> cfgs
+        adata = AnalysisData <$> cfgs <*> stmtMaps <*> consts <*> rdefs <*> vbusys
     in
-        M.fromList $ zip (name <$> ast) (zipWith4 AnalysisData cfg const rdefs vbusy)
+        M.fromList $ zip (name <$> ast) (getZipList adata)

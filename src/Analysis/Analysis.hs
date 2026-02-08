@@ -28,16 +28,16 @@ runAnalysis prog = if null errors
     where
         errors = (Semantic <$> Semantics.verify prog) <> (Type <$> Typecheck.verify prog)
 
-getDataflowAnalysis :: (CFG a -> ResultMap l) -> Program a -> [(String, CFG a, ResultMap l)]
+getDataflowAnalysis :: Ord a => (CFG a -> ResultMap l) -> Program a -> [(String, CFG a, ResultMap l)]
 getDataflowAnalysis solve prog = constx
     where
         cfgx = zip (name <$> prog) (CFGBuilder.build <$> prog)
         constx = (\(n, cfg) -> (n, cfg, solve cfg)) <$> cfgx
 
-getConstAnalysis :: Program a -> [(String, CFG a, ConstResultMap)]
+getConstAnalysis :: Ord a => Program a -> [(String, CFG a, ConstResultMap)]
 getConstAnalysis = getDataflowAnalysis ConstAna.solve
 
-getSignAnalysis :: Program a -> [(String, CFG a, SignResultMap)]
+getSignAnalysis :: Ord a => Program a -> [(String, CFG a, SignResultMap)]
 getSignAnalysis = getDataflowAnalysis SignAna.solve
 
 getVeryBusyAnalysis :: (Data a, Ord a) => Program a -> [(String, CFG a, VeryBusyResultMap a)]

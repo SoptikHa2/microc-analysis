@@ -1,4 +1,4 @@
-module Analysis.Cfg.Builder (build, buildStmt) where
+module Analysis.Cfg.Builder (build, buildStmt, buildWithMap, BuilderState, emptyState, cfgMap) where
 import Analysis.Cfg.Cfg
 import Parse.AST
 import Control.Monad.State (State, get, modify, gets, evalState)
@@ -6,10 +6,22 @@ import qualified Data.Map as M
 import Control.Monad
 import Data.Foldable
 
-build :: FunDecl a -> CFG a
-build fun = evalState (buildFun fun) M.empty
+-- Builder state: CFG nodes + stmt annotation -> CFGId mapping
+data BuilderState a = BuilderState {
+    cfgMap :: CFGMap a,
+    stmtCfgMap :: StmtCfgMap a
+}
 
-buildFun :: FunDecl a -> State (CFGMap a) (CFG a)
+emptyState :: BuilderState a
+emptyState = BuilderState M.empty M.empty
+
+build :: Ord a => FunDecl a -> CFG a
+build fun = cfg $ buildWithMap fun
+
+buildWithMap :: Ord a => FunDecl a -> CFGWithMap a
+buildWithMap fun = evalState (buildFun fun) emptyState
+
+buildFun :: Ord a => FunDecl a -> State (BuilderState a) (CFGWithMap a)
 buildFun fun = do
     funStartNode <- genId $ FunEntry 0 fun.name fun.body.idDecl fun.args []
     (bodyFirst, bodyLast) <- buildStmt (Block fun.body.d fun.body.body)
@@ -19,43 +31,53 @@ buildFun fun = do
     traverse_ (\p -> addChild p.id funEndNode.id) bodyLast
 
     rootNode <- refresh funStartNode
-    m <- get
-    pure $ CFG m rootNode
+    st <- get
+    pure $ CFGWithMap (CFG st.cfgMap rootNode) st.stmtCfgMap
 
-genId :: CFGNode a -> State (CFGMap a) (CFGNode a)
+genId :: CFGNode a -> State (BuilderState a) (CFGNode a)
 genId node = do
-    nextId <- gets M.size
+    nextId <- gets (M.size . cfgMap)
     let nodeWithId = setId node nextId
-    modify (M.insert nextId nodeWithId)
+    modify (\s -> s { cfgMap = M.insert nextId nodeWithId s.cfgMap })
     pure nodeWithId
 
+-- Record mapping from stmt annotation to CFG ID
+recordStmt :: Ord a => a -> CFGId -> State (BuilderState a) ()
+recordStmt ann cfgId = modify (\s -> s { stmtCfgMap = M.insert ann cfgId s.stmtCfgMap })
+
 -- For a node [Id], add child [Id]
-addChild :: CFGId -> CFGId -> State (CFGMap a) ()
+addChild :: CFGId -> CFGId -> State (BuilderState a) ()
 addChild parent child = do
-    parentNode <- gets (M.! parent)
-    childNode <- gets (M.! child)
+    parentNode <- gets ((M.! parent) . cfgMap)
+    childNode <- gets ((M.! child) . cfgMap)
 
     let newParent = addToNext parentNode child
     let newChild = addToPrev childNode parent
 
-    modify (M.insert parent newParent)
-    modify (M.insert child newChild)
+    modify (\s -> s { cfgMap = M.insert parent newParent s.cfgMap })
+    modify (\s -> s { cfgMap = M.insert child newChild s.cfgMap })
 
 asSingleCfgNode :: CFGNode a -> (CFGNode a, [CFGNode a])
 asSingleCfgNode n = (n, [n])
 
-refresh :: CFGNode a -> State (CFGMap a) (CFGNode a)
-refresh node = gets (M.! node.id)
+refresh :: CFGNode a -> State (BuilderState a) (CFGNode a)
+refresh node = gets ((M.! node.id) . cfgMap)
 
 newNode :: Stmt a -> CFGNode a
 newNode = Node 0 [] []
 
+-- Generate node and record the stmt -> CFGId mapping
+genStmtNode :: Ord a => Stmt a -> State (BuilderState a) (CFGNode a)
+genStmtNode s = do
+    node <- genId (newNode s)
+    recordStmt (stmtData s) node.id
+    pure node
 
 -- Returns first and last blocks of generated sequence
-buildStmt :: Stmt a -> State (CFGMap a) (CFGNode a, [CFGNode a])
-buildStmt s@(OutputStmt _ _) = asSingleCfgNode <$> genId (newNode s)
-buildStmt s@(AssignmentStmt _ _ _) = asSingleCfgNode <$> genId (newNode s)
-buildStmt s@(Block _ []) = asSingleCfgNode <$> genId (newNode s)  -- empty block
+buildStmt :: Ord a => Stmt a -> State (BuilderState a) (CFGNode a, [CFGNode a])
+buildStmt s@(OutputStmt _ _) = asSingleCfgNode <$> genStmtNode s
+buildStmt s@(AssignmentStmt _ _ _) = asSingleCfgNode <$> genStmtNode s
+buildStmt s@(Block _ []) = asSingleCfgNode <$> genStmtNode s  -- empty block
 buildStmt _s@(Block _ stmx) = do
     basicBlocks <- traverse buildStmt stmx
 
@@ -69,12 +91,12 @@ buildStmt _s@(Block _ stmx) = do
     zipWithM_ (\tails nextHead -> forM_ tails (`addChild` nextHead)) blockTailIds (tail blockHeadIds)
 
     -- Return toplevel block, and all bottom-level blocks
-    firstOfSeq <- gets (M.! head blockHeadIds)
-    lastOfSeq <- gets (\m -> (M.!) m <$> last blockTailIds)
+    firstOfSeq <- gets ((M.! head blockHeadIds) . cfgMap)
+    lastOfSeq <- gets (\s -> (M.!) s.cfgMap <$> last blockTailIds)
 
     pure (firstOfSeq, lastOfSeq)
 buildStmt s@(WhileStmt _ _ stmt) = do
-    whileCfg <- genId $ newNode s
+    whileCfg <- genStmtNode s
 
     (whileBodyStart, whileBodyEnds) <- buildStmt stmt
 
@@ -87,7 +109,7 @@ buildStmt s@(WhileStmt _ _ stmt) = do
 
     pure (cfgStart, [cfgStart])
 buildStmt s@(IfStmt _ _ tru Nothing) = do
-    ifCfg <- genId $ newNode s
+    ifCfg <- genStmtNode s
 
     (truStart, truEnd) <- buildStmt tru
     addChild ifCfg.id truStart.id
@@ -97,7 +119,7 @@ buildStmt s@(IfStmt _ _ tru Nothing) = do
 
     pure (cfgStart, cfgStart:cfgEnd)
 buildStmt s@(IfStmt _ _ tru (Just fals)) = do
-    ifCfg <- genId $ newNode s
+    ifCfg <- genStmtNode s
 
     (truStart, truEnd) <- buildStmt tru
     (falsStart, falsEnd) <- buildStmt fals
