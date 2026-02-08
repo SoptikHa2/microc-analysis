@@ -34,6 +34,7 @@ instance Show TinyCInstr where
     show (Not t r) = "NOT " <> show (Register r) <> " # " <> show t
     show (Div t l r) = showBinInstr "DIV" t (Register l) r
     show (Mov t l r) = showBinInstr "MOV" t l r
+    show (MovFunPtr t l r) = showBinInstr "MOV" t l r <> " # fun ptr"
     show (Lea t l r) = showBinInstr "LEA" t (Register l) r
     show (Jmp label) = "JMP " <> show label
     show (Jz label) = "JZ " <> show label

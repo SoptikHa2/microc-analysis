@@ -13,7 +13,7 @@ data Typeable a
     deriving (Show, Eq, Ord)
 
 typeableLoc :: Show a => Typeable a -> String
-typeableLoc (CExpr e) = show $ exprLoc e
+typeableLoc (CExpr e) = show $ exprData e
 typeableLoc (CFun f) = show f.d
 typeableLoc (CId l _) = l
 

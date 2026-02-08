@@ -84,18 +84,18 @@ data Expr a
 newtype Record a = Fields [(Identifier, Expr a)]
     deriving (Eq, Ord, Data, Typeable, Functor)
 
-exprLoc :: Expr a -> a
-exprLoc (BiOp l _ _ _) = l
-exprLoc (UnOp l _ _) = l
-exprLoc (Input l) = l
-exprLoc (Null l) = l
-exprLoc (FieldAccess l _ _) = l
-exprLoc (ArrayAccess l _ _) = l
-exprLoc (Call l _ _) = l
-exprLoc (Parse.AST.Record l _) = l
-exprLoc (Array l _) = l
-exprLoc (Number l _) = l
-exprLoc (EIdentifier l _) = l
+exprData :: Expr a -> a
+exprData (BiOp l _ _ _) = l
+exprData (UnOp l _ _) = l
+exprData (Input l) = l
+exprData (Null l) = l
+exprData (FieldAccess l _ _) = l
+exprData (ArrayAccess l _ _) = l
+exprData (Call l _ _) = l
+exprData (Parse.AST.Record l _) = l
+exprData (Array l _) = l
+exprData (Number l _) = l
+exprData (EIdentifier l _) = l
 
 instance Show UnOp where
     show Deref = "*"

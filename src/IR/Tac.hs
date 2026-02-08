@@ -45,8 +45,9 @@ dreg = Direct . Register
 data ExtendedInstr
     = Native TinyCInstr
     | Call Type Identifier [AnySource]
-    | RegCall Type Reg [AnyTarget]
+    | RegCall Type Reg [AnySource]
     | GetNthArg Type Int AnyTarget
+    | GetFunPtr Type Reg Identifier
     | Return Reg
     | Immediate Type Int Reg
     deriving (Eq)
@@ -62,6 +63,7 @@ data TinyCInstr
     | Not Type Reg
     | Div Type Reg AnyTarget
     | Mov Type AnyTarget AnyTarget
+    | MovFunPtr Type AnyTarget AnyTarget -- moving fun. ptr -> might need to be relocated, this is how to track it
     | Lea Type Reg AnySource
     | Jmp Label
     | Jz Label

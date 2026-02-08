@@ -1,5 +1,5 @@
 module IR.Desugar (desugar) where
-import IR.Tac (ExtendedInstr(..), TinyCInstr(..), dreg, AnySource (..))
+import IR.Tac (ExtendedInstr(..), TinyCInstr(..), dreg, AnySource (..), AnyTarget (..))
 import IR.TacPrint ()
 import Analysis.Typecheck.Type
 import IR.CompilerState (Reg(..), Label)
@@ -13,5 +13,14 @@ desugar funmap (Call _ target args) =
     (Push <$> args) <>
     [
         RCall (Imm (funmap M.! target))
+    ]
+desugar _ (RegCall _ reg args) =
+    (Push <$> args) <>
+    [
+        RCall (Register reg)
+    ]
+desugar funmap (GetFunPtr t reg name) =
+    [
+        MovFunPtr t (dreg reg) (Direct $ Imm (funmap M.! name))
     ]
 desugar _ i = error $ "Unknown instruction to desugar: " <> show i

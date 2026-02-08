@@ -1,4 +1,4 @@
-module IR.CompilerState (CState(..), Reg(..), Label, empty, reg, label, getFun, saveFun, getVarReg) where
+module IR.CompilerState (CState(..), Reg(..), Label, empty, reg, label, getFun, saveFun, getVarReg, getVarMaybe) where
 
 import Control.Monad.State
 import qualified Data.Map as M
@@ -31,6 +31,14 @@ reg = do
     modify (\s -> s { nextRegister = reg + 1 })
     pure $ R reg
 
+-- Get a register corresponding to a variable, if there is one already
+getVarMaybe :: Identifier -> State CState (Maybe Reg)
+getVarMaybe var = do
+    funName <- gets currentFunction
+    regs <- gets funRegsForVars
+    let regsFF = regs M.! funName
+    pure $ regsFF M.!? var
+
 setVar :: Identifier -> Reg -> State CState ()
 setVar var reg = do
     funName <- gets currentFunction
@@ -43,10 +51,8 @@ setVar var reg = do
 -- Get a register corresponding to a variable, or create one
 getVarReg :: Identifier -> State CState Reg
 getVarReg var = do
-    funName <- gets currentFunction
-    regs <- gets funRegsForVars
-    let regsFF = regs M.! funName
-    case regsFF M.!? var of
+    maybeReg <- getVarMaybe var
+    case maybeReg of
         Just reg -> pure reg
         Nothing -> do
             r <- reg

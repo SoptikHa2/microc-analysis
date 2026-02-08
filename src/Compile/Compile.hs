@@ -5,7 +5,7 @@ import qualified IR.TacCompiler as IRCompiler
 import Utils ((<$$>))
 import IR.Desugar (desugar)
 import Analysis.Typecheck.Type (Type)
-import IR.Tac (concatTAC, TAC (..), TinyCInstr (..), AnySource (..))
+import IR.Tac (concatTAC, TAC (..), TinyCInstr (..), AnySource (..), AnyTarget (..))
 import qualified Data.Map as M
 import IR.CompilerState
 import Data.Maybe (fromMaybe)
@@ -55,6 +55,7 @@ relabel (TAC li) =
 
         fixupJumps :: M.Map Label Label -> TinyCInstr -> TinyCInstr
         fixupJumps m (RCall (Imm i)) = RCall (Imm (i `fromMaybe` (m M.!? i)))
+        fixupJumps m (MovFunPtr t l (Direct (Imm i))) = MovFunPtr t l (Direct (Imm (i `fromMaybe` (m M.!? i))))
         fixupJumps m (Jmp l) = Jmp (l `fromMaybe` (m M.!? l))
         fixupJumps m (Jz l) = Jz (l `fromMaybe` (m M.!? l))
         fixupJumps m (Jnz l) = Jnz (l `fromMaybe` (m M.!? l))

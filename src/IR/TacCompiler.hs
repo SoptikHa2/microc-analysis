@@ -5,7 +5,7 @@ import IR.CompilerState
 import IR.Emit
 import Parse.AST
 import Analysis.Typecheck.Type (Type(..))
-import Data.Foldable (traverse_, for_)
+import Data.Foldable (traverse_)
 
 entrypoint :: ExtendedTAC
 entrypoint = TAC $
@@ -87,12 +87,15 @@ emitStmt (IfStmt _ cond tru fals) = mdo
 
 emitStmt (Block _ stmx) = traverse_ emitStmt stmx
 
-emitStmt (AssignmentStmt t lhs rhs) = do
+emitStmt (AssignmentStmt _ lhs rhs) = do
+    let rhsType = exprData rhs
     target <- emitExpr lhs
-    rval <- emitExpr rhs
-    -- TODO: Based on the type,
-    -- decide between Mov and MovIntoPtr?
-    emit_ $ Mov t (dreg target) (dreg rval)
+    rval <- emitRValExpr rhs
+    case rhsType of
+        -- If we are storing function pointer, we need to make sure to mark it; as we are relocating functions later
+        Fun _ _ -> emit_ $ MovFunPtr rhsType (dreg target) (dreg rval)
+        -- Fallback (ints and stuff)
+        _ -> emit_ $ Mov rhsType (dreg target) (dreg rval)
 
 -- Emit an expression, but we don't care about the result - just about the flags.
 -- Returns the jump that should be used to get to False branch (NOT successful (it's more convenient))
@@ -175,7 +178,13 @@ emitExpr (UnOp t Parse.AST.Not rhs) = mdo
 
 emitExpr (Parse.AST.Call t (EIdentifier _ target) args) = mdo
     ex <- traverse emitExpr args
-    emit_ $ IR.Tac.Call t target (Register <$> ex)
+
+    -- if the target is a variable, treat it as a function pointer instead
+    funPtr <- run $ getVarMaybe target
+    case funPtr of
+        Just reg -> emit_ $ IR.Tac.RegCall t reg (Register <$> ex)
+        Nothing -> emit_ $ IR.Tac.Call t target (Register <$> ex)
+    
     pure (R 0)
 
 emitExpr (Number t i) = do
@@ -185,3 +194,8 @@ emitExpr (EIdentifier _ e) = do
     run $ getVarReg e
 
 emitExpr e = error $ "Compiling expr " <> show e <> " is not defined"
+
+emitRValExpr :: Expr Type -> Emitter Reg
+emitRValExpr (EIdentifier t@(Fun _ _) e) = do
+    emit $ \r -> GetFunPtr t r e
+emitRValExpr e = emitExpr e
