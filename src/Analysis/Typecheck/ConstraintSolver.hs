@@ -166,11 +166,13 @@ mergeWithAssumptions assumptions l (Fun args1 ret1) (Fun args2 ret2)
         return $ Fun mergedArgs mergedRet
     | otherwise = Left $ l ++ ": Function being called has arity " ++ show (length args1) ++ ", but should have " ++ show (length args2)
 -- Record
-mergeWithAssumptions assumptions l (Record fields1) (Record fields2) = do
-    let sfields1 = sortBy (\a b -> compare (fst a) (fst b)) fields1
-    let sfields2 = sortBy (\a b -> compare (fst a) (fst b)) fields2
-    mergedFields <- zipWithM mergeField sfields1 sfields2
-    return $ Record mergedFields
+mergeWithAssumptions assumptions l (Record fields1) (Record fields2)
+    | length fields1 /= length fields2 = Left $ l ++ ": Record field count mismatch: " ++ show (length fields1) ++ " vs " ++ show (length fields2)
+    | otherwise = do
+        let sfields1 = sortBy (\a b -> compare (fst a) (fst b)) fields1
+        let sfields2 = sortBy (\a b -> compare (fst a) (fst b)) fields2
+        mergedFields <- zipWithM mergeField sfields1 sfields2
+        return $ Record mergedFields
   where
     mergeField (n1, t1) (n2, t2)
         | n1 == n2 = (,) n1 <$> mergeWithAssumptions assumptions l t1 t2
