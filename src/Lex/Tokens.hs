@@ -49,6 +49,8 @@ strToKw = [
     ("vrať", Return),
     ("if", If),
     ("když", If),
+    ("pokud", If),
+    ("pokuď", If),
     ("else", Else),
     ("jinak", Else),
     ("while", While),

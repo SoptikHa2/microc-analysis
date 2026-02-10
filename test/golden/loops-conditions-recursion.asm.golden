@@ -1,0 +1,59 @@
+.text
+0		CALL 37
+1		PUTNUM R0
+2		HALT
+3		POP R0 # Int
+4		POP R1 # ◇
+5		PUSH R0
+6		MOV R3, 0 # Int
+7		CMP R1, R3
+8		JNZ 12
+9		MOV R4, 1 # Int
+10		MOV R2, R4 # Int
+11		JMP 35
+12		MOV R5, 1 # Int
+13		CMP R1, R5
+14		JNZ 18
+15		MOV R6, 0 # Int
+16		MOV R2, R6 # Int
+17		JMP 35
+18		MOV R7, 2 # Int
+19		MOV R8, 0 # Int
+20		CMP R7, R1
+21		JLE 23
+22		MOV R8, 1 # Int
+23		CMP R8, 0
+24		JNZ 35
+25		MOV R9, 1 # Int
+26		SUB R1, R9 # Int
+27		PUSH R1
+28		CALL 3
+29		MOV R10, 0 # Int
+30		CMP R0, 0
+31		JNZ 33
+32		MOV R10, 1 # Int
+33		MOV R2, R10 # Int
+34		JMP 35
+35		MOV R0, R2 # ◇
+36		RET
+37		MOV R14, 1000 # Int
+38		MOV R12, R14 # Int
+39		MOV R15, 0 # Int
+40		MOV R11, R15 # Int
+41		MOV R16, 0 # Int
+42		MOV R13, R16 # Int
+43		CMP R12, R11
+44		JLE 56
+45		PUSH R11
+46		CALL 3
+47		CMP R0, 0
+48		JZ 52
+49		ADD R13, R11 # Int
+50		MOV R13, R13 # Int
+51		JMP 52
+52		MOV R17, 1 # Int
+53		ADD R11, R17 # Int
+54		MOV R11, R11 # Int
+55		JMP 43
+56		MOV R0, R13 # ◇
+57		RET

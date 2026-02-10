@@ -1,0 +1,62 @@
+digraph main {
+n_0[label="Fun main entry"]
+n_1var[label="var i;"]
+
+n_2var[label="var max;"]
+
+n_3var[label="var suma;"]
+
+n_0 -> n_1var
+
+n_1var -> n_2var
+
+n_2var -> n_3var
+
+n_3var -> n_1
+n_1[label="max = 1000;"]
+n_2[label="i = 0;"]
+n_3[label="suma = 0;"]
+n_4[label="while (max > i)"]
+n_8[label="return suma;"]
+n_exit[label="Fun main exit"]
+n_8 -> n_exit
+n_5[label="if (sudé(i))"]
+n_7[label="i = i + 1;"]
+n_7 -> n_4
+n_6[label="suma = suma + i;"]
+n_6 -> n_7
+n_5 -> n_7
+n_5 -> n_6
+n_4 -> n_8
+n_4 -> n_5
+n_3 -> n_4
+n_2 -> n_3
+n_1 -> n_2
+}
+
+digraph sudé {
+n_0[label="Fun sudé entry"]
+n_1var[label="var výsledek;"]
+
+n_0 -> n_1var
+
+n_1var -> n_1
+n_1[label="if (i == 0)"]
+n_3[label="if (i == 1)"]
+n_5[label="if (! 2 > i)"]
+n_7[label="return výsledek;"]
+n_exit[label="Fun sudé exit"]
+n_7 -> n_exit
+n_6[label="výsledek = ! sudé(i - 1);"]
+n_6 -> n_7
+n_5 -> n_7
+n_5 -> n_6
+n_4[label="výsledek = 0;"]
+n_4 -> n_7
+n_3 -> n_5
+n_3 -> n_4
+n_2[label="výsledek = 1;"]
+n_2 -> n_7
+n_1 -> n_3
+n_1 -> n_2
+}

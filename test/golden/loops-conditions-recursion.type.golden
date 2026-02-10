@@ -1,0 +1,7 @@
+[sudé() :: "examples/loops-conditions-recursion.mc" (line 1, column 1)] = (Int) -> Int
+[main() :: "examples/loops-conditions-recursion.mc" (line 15, column 2)] = () -> Int
+[i :: "examples/loops-conditions-recursion.mc" (line 1, column 1)] = Int
+[i :: main:"examples/loops-conditions-recursion.mc" (line 15, column 2)] = Int
+[max :: main:"examples/loops-conditions-recursion.mc" (line 15, column 2)] = Int
+[suma :: main:"examples/loops-conditions-recursion.mc" (line 15, column 2)] = Int
+[výsledek :: sudé:"examples/loops-conditions-recursion.mc" (line 1, column 1)] = Int

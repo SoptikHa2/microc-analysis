@@ -1,0 +1,20 @@
+Function: sudé
+ 0: [ fun entry sudé (i) ; var výsledek ]: { i -> T, výsledek -> ⊥ }
+ 1: [ if (i == 0)                       ]: { i -> T, výsledek -> ⊥ }
+ 2: [ výsledek = 1;                     ]: { i -> T, výsledek -> + }
+ 3: [ if (i == 1)                       ]: { i -> T, výsledek -> ⊥ }
+ 4: [ výsledek = 0;                     ]: { i -> T, výsledek -> 0 }
+ 5: [ if (! 2 > i)                      ]: { i -> T, výsledek -> ⊥ }
+ 6: [ výsledek = ! sudé(i - 1);         ]: { i -> T, výsledek -> T }
+ 7: [ return výsledek;                  ]: { i -> T, výsledek -> T }
+
+Function: main
+ 0: [ fun entry main () ; var i, max, suma ]: { i -> ⊥, max -> ⊥, suma -> ⊥ }
+ 1: [ max = 1000;                          ]: { i -> ⊥, max -> +, suma -> ⊥ }
+ 2: [ i = 0;                               ]: { i -> 0, max -> +, suma -> ⊥ }
+ 3: [ suma = 0;                            ]: { i -> 0, max -> +, suma -> 0 }
+ 4: [ while (max > i)                      ]: { i -> T, max -> +, suma -> T }
+ 5: [ if (sudé(i))                         ]: { i -> T, max -> +, suma -> T }
+ 6: [ suma = suma + i;                     ]: { i -> T, max -> +, suma -> T }
+ 7: [ i = i + 1;                           ]: { i -> T, max -> +, suma -> T }
+ 8: [ return suma;                         ]: { i -> T, max -> +, suma -> T }
