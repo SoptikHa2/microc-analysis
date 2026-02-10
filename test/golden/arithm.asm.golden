@@ -7,18 +7,15 @@
 5		PUSH R0
 6		MOV R3, 42 # Int
 7		MOV R1, R3 # Int
-8		MOV R4, 14 # Int
-9		ADD R4, R1 # Int
-10		MOV R2, R4 # Int
-11		MUL R1, R2 # Int
-12		MOV R1, R1 # Int
-13		MOV R5, 1446 # Int
-14		MUL R2, R5 # Int
-15		DIV R2, R1 # Int
-16		MOV R2, R2 # Int
-17		DIV R2, R2 # Int
-18		MOV R2, R2 # Int
-19		ADD R1, R2 # Int
-20		MOV R1, R1 # Int
-21		MOV R0, R1 # ◇
-22		RET
+8		MOV R4, 56 # Int
+9		MOV R2, R4 # Int
+10		MOV R5, 2352 # Int
+11		MOV R1, R5 # Int
+12		MOV R6, 34 # Int
+13		MOV R2, R6 # Int
+14		MOV R7, 1 # Int
+15		MOV R2, R7 # Int
+16		MOV R8, 2353 # Int
+17		MOV R1, R8 # Int
+18		MOV R0, R1 # ◇
+19		RET

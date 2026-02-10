@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
-module Analysis.Dataflow.Const (solve, ConstResultMap, ConstResultLat, ConstLattice) where
+module Analysis.Dataflow.Const (solve, ConstResultMap, ConstResultLat, ConstLattice, latticeToInt) where
 import Analysis.Dataflow.Analysis (ResultMap, ResultLat, runAnalysisOnVars)
 import qualified Data.Map as M
 import Parse.AST
@@ -12,6 +12,10 @@ data ConstLattice
     | Const Int
     | Bottom
     deriving (Eq)
+
+latticeToInt :: ConstLattice -> Maybe Int
+latticeToInt (Const i) = Just i
+latticeToInt _ = Nothing
 
 instance Show ConstLattice where
     show Top = "T"

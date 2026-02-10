@@ -42,6 +42,8 @@ library
       Analysis.Typecheck.Type
       Analysis.Typecheck.Typecheck
       Compile.Compile
+      Compile.Optimization.AST.ConstPropagation
+      Compile.Optimization.AST.Optimize
       Error
       Interpreter.Data
       Interpreter.Interpret

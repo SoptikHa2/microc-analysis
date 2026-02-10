@@ -9,10 +9,12 @@ import IR.Tac (concatTAC, TAC (..), TinyCInstr (..), AnySource (..), AnyTarget (
 import qualified Data.Map as M
 import IR.CompilerState
 import Data.Maybe (fromMaybe)
+import Compile.Optimization.AST.Optimize (optimize)
 
 compile :: Program (SourcePos, Type) -> Either String String
-compile prog = do
-    -- TODO: optimize on AST
+compile unOptProg = do
+    -- AST-level optimization
+    let prog = optimize unOptProg
 
     -- Generate IR
     let (richIR, funInfo) = IRCompiler.compile (snd <$$> prog)
