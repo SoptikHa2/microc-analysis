@@ -7,6 +7,7 @@ import Analysis.Dataflow.Const (ConstResultMap)
 import Analysis.Cfg.Cfg (CFG, StmtCfgMap)
 import qualified Analysis.Cfg.Cfg as Cfg
 import Analysis.Dataflow.VeryBusy (VeryBusyResultMap)
+import Analysis.Dataflow.Liveness (LivenessResultMap)
 import Text.Parsec.Error (ParseError)
 import Analysis.Semantics (SemanticError, verifyM)
 import Parse.DeclParser (program)
@@ -17,6 +18,7 @@ import qualified Analysis.Dataflow.Const as ConstAna
 import qualified Data.Map as M
 import qualified Analysis.Dataflow.VeryBusy as VeryBusyAna
 import qualified Analysis.Dataflow.ReachingDef as ReachingDefsAna
+import qualified Analysis.Dataflow.Liveness as LivenessAna
 import Data.List (intercalate)
 import Control.Applicative (ZipList(..))
 import Analysis.Typecheck.Constraints (Typeable)
@@ -31,7 +33,8 @@ data AnalysisData = AnalysisData {
     stmtToCfg :: StmtCfgMap (SourcePos, Type),
     consts :: ConstResultMap,
     reachingDefs :: ReachingDefResultMap (SourcePos, Type),
-    veryBusy :: VeryBusyResultMap (SourcePos, Type)
+    veryBusy :: VeryBusyResultMap (SourcePos, Type),
+    liveness :: LivenessResultMap
 } deriving (Show)
 
 data AnyError
@@ -60,6 +63,7 @@ getAna ast =
         consts = ConstAna.solve <$> cfgs
         rdefs = ReachingDefsAna.solve <$> cfgs
         vbusys = VeryBusyAna.solve <$> cfgs
-        adata = AnalysisData <$> cfgs <*> stmtMaps <*> consts <*> rdefs <*> vbusys
+        lives = LivenessAna.solve <$> cfgs
+        adata = AnalysisData <$> cfgs <*> stmtMaps <*> consts <*> rdefs <*> vbusys <*> lives
     in
         M.fromList $ zip (name <$> ast) (getZipList adata)

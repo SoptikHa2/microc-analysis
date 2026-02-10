@@ -30,6 +30,7 @@ library
       Analysis.Cfg.Cfg
       Analysis.Dataflow.Analysis
       Analysis.Dataflow.Const
+      Analysis.Dataflow.Liveness
       Analysis.Dataflow.ReachingDef
       Analysis.Dataflow.Sign
       Analysis.Dataflow.Utils

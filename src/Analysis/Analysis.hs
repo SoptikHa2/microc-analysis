@@ -1,4 +1,4 @@
-module Analysis.Analysis (runAnalysis, getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis) where
+module Analysis.Analysis (runAnalysis, getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis, getLivenessAnalysis) where
 import Parse.AST
 import qualified Analysis.Semantics as Semantics
 import Data.Data
@@ -18,6 +18,8 @@ import Analysis.Dataflow.VeryBusy (VeryBusyResultMap)
 import qualified Analysis.Dataflow.VeryBusy as VeryBusyAna
 import Analysis.Dataflow.ReachingDef (ReachingDefResultMap)
 import qualified Analysis.Dataflow.ReachingDef as ReachingDefsAna
+import Analysis.Dataflow.Liveness (LivenessResultMap)
+import qualified Analysis.Dataflow.Liveness as LivenessAna
 
 runAnalysis :: (Show a, Data a, Ord a) => Program a -> IO ()
 runAnalysis prog = if null errors
@@ -45,3 +47,6 @@ getVeryBusyAnalysis = getDataflowAnalysis VeryBusyAna.solve
 
 getReachingDefsAnalysis :: Ord a => Program a -> [(String, CFG a, ReachingDefResultMap a)]
 getReachingDefsAnalysis = getDataflowAnalysis ReachingDefsAna.solve
+
+getLivenessAnalysis :: (Data a, Ord a) => Program a -> [(String, CFG a, LivenessResultMap)]
+getLivenessAnalysis = getDataflowAnalysis LivenessAna.solve

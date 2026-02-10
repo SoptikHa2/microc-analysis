@@ -12,7 +12,7 @@ import Control.Exception
 import Error
 import qualified Analysis.Cfg.Cfg as CFG
 import Data.List (intercalate)
-import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis)
+import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis, getLivenessAnalysis)
 import qualified Analysis.Dataflow.Utils as DFUtils
 import Analysis.Dataflow.Analysis (ResultMap)
 import qualified Compile.Compile as C
@@ -30,6 +30,7 @@ data Command
   | SignAna FilePath
   | VeryBusyAna FilePath
   | ReachAna FilePath
+  | LiveAna FilePath
   | Compile FilePath (Maybe FilePath)
   | Asm FilePath
 
@@ -43,6 +44,7 @@ commandParser = hsubparser
     <> command "sign" (info signParser (progDesc "Run sign propagation analysis of the program"))
     <> command "vbusy" (info veryBusyParser (progDesc "Run very busy analysis of the program"))
     <> command "reach" (info reachParser (progDesc "Run reaching definitions analysis of the program"))
+    <> command "live" (info liveParser (progDesc "Run liveness analysis of the program"))
     <> command "compile" (info compileParser (progDesc "Compile program into .t86"))
     <> command "asm" (info asmParser (progDesc "Compile program into .t86 and output the assembly"))
     )
@@ -58,6 +60,7 @@ commandParser = hsubparser
     signParser = SignAna <$> programArg
     veryBusyParser = VeryBusyAna <$> programArg
     reachParser = ReachAna <$> programArg
+    liveParser = LiveAna <$> programArg
     compileParser = Compile <$> programArg <*> optional (argument str (metavar "TARGET" <> help "Target output file (- for stdout; default: <input>.s)"))
     asmParser = Asm <$> programArg
 
@@ -73,6 +76,7 @@ main = do
     SignAna filepath -> runSign filepath
     VeryBusyAna filepath -> runVeryBusy filepath
     ReachAna filepath -> runReach filepath
+    LiveAna filepath -> runLive filepath
     Compile filepath targetFile -> compile filepath outFile
       where
         outFile = case targetFile of
@@ -159,4 +163,7 @@ runVeryBusy = runAna show getVeryBusyAnalysis
 
 runReach :: String -> IO ()
 runReach = runAna show getReachingDefsAnalysis
+
+runLive :: String -> IO ()
+runLive = runAna show getLivenessAnalysis
 
