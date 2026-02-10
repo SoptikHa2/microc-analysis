@@ -3,9 +3,7 @@
 1		PUTNUM R0
 2		HALT
 3		NOP
-4		POP R0 # Int
-5		PUSH R0
-6		MOV R3, 2353 # Int
-7		MOV R1, R3 # Int
-8		MOV R0, R1 # ◇
-9		RET
+4		MOV R3, 2353 # Int
+5		MOV R1, R3 # Int
+6		MOV R0, R1 # ◇
+7		RET

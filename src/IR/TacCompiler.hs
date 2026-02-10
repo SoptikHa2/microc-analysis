@@ -6,6 +6,7 @@ import IR.Emit
 import Parse.AST
 import Analysis.Typecheck.Type (Type(..))
 import Data.Foldable (traverse_)
+import Control.Monad (unless)
 
 entrypoint :: ExtendedTAC
 entrypoint = TAC $
@@ -29,14 +30,15 @@ emitFun f = do
     -- generate nop and label it
     funLabel <- emitL Nop
 
-    -- save call into r0 (its a special register for returns, so nothing important can be there)
-    emit_ $ Pop Int (R 0)
-    -- first N args correspond to first N regs
-    let argRegs = take (length f.args) varRegs
-    -- in reverse, pop into the correct reg
-    traverse_ (emit_ . Pop Bottom) argRegs
-    -- restore the return address
-    emit_ $ Push (Register $ R 0)
+    unless (null f.args) $ do
+        -- save call into r0 (its a special register for returns, so nothing important can be there)
+        emit_ $ Pop Int (R 0)
+        -- first N args correspond to first N regs
+        let argRegs = take (length f.args) varRegs
+        -- in reverse, pop into the correct reg
+        traverse_ (emit_ . Pop Bottom) argRegs
+        -- restore the return address
+        emit_ $ Push (Register $ R 0)
 
     run $ saveFun f.name funLabel (zip argVars varRegs)
 
@@ -184,7 +186,7 @@ emitExpr (Parse.AST.Call t (EIdentifier _ target) args) = mdo
     case funPtr of
         Just reg -> emit_ $ IR.Tac.RegCall t reg (Register <$> ex)
         Nothing -> emit_ $ IR.Tac.Call t target (Register <$> ex)
-    
+
     pure (R 0)
 
 emitExpr (Number t i) = do

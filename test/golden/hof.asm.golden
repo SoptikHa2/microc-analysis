@@ -20,12 +20,10 @@
 18		MOV R0, R0 # ◇
 19		RET
 20		NOP
-21		POP R0 # Int
-22		PUSH R0
-23		MOV R6, 11 # ((Int) -> Int) -> Int # fun ptr
-24		MOV R5, R6 # ((Int) -> Int) -> Int # fun ptr
-25		MOV R7, 3 # (Int) -> Int # fun ptr
-26		PUSH R7
-27		CALL R5
-28		MOV R0, R0 # ◇
-29		RET
+21		MOV R6, 11 # ((Int) -> Int) -> Int # fun ptr
+22		MOV R5, R6 # ((Int) -> Int) -> Int # fun ptr
+23		MOV R7, 3 # (Int) -> Int # fun ptr
+24		PUSH R7
+25		CALL R5
+26		MOV R0, R0 # ◇
+27		RET
