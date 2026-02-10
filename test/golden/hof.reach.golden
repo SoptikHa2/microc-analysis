@@ -8,5 +8,5 @@ Function: map
 
 Function: main
  0: [ fun entry main () ; var a ]: 
- 1: [ return a(inc);            ]: a = map;
- 2: [ a = map;                  ]: a = map;
+ 1: [ a = map;                  ]: a = map;
+ 2: [ return a(inc);            ]: a = map;

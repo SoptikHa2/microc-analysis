@@ -8,20 +8,20 @@ n_0 -> n_1var
 
 n_1var -> n_2var
 
-n_2var -> n_2
-n_2[label="a = 42;"]
-n_3[label="b = 14 + a;"]
-n_4[label="a = a * b;"]
-n_5[label="b = b * 1446 / a;"]
-n_6[label="b = b / b;"]
-n_7[label="a = a + b;"]
-n_1[label="return a;"]
+n_2var -> n_1
+n_1[label="a = 42;"]
+n_2[label="b = 14 + a;"]
+n_3[label="a = a * b;"]
+n_4[label="b = b * 1446 / a;"]
+n_5[label="b = b / b;"]
+n_6[label="a = a + b;"]
+n_7[label="return a;"]
 n_exit[label="Fun main exit"]
-n_1 -> n_exit
-n_7 -> n_1
+n_7 -> n_exit
 n_6 -> n_7
 n_5 -> n_6
 n_4 -> n_5
 n_3 -> n_4
 n_2 -> n_3
+n_1 -> n_2
 }

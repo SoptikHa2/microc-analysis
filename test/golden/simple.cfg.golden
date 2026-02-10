@@ -4,12 +4,12 @@ n_1var[label="var x;"]
 
 n_0 -> n_1var
 
-n_1var -> n_2
-n_2[label="x = 42;"]
-n_3[label="output x;"]
-n_1[label="return 0;"]
+n_1var -> n_1
+n_1[label="x = 42;"]
+n_2[label="output x;"]
+n_3[label="return 0;"]
 n_exit[label="Fun main exit"]
-n_1 -> n_exit
-n_3 -> n_1
+n_3 -> n_exit
 n_2 -> n_3
+n_1 -> n_2
 }

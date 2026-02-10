@@ -12,12 +12,12 @@ n_1var[label="var a;"]
 
 n_0 -> n_1var
 
-n_1var -> n_2
-n_2[label="a = map;"]
-n_1[label="return a(inc);"]
+n_1var -> n_1
+n_1[label="a = map;"]
+n_2[label="return a(inc);"]
 n_exit[label="Fun main exit"]
-n_1 -> n_exit
-n_2 -> n_1
+n_2 -> n_exit
+n_1 -> n_2
 }
 
 digraph map {

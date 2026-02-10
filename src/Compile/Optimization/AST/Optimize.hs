@@ -5,6 +5,7 @@ import Parse.AST (Program, FunDecl (name))
 import Workflow (getAna)
 import qualified Data.Map as M
 import qualified Compile.Optimization.AST.ConstPropagation as ConstProp
+import qualified Compile.Optimization.AST.DeadStoreElimination as DeadStore
 
 optimize :: Program (SourcePos, Type) -> Program (SourcePos, Type)
 optimize prog
@@ -14,5 +15,5 @@ optimize prog
         adata = getAna prog
         prog' = optimizeFun <$> prog
         optimizeFun fun = case M.lookup fun.name adata of
-            Just ad -> ConstProp.optimize ad fun
+            Just ad -> DeadStore.optimize ad . ConstProp.optimize ad $ fun
             Nothing -> fun

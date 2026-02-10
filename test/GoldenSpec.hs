@@ -11,7 +11,7 @@ import qualified Data.Map as M
 import Parse.AST (Program)
 import Workflow (getSource, SourceData(..), getAna, AnalysisData(..))
 import Analysis.Typecheck.Constraints (printTyping)
-import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis)
+import Analysis.Analysis (getConstAnalysis, getSignAnalysis, getVeryBusyAnalysis, getReachingDefsAnalysis, getLivenessAnalysis)
 import Analysis.Dataflow.Analysis (ResultMap)
 import qualified Analysis.Dataflow.Utils as DFUtils
 import qualified Analysis.Cfg.Cfg as CFG
@@ -80,6 +80,10 @@ getVeryBusyOutput prog = formatAnalysis show (getVeryBusyAnalysis prog)
 getReachOutput :: Program SourcePos -> String
 getReachOutput prog = formatAnalysis show (getReachingDefsAnalysis prog)
 
+-- | Get liveness analysis output
+getLiveOutput :: Program SourcePos -> String
+getLiveOutput prog = formatAnalysis show (getLivenessAnalysis prog)
+
 -- | Get CFG output
 getCfgOutput :: SourceData -> String
 getCfgOutput source =
@@ -119,6 +123,9 @@ specForExample filename = describe filename $ do
 
     it "reaching definitions analysis" $
         golden (baseName ++ ".reach") (getReachOutput prog)
+
+    it "liveness analysis" $
+        golden (baseName ++ ".live") (getLiveOutput prog)
 
     it "CFG generation" $
         golden (baseName ++ ".cfg") (getCfgOutput source)

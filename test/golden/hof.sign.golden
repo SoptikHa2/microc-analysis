@@ -8,5 +8,5 @@ Function: map
 
 Function: main
  0: [ fun entry main () ; var a ]: { a -> ⊥ }
- 1: [ return a(inc);            ]: { a -> ⊥ }
- 2: [ a = map;                  ]: { a -> ⊥ }
+ 1: [ a = map;                  ]: { a -> ⊥ }
+ 2: [ return a(inc);            ]: { a -> ⊥ }

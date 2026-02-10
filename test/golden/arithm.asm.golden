@@ -5,17 +5,7 @@
 3		NOP
 4		POP R0 # Int
 5		PUSH R0
-6		MOV R3, 42 # Int
+6		MOV R3, 2353 # Int
 7		MOV R1, R3 # Int
-8		MOV R4, 56 # Int
-9		MOV R2, R4 # Int
-10		MOV R5, 2352 # Int
-11		MOV R1, R5 # Int
-12		MOV R6, 34 # Int
-13		MOV R2, R6 # Int
-14		MOV R7, 1 # Int
-15		MOV R2, R7 # Int
-16		MOV R8, 2353 # Int
-17		MOV R1, R8 # Int
-18		MOV R0, R1 # ◇
-19		RET
+8		MOV R0, R1 # ◇
+9		RET

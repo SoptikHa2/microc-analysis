@@ -1,9 +1,9 @@
 Function: main
  0: [ fun entry main () ; var a, b ]: 42
- 1: [ return a;                    ]: a
- 2: [ a = 42;                      ]: 42
- 3: [ b = 14 + a;                  ]: 14 + a
- 4: [ a = a * b;                   ]: a * b
- 5: [ b = b * 1446 / a;            ]: b * 1446 / a
- 6: [ b = b / b;                   ]: b / b
- 7: [ a = a + b;                   ]: a + b
+ 1: [ a = 42;                      ]: 42
+ 2: [ b = 14 + a;                  ]: 14 + a
+ 3: [ a = a * b;                   ]: a * b
+ 4: [ b = b * 1446 / a;            ]: b * 1446 / a
+ 5: [ b = b / b;                   ]: b / b
+ 6: [ a = a + b;                   ]: a + b
+ 7: [ return a;                    ]: a
