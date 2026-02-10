@@ -15,7 +15,8 @@ module IR.Tac (
     -- * Compiler monad
     Emitter(..),
     -- * Utilities
-    concatTAC
+    concatTAC,
+    fixupJumps
 ) where
 
 import IR.CompilerState
@@ -25,6 +26,8 @@ import Control.Monad.Writer (WriterT, MonadWriter)
 import Analysis.Typecheck.Type (Type)
 import Data.List (intercalate)
 import Parse.AST (Identifier)
+import qualified Data.Map as M
+import Data.Maybe (fromMaybe)
 
 type NativeTAC = TAC TinyCInstr
 type ExtendedTAC = TAC ExtendedInstr
@@ -96,6 +99,16 @@ data TinyCInstr
     | PutNum Reg
     | GetChar Reg
     deriving (Eq)
+
+-- For relocation
+fixupJumps :: M.Map Label Label -> TinyCInstr -> TinyCInstr
+fixupJumps m (RCall (Imm i)) = RCall (Imm (i `fromMaybe` (m M.!? i)))
+fixupJumps m (MovFunPtr t l (Direct (Imm i))) = MovFunPtr t l (Direct (Imm (i `fromMaybe` (m M.!? i))))
+fixupJumps m (Jmp l) = Jmp (l `fromMaybe` (m M.!? l))
+fixupJumps m (Jz l) = Jz (l `fromMaybe` (m M.!? l))
+fixupJumps m (Jnz l) = Jnz (l `fromMaybe` (m M.!? l))
+fixupJumps m (Jle l) = Jle (l `fromMaybe` (m M.!? l))
+fixupJumps _ i = i
 
 instance Semigroup (TAC a) where
     TAC a <> TAC b = TAC (a <> b)

@@ -5,16 +5,16 @@ import qualified IR.TacCompiler as IRCompiler
 import Utils ((<$$>))
 import IR.Desugar (desugar)
 import Analysis.Typecheck.Type (Type)
-import IR.Tac (concatTAC, TAC (..), TinyCInstr (..), AnySource (..), AnyTarget (..))
 import qualified Data.Map as M
 import IR.CompilerState
-import Data.Maybe (fromMaybe)
-import Compile.Optimization.AST.Optimize (optimize)
+import IR.Tac (TAC (TAC), TinyCInstr, fixupJumps, concatTAC)
+import qualified Compile.Optimization.AST.Optimize as AST
+import qualified Compile.Optimization.IR.Optimize as IR
 
 compile :: Program (SourcePos, Type) -> Either String String
 compile unOptProg = do
     -- AST-level optimization
-    let prog = optimize unOptProg
+    let prog = AST.optimize unOptProg
 
     -- Generate IR
     let (richIR, funInfo) = IRCompiler.compile (snd <$$> prog)
@@ -22,15 +22,18 @@ compile unOptProg = do
     -- TODO: optimize on IR
 
     -- Desugar IR to instructions supported by the underlying machine
-    let rawIR = concatTAC $ desugar (M.fromList funInfo) <$> richIR
+    let rawIR = relabel $ concatTAC $ desugar (M.fromList funInfo) <$> richIR
 
     -- TODO: optimize on IR
+    let optimizedIR = relabel $ IR.optimize rawIR
 
     -- TODO: register allocation
 
     -- Emit ASM
-    Right $ ".text\n" <> show (relabel rawIR) <> "\n"
+    Right $ ".text\n" <> show optimizedIR <> "\n"
 
+-- Re-do labels and relocate jumps / functions to match that.
+-- End result has every instruction annotated with a label, and they are consecutive.
 relabel :: TAC TinyCInstr -> TAC TinyCInstr
 relabel (TAC li) =
     let
@@ -55,14 +58,6 @@ relabel (TAC li) =
             where
                 (tailXs, tailMapping) = relabel' xs (next + 1)
 
-        fixupJumps :: M.Map Label Label -> TinyCInstr -> TinyCInstr
-        fixupJumps m (RCall (Imm i)) = RCall (Imm (i `fromMaybe` (m M.!? i)))
-        fixupJumps m (MovFunPtr t l (Direct (Imm i))) = MovFunPtr t l (Direct (Imm (i `fromMaybe` (m M.!? i))))
-        fixupJumps m (Jmp l) = Jmp (l `fromMaybe` (m M.!? l))
-        fixupJumps m (Jz l) = Jz (l `fromMaybe` (m M.!? l))
-        fixupJumps m (Jnz l) = Jnz (l `fromMaybe` (m M.!? l))
-        fixupJumps m (Jle l) = Jle (l `fromMaybe` (m M.!? l))
-        fixupJumps _ i = i
 
         applySnd :: (a -> b) -> (Maybe Label, a) -> (Maybe Label, b)
         applySnd f (ml, a) = (ml, f a)

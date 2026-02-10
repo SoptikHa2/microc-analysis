@@ -2,10 +2,9 @@
 0		CALL 3
 1		PUTNUM R0
 2		HALT
-3		NOP
-4		MOV R2, 42 # Int
-5		MOV R1, R2 # Int
-6		PUTNUM R1
-7		MOV R3, 0 # Int
-8		MOV R0, R3 # ◇
-9		RET
+3		MOV R2, 42 # Int
+4		MOV R1, R2 # Int
+5		PUTNUM R1
+6		MOV R3, 0 # Int
+7		MOV R0, R3 # ◇
+8		RET
