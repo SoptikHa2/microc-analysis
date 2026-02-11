@@ -1,0 +1,6 @@
+Function: main
+ 0: [ fun entry main () ; var a, pa ]: 
+ 1: [ a = 4;                        ]: a = 4;
+ 2: [ pa = & a;                     ]: a = 4;, pa = & a;
+ 3: [ * pa = 8;                     ]: a = 4;, pa = & a;
+ 4: [ return a;                     ]: a = 4;, pa = & a;

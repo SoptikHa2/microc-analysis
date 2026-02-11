@@ -168,11 +168,8 @@ emitExpr (UnOp t Parse.AST.Deref rhs) = do
     emit (\r -> Mov t (dreg r) (IR.Tac.Deref (Register val) 0))
 
 emitExpr (UnOp t Ref rhs) = do
-    val <- emitExpr rhs
-    -- todo: type
-    -- lea
-    -- todo: verify
-    emit (\r -> Lea t r (Register val))
+    addr <- emitLAddrExpr rhs
+    emit (\r -> Lea t r addr)
 
 emitExpr (UnOp _ Alloc _) = undefined
 
@@ -223,4 +220,8 @@ emitLAddrExpr :: Expr Type -> Emitter AnyTarget
 emitLAddrExpr (EIdentifier _ e) = do
     offset <- run $ getVar e
     pure $ IR.Tac.Deref (Register BP) offset
+emitLAddrExpr (UnOp t Parse.AST.Deref nestedExpr) = do
+    nestedAddr <- emitLAddrExpr nestedExpr
+    nestedAddrReg <- emit (\r -> Mov t (dreg r) nestedAddr)
+    pure $ IR.Tac.Deref (Register nestedAddrReg) 0
 emitLAddrExpr e = error $ "I don't know how to get address of " <> show e <> " (for assignment)."

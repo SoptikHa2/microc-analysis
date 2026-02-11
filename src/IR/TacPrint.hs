@@ -17,9 +17,7 @@ instance Show AnySource where
 instance Show AnyTarget where
     show (Direct s) = show s
     show (Deref s 0) = "[" <> show s <> "]"
-    show (Deref s offset) 
-        | offset > 0 = "[" <> show s <> " + " <> show offset <> "]"
-        | otherwise = "[" <> show s <> " + " <> show offset <> "]"  -- Already has minus sign
+    show (Deref s offset) = "[" <> show s <> " + " <> show offset <> "]"
 
 showBinInstr :: (Show l, Show r) => String -> Type -> l -> r -> String
 showBinInstr op t l r = op <> " " <> show l <> ", " <> show r <> " # " <> show t

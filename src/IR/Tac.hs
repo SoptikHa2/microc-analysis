@@ -83,7 +83,7 @@ data TinyCInstr
     | Div Type Reg AnyTarget
     | Mov Type AnyTarget AnyTarget
     | MovFunPtr Type AnyTarget AnyTarget -- moving fun. ptr -> might need to be relocated, this is how to track it
-    | Lea Type Reg AnySource
+    | Lea Type Reg AnyTarget
     | Jmp Label
     | Jz Label
     | Jnz Label

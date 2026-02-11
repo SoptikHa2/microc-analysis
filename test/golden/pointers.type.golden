@@ -1,0 +1,3 @@
+[main() :: "examples/pointers.mc" (line 1, column 1)] = () -> Int
+[a :: main:"examples/pointers.mc" (line 1, column 1)] = Int
+[pa :: main:"examples/pointers.mc" (line 1, column 1)] = ↑Int

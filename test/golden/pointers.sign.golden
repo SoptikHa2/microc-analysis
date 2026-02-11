@@ -1,0 +1,6 @@
+Function: main
+ 0: [ fun entry main () ; var a, pa ]: { a -> ⊥, pa -> ⊥ }
+ 1: [ a = 4;                        ]: { a -> +, pa -> ⊥ }
+ 2: [ pa = & a;                     ]: { a -> +, pa -> ⊥ }
+ 3: [ * pa = 8;                     ]: { a -> +, pa -> ⊥ }
+ 4: [ return a;                     ]: { a -> +, pa -> ⊥ }
