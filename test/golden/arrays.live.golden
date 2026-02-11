@@ -1,0 +1,16 @@
+Function: foo
+ 0: [ fun entry foo (a)   ]: a
+ 1: [ output a[0];        ]: a
+ 2: [ output a[1];        ]: a
+ 3: [ output a[2];        ]: a
+ 4: [ return a[0] + a[2]; ]: a
+
+Function: main
+ 0: [ fun entry main () ; var a, x ]: foo
+ 1: [ a = [1, 2, 3];               ]: foo
+ 2: [ output a[0];                 ]: a, foo
+ 3: [ output a[1];                 ]: a, foo
+ 4: [ output a[2];                 ]: a, foo
+ 5: [ a[2] = 42;                   ]: a, foo
+ 6: [ x = foo(a);                  ]: a, foo
+ 7: [ return x;                    ]: x

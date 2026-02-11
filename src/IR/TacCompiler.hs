@@ -215,6 +215,15 @@ emitExpr (Parse.AST.Record t (Fields fx)) = do
         emit_ (Push $ Register reg)
     pure resultReg
 
+emitExpr (Parse.AST.Array t exprx) = do
+    -- Copy ptr to stack top (== ptr to array)
+    resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (-1))))
+    -- Write the array into memory
+    for_ exprx $ \expr -> do
+        reg <- emitRValExpr expr
+        emit_ (Push $ Register reg)
+    pure resultReg
+
 emitExpr fa@(FieldAccess t _ _) = do
     access <- emitLAddrExpr fa
     emit (\r -> Mov t (dreg r) access)

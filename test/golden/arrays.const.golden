@@ -1,0 +1,16 @@
+Function: foo
+ 0: [ fun entry foo (a)   ]: { a -> T }
+ 1: [ output a[0];        ]: { a -> T }
+ 2: [ output a[1];        ]: { a -> T }
+ 3: [ output a[2];        ]: { a -> T }
+ 4: [ return a[0] + a[2]; ]: { a -> T }
+
+Function: main
+ 0: [ fun entry main () ; var a, x ]: { a -> ⊥, x -> ⊥ }
+ 1: [ a = [1, 2, 3];               ]: { a -> ⊥, x -> ⊥ }
+ 2: [ output a[0];                 ]: { a -> ⊥, x -> ⊥ }
+ 3: [ output a[1];                 ]: { a -> ⊥, x -> ⊥ }
+ 4: [ output a[2];                 ]: { a -> ⊥, x -> ⊥ }
+ 5: [ a[2] = 42;                   ]: { a -> ⊥, x -> ⊥ }
+ 6: [ x = foo(a);                  ]: { a -> ⊥, x -> T }
+ 7: [ return x;                    ]: { a -> ⊥, x -> T }

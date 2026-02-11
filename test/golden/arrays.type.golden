@@ -1,0 +1,5 @@
+[foo() :: "examples/arrays.mc" (line 1, column 1)] = ([Int]) -> Int
+[main() :: "examples/arrays.mc" (line 6, column 2)] = () -> Int
+[a :: "examples/arrays.mc" (line 1, column 1)] = [Int]
+[a :: main:"examples/arrays.mc" (line 6, column 2)] = [Int]
+[x :: main:"examples/arrays.mc" (line 6, column 2)] = Int
