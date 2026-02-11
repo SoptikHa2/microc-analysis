@@ -4,9 +4,9 @@ import IR.Tac
 import IR.CompilerState
 import IR.Emit
 import Parse.AST
-import Analysis.Typecheck.Type (Type(..))
-import Data.Foldable (traverse_)
-import Control.Monad (unless)
+import Analysis.Typecheck.Type (Type(..), sizeof)
+import Data.Foldable (traverse_, for_)
+import Data.Traversable
 
 entrypoint :: ExtendedTAC
 entrypoint = TAC $
@@ -23,30 +23,38 @@ compile funcs = (entrypoint <> ir, funinfo)
 emitFun :: FunDecl Type -> Emitter (Identifier, Label)
 emitFun f = do
     -- get args and vars
-    let argVars = f.args <> f.body.idDecl
-    -- generate registers for them
-    -- TODO: both variables and args should live on stack
-    varRegs <- traverse (const $ run reg) argVars
-    -- generate nop and label it
+    let argTypes = case f.d of
+            (Fun at _) -> at
+            t -> error $ "Bad type for a function: " <> show t
+    let varTypes = repeat Int -- TODO
+
+    -- generate function entry and label it
     funLabel <- emitL Nop
 
-    unless (null f.args) $ do
-        -- save call into r0 (its a special register for returns, so nothing important can be there)
-        emit_ $ Pop Int (R 0)
-        -- first N args correspond to first N regs
-        let argRegs = take (length f.args) varRegs
-        -- in reverse, pop into the correct reg
-        traverse_ (emit_ . Pop Bottom) argRegs
-        -- restore the return address
-        emit_ $ Push (Register $ R 0)
+    -- prolog:
+    -- save previous BP
+    emit_ $ Push (Register BP)
+    -- new BP is at top of previous stack
+    emit_ $ Mov (Ptr Int) (dreg BP) (dreg SP)
+    -- make sure pushes don't overwrite variables and arguments (passed on-stack)
+    -- note that we offset SP by only the LOCAL variables, since the args are on-stack passed :)
+    -- TODO: the take can be removed when we remove the Repeat above
+    let varsSize = sum $ sizeof <$> take (length f.body.idDecl) varTypes
+    emit_ $ Sub (Ptr Int) SP (Direct $ Imm varsSize)
 
-    run $ saveFun f.name funLabel (zip argVars varRegs)
+    run $ saveFun f.name funLabel (zip f.body.idDecl varTypes) (zip f.args argTypes)
 
     -- emit function body
     traverse_ emitStmt f.body.body
 
     -- emit the return into reg
     result <- emitExpr f.body.return
+
+    -- epilog:
+    -- restore stack
+    emit_ $ Mov (Ptr Int) (dreg SP) (dreg BP)
+    -- restore BP
+    emit_ $ Pop (Ptr Int) BP
 
     emit_ $ Return result
     pure (f.name, funLabel)
@@ -91,13 +99,13 @@ emitStmt (Block _ stmx) = traverse_ emitStmt stmx
 
 emitStmt (AssignmentStmt _ lhs rhs) = do
     let rhsType = exprData rhs
-    target <- emitExpr lhs
+    target <- emitLAddrExpr lhs
     rval <- emitRValExpr rhs
     case rhsType of
         -- If we are storing function pointer, we need to make sure to mark it; as we are relocating functions later
-        Fun _ _ -> emit_ $ MovFunPtr rhsType (dreg target) (dreg rval)
+        Fun _ _ -> emit_ $ MovFunPtr rhsType target (dreg rval)
         -- Fallback (ints and stuff)
-        _ -> emit_ $ Mov rhsType (dreg target) (dreg rval)
+        _ -> emit_ $ Mov rhsType target (dreg rval)
 
 -- Emit an expression, but we don't care about the result - just about the flags.
 -- Returns the jump that should be used to get to False branch (NOT successful (it's more convenient))
@@ -178,22 +186,30 @@ emitExpr (UnOp t Parse.AST.Not rhs) = mdo
     end <- emitL Nop
     pure result
 
-emitExpr (Parse.AST.Call t (EIdentifier _ target) args) = mdo
+emitExpr (Parse.AST.Call t (EIdentifier targetT target) args) = mdo
     ex <- traverse emitRValExpr args
 
     -- if the target is a variable, treat it as a function pointer instead
     funPtr <- run $ getVarMaybe target
     case funPtr of
-        Just reg -> emit_ $ IR.Tac.RegCall t reg (Register <$> ex)
+        Just offset -> do
+            varReg <- emit (\r -> Mov targetT (dreg r) (IR.Tac.Deref (Register BP) offset))
+            emit_ $ IR.Tac.RegCall t varReg (Register <$> ex)
         Nothing -> emit_ $ IR.Tac.Call t target (Register <$> ex)
+
+    -- remove pushed parameters to the function
+    emit_ $ Sub (Ptr Int) SP (Direct $ Imm (length args))
 
     pure (R 0)
 
 emitExpr (Number t i) = do
     emit (\r -> Mov t (Direct $ Register r) (Direct $ Imm i))
 
-emitExpr (EIdentifier _ e) = do
-    run $ getVarReg e
+emitExpr expr@(EIdentifier t _) = do
+    -- get the variable address
+    var <- emitLAddrExpr expr
+    -- save it to a new register
+    emit (\r -> Mov t (dreg r) var)
 
 emitExpr e = error $ "Compiling expr " <> show e <> " is not defined"
 
@@ -201,3 +217,10 @@ emitRValExpr :: Expr Type -> Emitter Reg
 emitRValExpr (EIdentifier t@(Fun _ _) e) = do
     emit $ \r -> GetFunPtr t r e
 emitRValExpr e = emitExpr e
+
+-- Get address of the target expression to write into
+emitLAddrExpr :: Expr Type -> Emitter AnyTarget
+emitLAddrExpr (EIdentifier _ e) = do
+    offset <- run $ getVar e
+    pure $ IR.Tac.Deref (Register BP) offset
+emitLAddrExpr e = error $ "I don't know how to get address of " <> show e <> " (for assignment)."

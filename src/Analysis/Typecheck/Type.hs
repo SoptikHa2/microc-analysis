@@ -1,6 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-module Analysis.Typecheck.Type (Type(..), TypeError) where
+module Analysis.Typecheck.Type (Type(..), TypeError, sizeof) where
 import Data.List (intercalate, sortBy)
 import Data.Data (Data)
 
@@ -15,6 +15,18 @@ data Type
     | TypeVarBinding Int Type
     | Bottom
     deriving (Eq, Data, Ord)
+
+-- How many memory cells does a type take after compiling
+sizeof :: Type -> Int
+sizeof Int = 1
+sizeof (Ptr _) = 1
+sizeof (Fun _ _) = 1
+sizeof (Record fx) = sum $ sizeof . snd <$> fx
+sizeof (Array _) = 1
+sizeof (Unknown _) = error "Cannot determine size of unknown type. Does it have finite size?"
+sizeof (BoundTypeVar _) = error "Type does not have finite size."
+sizeof t'@(TypeVarBinding _ t) = error $ "Type " <> show t' <> " does not have finite size."
+sizeof Bottom = 0
 
 instance Show Type where
   show :: Type -> String

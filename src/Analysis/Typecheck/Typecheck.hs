@@ -43,7 +43,8 @@ typeAST :: (Data a, Ord a) => Program a -> M.Map (Typeable a) Type -> Program (a
 typeAST ast typemap = astWithType
     where
         astWithBotType = (, Bottom) <$$> ast
-        astWithType = transformBi (annotateExpr typemap) astWithBotType
+        astWithEType = transformBi (annotateExpr typemap) astWithBotType
+        astWithType = transformBi (annotateFun typemap) astWithEType 
 
         annotateExpr :: Ord a => M.Map (Typeable a) Type -> Expr (a, Type) -> Expr (a, Type)
         annotateExpr typingmap expr = setExprData (srcPos, dstType) expr
@@ -51,3 +52,15 @@ typeAST ast typemap = astWithType
                 key = CExpr (fst <$> expr)
                 dstType = typingmap M.! key
                 (srcPos, _) = exprData expr
+        
+        annotateFun :: Ord a => M.Map (Typeable a) Type -> FunDecl (a, Type) -> FunDecl (a, Type)
+        annotateFun typingmap fun =
+                FunDecl (srcPos, dstType) fun.name fun.args typedBody
+            where
+                key = CFun (fst <$> fun)
+                dstType = typingmap M.! key
+                (srcPos, _) = fun.d
+                
+                (bodySrcPos, _) = fun.body.d
+                typedBody = FunBlock (bodySrcPos, dstType) fun.body.idDecl fun.body.body fun.body.return
+    

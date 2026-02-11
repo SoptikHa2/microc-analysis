@@ -2,7 +2,13 @@
 0		CALL 3
 1		PUTNUM R0
 2		HALT
-3		MOV R3, 2353 # Int
-4		MOV R1, R3 # Int
-5		MOV R0, R1 # ◇
-6		RET
+3		PUSH BP
+4		MOV BP, SP # ↑Int
+5		SUB SP, 2 # ↑Int
+6		MOV R1, 2353 # Int
+7		MOV [BP + -1], R1 # Int
+8		MOV R2, [BP + -1] # Int
+9		MOV SP, BP # ↑Int
+10		POP BP # ↑Int
+11		MOV R0, R2 # ◇
+12		RET
