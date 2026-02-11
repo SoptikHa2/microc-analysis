@@ -4,7 +4,7 @@ import IR.Tac
 import IR.CompilerState
 import IR.Emit
 import Parse.AST
-import Analysis.Typecheck.Type (Type(..), sizeof, innerSizeOf)
+import Analysis.Typecheck.Type (Type(..), sizeof, innerSizeOf, isSimpleType)
 import Data.Foldable (traverse_, for_)
 import Data.Traversable
 import Data.List (elemIndex, sort, sortBy)
@@ -43,7 +43,7 @@ emitFun f = do
     -- note that we offset SP by only the LOCAL variables, since the args are on-stack passed :)
     -- TODO: the take can be removed when we remove the Repeat above
     let varsSize = sum $ sizeof <$> take (length f.body.idDecl) varTypes
-    emit_ $ Sub (Ptr Int) SP (Direct $ Imm varsSize)
+    emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm varsSize)
 
     run $ saveFun f.name funLabel (zip f.body.idDecl varTypes) (zip f.args argTypes)
 
@@ -122,11 +122,11 @@ emitCondition (BiOp t Gt lhs rhs) = do
 -- If the expression is not == or >; compare it with equality to non-zero (or zero if prefixed with Not)
 emitCondition (UnOp _ Parse.AST.Not expr) = do
     r <- emitExpr expr
-    emit_ $ Cmp r (Direct $ Imm 0)
+    emit_ $ Cmp r (Direct0 $ Imm 0)
     pure Jnz
 emitCondition expr = do
     r <- emitExpr expr
-    emit_ $ Cmp r (Direct $ Imm 0)
+    emit_ $ Cmp r (Direct0 $ Imm 0)
     pure Jz
 
 emitGenericBinOp :: (Type -> Reg -> AnyTarget -> TinyCInstr) -> Type -> Expr Type -> Expr Type -> Emitter Reg
@@ -146,10 +146,10 @@ emitExpr (BiOp _ Parse.AST.Div lhs rhs) = emitGenericBinOp IR.Tac.Div Int lhs rh
 emitExpr (BiOp t Eq lhs rhs) = mdo
     lreg <- emitExpr lhs
     rreg <- emitExpr rhs
-    result <- emit (\r -> Mov t (dreg r) (Direct $ Imm 0))
+    result <- emit (\r -> Mov t (dreg r) (Direct0 $ Imm 0))
     emit_ $ Cmp lreg (dreg rreg)
     emit_ $ Jnz end
-    emit_ $ Mov t (dreg result) (Direct $ Imm 1)
+    emit_ $ Mov t (dreg result) (Direct0 $ Imm 1)
     end <- emitL Nop
     pure result
 
@@ -157,10 +157,10 @@ emitExpr (BiOp t Eq lhs rhs) = mdo
 emitExpr (BiOp t Gt lhs rhs) = mdo
     lreg <- emitExpr lhs
     rreg <- emitExpr rhs
-    result <- emit (\r -> Mov t (dreg r) (Direct $ Imm 0))
+    result <- emit (\r -> Mov t (dreg r) (Direct0 $ Imm 0))
     emit_ $ Cmp lreg (dreg rreg)
     emit_ $ Jle end
-    emit_ $ Mov t (dreg result) (Direct $ Imm 1)
+    emit_ $ Mov t (dreg result) (Direct0 $ Imm 1)
     end <- emitL Nop
     pure result
 
@@ -168,7 +168,7 @@ emitExpr (UnOp t Parse.AST.Deref rhs) = do
     val <- emitExpr rhs
     -- todo: type
     -- mov target [rhs]
-    emit (\r -> Mov t (dreg r) (IR.Tac.Deref (Register val) 0))
+    emit (\r -> Mov t (dreg r) (IR.Tac.Deref0 (Register val)))
 
 emitExpr (UnOp t Ref rhs) = do
     addr <- emitLAddrExpr rhs
@@ -179,10 +179,10 @@ emitExpr (UnOp _ Alloc _) = undefined
 -- !x: returns 1 if x == 0, 0 otherwise
 emitExpr (UnOp t Parse.AST.Not rhs) = mdo
     val <- emitExpr rhs
-    result <- emit (\r -> Mov t (dreg r) (Direct $ Imm 0))
-    emit_ $ Cmp val (Direct $ Imm 0)
+    result <- emit (\r -> Mov t (dreg r) (Direct0 $ Imm 0))
+    emit_ $ Cmp val (Direct0 $ Imm 0)
     emit_ $ Jnz end
-    emit_ $ Mov t (dreg result) (Direct $ Imm 1)
+    emit_ $ Mov t (dreg result) (Direct0 $ Imm 1)
     end <- emitL Nop
     pure result
 
@@ -193,21 +193,21 @@ emitExpr (Parse.AST.Call t (EIdentifier targetT target) args) = mdo
     funPtr <- run $ getVarMaybe target
     case funPtr of
         Just offset -> do
-            varReg <- emit (\r -> Mov targetT (dreg r) (IR.Tac.Deref (Register BP) offset))
+            varReg <- emit (\r -> Mov targetT (dreg r) (IR.Tac.Deref (Register BP) (Imm offset)))
             emit_ $ IR.Tac.RegCall t varReg (Register <$> ex)
         Nothing -> emit_ $ IR.Tac.Call t target (Register <$> ex)
 
     -- remove pushed parameters to the function
-    emit_ $ Sub (Ptr Int) SP (Direct $ Imm (length args))
+    emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm (length args))
 
     pure (R 0)
 
 emitExpr (Number t i) = do
-    emit (\r -> Mov t (Direct $ Register r) (Direct $ Imm i))
+    emit (\r -> Mov t (Direct0 $ Register r) (Direct0 $ Imm i))
 
 emitExpr (Parse.AST.Record t (Fields fx)) = do
     -- Copy ptr to stack top (== ptr to record)
-    resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (dreg SP))
+    resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (-1))))
     -- Write the record into memory
     let exprs = snd <$> sortBy (\a b -> compare (fst a) (fst b)) fx
     for_ exprs $ \expr -> do
@@ -217,6 +217,10 @@ emitExpr (Parse.AST.Record t (Fields fx)) = do
 
 emitExpr fa@(FieldAccess t _ _) = do
     access <- emitLAddrExpr fa
+    emit (\r -> Mov t (dreg r) access)
+
+emitExpr aa@(ArrayAccess t _ _) = do
+    access <- emitLAddrExpr aa
     emit (\r -> Mov t (dreg r) access)
 
 emitExpr expr@(EIdentifier t _) = do
@@ -236,16 +240,20 @@ emitRValExpr e = emitExpr e
 emitLAddrExpr :: Expr Type -> Emitter AnyTarget
 emitLAddrExpr (EIdentifier _ e) = do
     offset <- run $ getVar e
-    pure $ IR.Tac.Deref (Register BP) offset
+    pure $ IR.Tac.Deref (Register BP) (Imm offset)
 emitLAddrExpr (UnOp t Parse.AST.Deref nestedExpr) = do
     nestedAddr <- emitLAddrExpr nestedExpr
     nestedAddrReg <- emit (\r -> Mov t (dreg r) nestedAddr)
-    pure $ IR.Tac.Deref (Register nestedAddrReg) 0
+    pure $ IR.Tac.Deref (Register nestedAddrReg) (Imm 0)
 emitLAddrExpr (FieldAccess _t fieldExpr field) = do
     fieldPtr <- emitExpr fieldExpr
     let fields = case exprData fieldExpr of
             Analysis.Typecheck.Type.Record fields -> fields
             _ -> error $ "Attempted to access field of non-field: " <> show fieldExpr
     let nthField = fromJust $ elemIndex field (sort $ fst <$> fields)
-    pure $ IR.Tac.Deref (Register fieldPtr) (negate (nthField + 1))
+    pure $ IR.Tac.Deref (Register fieldPtr) (Imm $ negate nthField)
+emitLAddrExpr (ArrayAccess _t arrayExpr idxExpr) = do
+    arrayPtr <- emitExpr arrayExpr
+    idx <- emitExpr idxExpr
+    pure $ IR.Tac.DerefNeg (Register arrayPtr) idx
 emitLAddrExpr e = error $ "I don't know how to get address of " <> show e <> " (for assignment)."

@@ -54,12 +54,15 @@ data AnySource
     deriving (Eq)
 
 data AnyTarget
-    = Direct AnySource
-    | Deref AnySource Int  -- register + offset
+    = Direct AnySource AnySource
+    | Direct0 AnySource
+    | Deref AnySource AnySource  -- register + offset
+    | Deref0 AnySource
+    | DerefNeg AnySource Reg  -- register + Rx * (-1)
     deriving (Eq)
 
 dreg :: Reg -> AnyTarget
-dreg = Direct . Register
+dreg = Direct0 . Register
 
 data ExtendedInstr
     = Native TinyCInstr
@@ -103,7 +106,7 @@ data TinyCInstr
 -- For relocation
 fixupJumps :: M.Map Label Label -> TinyCInstr -> TinyCInstr
 fixupJumps m (RCall (Imm i)) = RCall (Imm (i `fromMaybe` (m M.!? i)))
-fixupJumps m (MovFunPtr t l (Direct (Imm i))) = MovFunPtr t l (Direct (Imm (i `fromMaybe` (m M.!? i))))
+fixupJumps m (MovFunPtr t l (Direct0 (Imm i))) = MovFunPtr t l (Direct0 (Imm (i `fromMaybe` (m M.!? i))))
 fixupJumps m (Jmp l) = Jmp (l `fromMaybe` (m M.!? l))
 fixupJumps m (Jz l) = Jz (l `fromMaybe` (m M.!? l))
 fixupJumps m (Jnz l) = Jnz (l `fromMaybe` (m M.!? l))

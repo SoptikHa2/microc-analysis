@@ -15,9 +15,13 @@ instance Show AnySource where
     show (Imm i) = show i
 
 instance Show AnyTarget where
-    show (Direct s) = show s
-    show (Deref s 0) = "[" <> show s <> "]"
+    show (Direct0 s) = show (Direct s (Imm 0))
+    show (Direct s (Imm 0)) = show s
+    show (Direct s offset) = show s <> " + " <> show offset
+    show (Deref0 s) = show (Deref s (Imm 0))
+    show (Deref s (Imm 0)) = "[" <> show s <> "]"
     show (Deref s offset) = "[" <> show s <> " + " <> show offset <> "]"
+    show (DerefNeg s offset) = "[" <> show s <> " + " <> show offset <> " * -1]"
 
 showBinInstr :: (Show l, Show r) => String -> Type -> l -> r -> String
 showBinInstr op t l r = op <> " " <> show l <> ", " <> show r <> " # " <> show t

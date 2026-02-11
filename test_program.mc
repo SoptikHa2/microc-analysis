@@ -1,17 +1,17 @@
 foo(a) {
-    print a.foo;
-    print a.bar;
-    print a.baz;
-    return a.foo + a.baz;
+  print a[0];
+  print a[1];
+  print a[2];
+  return a[0] + a[2];
 }
 
 main() {
   var a, x;
-  a = {foo: 1, bar: 2, baz: 3};
-  print a.foo;
-  print a.bar;
-  print a.baz;
-  a.baz = 42;
+  a = [1,2,3];
+  print a[0];
+  print a[1];
+  print a[2];
+  a[2]= 42;
   x = foo(a);
   return x;
 }

@@ -1,6 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-module Analysis.Typecheck.Type (Type(..), TypeError, sizeof, innerSizeOf) where
+module Analysis.Typecheck.Type (Type(..), TypeError, sizeof, innerSizeOf, isSimpleType) where
 import Data.List (intercalate, sortBy)
 import Data.Data (Data)
 
@@ -33,6 +33,15 @@ innerSizeOf :: Type -> Int
 innerSizeOf (Record fx) = sum $ sizeof . snd <$> fx
 innerSizeOf (Array t) = error "Cannot determine array length, we don't know how many elements does it have."
 innerSizeOf t = sizeof t
+
+-- Whether the type is something that can be handled via simple register operations (so no useless indirection builtin)
+isSimpleType :: Type -> Bool
+isSimpleType Int = True
+isSimpleType (Ptr _) = True
+isSimpleType (Fun _ _) = True  -- still function pointer
+isSimpleType (Record _) = False  -- we need to handle storing it somewhere... painful
+isSimpleType (Array _) = False
+isSimpleType t = False
 
 instance Show Type where
   show :: Type -> String
