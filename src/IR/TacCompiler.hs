@@ -4,9 +4,12 @@ import IR.Tac
 import IR.CompilerState
 import IR.Emit
 import Parse.AST
-import Analysis.Typecheck.Type (Type(..), sizeof)
+import Analysis.Typecheck.Type (Type(..), sizeof, innerSizeOf)
 import Data.Foldable (traverse_, for_)
 import Data.Traversable
+import Data.List (elemIndex, sort, sortBy)
+import Data.Maybe (fromJust)
+import Debug.Trace (traceM)
 
 entrypoint :: ExtendedTAC
 entrypoint = TAC $
@@ -202,6 +205,20 @@ emitExpr (Parse.AST.Call t (EIdentifier targetT target) args) = mdo
 emitExpr (Number t i) = do
     emit (\r -> Mov t (Direct $ Register r) (Direct $ Imm i))
 
+emitExpr (Parse.AST.Record t (Fields fx)) = do
+    -- Copy ptr to stack top (== ptr to record)
+    resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (dreg SP))
+    -- Write the record into memory
+    let exprs = snd <$> sortBy (\a b -> compare (fst a) (fst b)) fx
+    for_ exprs $ \expr -> do
+        reg <- emitRValExpr expr
+        emit_ (Push $ Register reg)
+    pure resultReg
+
+emitExpr fa@(FieldAccess t _ _) = do
+    access <- emitLAddrExpr fa
+    emit (\r -> Mov t (dreg r) access)
+
 emitExpr expr@(EIdentifier t _) = do
     -- get the variable address
     var <- emitLAddrExpr expr
@@ -224,4 +241,11 @@ emitLAddrExpr (UnOp t Parse.AST.Deref nestedExpr) = do
     nestedAddr <- emitLAddrExpr nestedExpr
     nestedAddrReg <- emit (\r -> Mov t (dreg r) nestedAddr)
     pure $ IR.Tac.Deref (Register nestedAddrReg) 0
+emitLAddrExpr (FieldAccess _t fieldExpr field) = do
+    fieldPtr <- emitExpr fieldExpr
+    let fields = case exprData fieldExpr of
+            Analysis.Typecheck.Type.Record fields -> fields
+            _ -> error $ "Attempted to access field of non-field: " <> show fieldExpr
+    let nthField = fromJust $ elemIndex field (sort $ fst <$> fields)
+    pure $ IR.Tac.Deref (Register fieldPtr) (negate (nthField + 1))
 emitLAddrExpr e = error $ "I don't know how to get address of " <> show e <> " (for assignment)."

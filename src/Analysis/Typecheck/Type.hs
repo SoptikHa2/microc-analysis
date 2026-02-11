@@ -1,6 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-module Analysis.Typecheck.Type (Type(..), TypeError, sizeof) where
+module Analysis.Typecheck.Type (Type(..), TypeError, sizeof, innerSizeOf) where
 import Data.List (intercalate, sortBy)
 import Data.Data (Data)
 
@@ -21,12 +21,18 @@ sizeof :: Type -> Int
 sizeof Int = 1
 sizeof (Ptr _) = 1
 sizeof (Fun _ _) = 1
-sizeof (Record fx) = sum $ sizeof . snd <$> fx
+sizeof (Record fx) = 1
 sizeof (Array _) = 1
 sizeof (Unknown _) = error "Cannot determine size of unknown type. Does it have finite size?"
 sizeof (BoundTypeVar _) = error "Type does not have finite size."
 sizeof t'@(TypeVarBinding _ t) = error $ "Type " <> show t' <> " does not have finite size."
 sizeof Bottom = 0
+
+-- Ie. record is stored as ptr, but this return the real size of the data
+innerSizeOf :: Type -> Int
+innerSizeOf (Record fx) = sum $ sizeof . snd <$> fx
+innerSizeOf (Array t) = error "Cannot determine array length, we don't know how many elements does it have."
+innerSizeOf t = sizeof t
 
 instance Show Type where
   show :: Type -> String

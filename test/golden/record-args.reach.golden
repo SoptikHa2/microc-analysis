@@ -1,0 +1,16 @@
+Function: foo
+ 0: [ fun entry foo (a)         ]: 
+ 1: [ output a."foo";           ]: 
+ 2: [ output a."bar";           ]: 
+ 3: [ output a."baz";           ]: 
+ 4: [ return a."foo" + a."baz"; ]: 
+
+Function: main
+ 0: [ fun entry main () ; var a, x        ]: 
+ 1: [ a = {"foo": 1, "bar": 2, "baz": 3}; ]: a = {"foo": 1, "bar": 2, "baz": 3};
+ 2: [ output a."foo";                     ]: a = {"foo": 1, "bar": 2, "baz": 3};
+ 3: [ output a."bar";                     ]: a = {"foo": 1, "bar": 2, "baz": 3};
+ 4: [ output a."baz";                     ]: a = {"foo": 1, "bar": 2, "baz": 3};
+ 5: [ a."baz" = 42;                       ]: a = {"foo": 1, "bar": 2, "baz": 3};
+ 6: [ x = foo(a);                         ]: a = {"foo": 1, "bar": 2, "baz": 3};, x = foo(a);
+ 7: [ return x;                           ]: a = {"foo": 1, "bar": 2, "baz": 3};, x = foo(a);
