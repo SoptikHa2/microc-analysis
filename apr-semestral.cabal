@@ -56,7 +56,7 @@ library
       IR.CompilerState
       IR.Desugar
       IR.Emit
-      IR.Stdlib
+      IR.Alloc
       IR.Tac
       IR.TacCompiler
       IR.TacPrint

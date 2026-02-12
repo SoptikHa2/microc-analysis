@@ -31,14 +31,14 @@
 29		PUSH BP
 30		MOV BP, SP # ↑Int
 31		SUB SP, 2 # ↑Int
-32		MOV R16, SP + -1 # ↑[Int]
-33		MOV R17, 1 # Int
-34		PUSH R17
-35		MOV R18, 2 # Int
-36		PUSH R18
-37		MOV R19, 3 # Int
-38		PUSH R19
-39		MOV [BP + -1], R16 # [Int]
+32		MOV R16, 1 # Int
+33		MOV R17, 2 # Int
+34		MOV R18, 3 # Int
+35		MOV R19, SP + -1 # ↑[Int]
+36		PUSH R16
+37		PUSH R17
+38		PUSH R18
+39		MOV [BP + -1], R19 # [Int]
 40		MOV R20, [BP + -1] # [Int]
 41		MOV R21, 0 # Int
 42		MOV R22, [R20 + R21 * -1] # Int

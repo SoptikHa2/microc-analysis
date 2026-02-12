@@ -1,0 +1,3 @@
+[main() :: "examples/tree.mc" (line 1, column 1)] = () -> Int
+[head :: main:"examples/tree.mc" (line 1, column 1)] = {next:↑{next:↑?9,value:Int},value:Int}
+[ni :: main:"examples/tree.mc" (line 1, column 1)] = {next:↑?9,value:Int}

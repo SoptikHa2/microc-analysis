@@ -1,0 +1,6 @@
+Function: main
+ 0: [ fun entry main () ; var head, ni    ]: 
+ 1: [ head = {"value": 42, "next": null}; ]: head = {"value": 42, "next": null};
+ 2: [ ni = {"value": 84, "next": null};   ]: head = {"value": 42, "next": null};, ni = {"value": 84, "next": null};
+ 3: [ head."next" = & ni;                 ]: head = {"value": 42, "next": null};, ni = {"value": 84, "next": null};
+ 4: [ return * head."next"."value";       ]: head = {"value": 42, "next": null};, ni = {"value": 84, "next": null};

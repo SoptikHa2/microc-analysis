@@ -152,6 +152,12 @@ instance Show (Expr a) where
     show (Number _ i) = show i
     show (EIdentifier _ i) = i
 
+-- How many memory cells does this expression's value occupy
+exprSize :: Expr a -> Int
+exprSize (Parse.AST.Record _ (Fields fx)) = sum $ exprSize . snd <$> fx
+exprSize (Array _ ex) = sum $ exprSize <$> ex
+exprSize _ = 1
+
 instance Show (Record a) where
     show (Fields fx) = "{" <> intercalate ", " (sf <$> fx) <> "}"
         where

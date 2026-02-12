@@ -10,6 +10,7 @@ import Data.Traversable
 import Data.List (elemIndex, sort, sortBy)
 import Data.Maybe (fromJust)
 import Debug.Trace (traceM)
+import IR.Alloc (alloc, alloc1)
 
 entrypoint :: ExtendedTAC
 entrypoint = TAC $
@@ -174,7 +175,22 @@ emitExpr (UnOp t Ref rhs) = do
     addr <- emitLAddrExpr rhs
     emit (\r -> Lea t r addr)
 
-emitExpr (UnOp _ Alloc _) = undefined
+-- Alloc is a bit tricky. We need to distinguish between two situations:
+-- 1) something like struct or array is contructed via a literal.
+--      since those are represented via pointers, we can't just take and mov
+--      them, we need to *construct* them on the heap.
+-- 2) it is something else - we can just evaluate it and copy the reg
+emitExpr (UnOp t Alloc (Parse.AST.Array _ ex)) = do
+    undefined
+emitExpr (UnOp t Alloc (Parse.AST.Record _ rx)) = do
+    undefined
+emitExpr (UnOp t Alloc e) = do
+    r <- emitExpr e
+    target <- alloc1
+    -- *target = r
+    emit_ $ Mov t (Deref0 $ Register target) (dreg r)
+    -- return the ptr
+    pure target
 
 -- !x: returns 1 if x == 0, 0 otherwise
 emitExpr (UnOp t Parse.AST.Not rhs) = mdo
@@ -205,22 +221,25 @@ emitExpr (Parse.AST.Call t (EIdentifier targetT target) args) = mdo
 emitExpr (Number t i) = do
     emit (\r -> Mov t (Direct0 $ Register r) (Direct0 $ Imm i))
 
+emitExpr (Null t) = do
+    emit (\r -> Mov t (dreg r) (Direct0 $ Imm 0))
+
 emitExpr (Parse.AST.Record t (Fields fx)) = do
     -- Copy ptr to stack top (== ptr to record)
     resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (-1))))
     -- Write the record into memory
     let exprs = snd <$> sortBy (\a b -> compare (fst a) (fst b)) fx
-    for_ exprs $ \expr -> do
-        reg <- emitRValExpr expr
+    regs <- traverse emitRValExpr exprs
+    for_ regs $ \reg ->
         emit_ (Push $ Register reg)
     pure resultReg
 
 emitExpr (Parse.AST.Array t exprx) = do
-    -- Copy ptr to stack top (== ptr to array)
+    -- Compile all elements first (inner exprs like records may push data)
+    regs <- traverse emitRValExpr exprx
+    -- Now capture ptr — the following pushes will be contiguous
     resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (-1))))
-    -- Write the array into memory
-    for_ exprx $ \expr -> do
-        reg <- emitRValExpr expr
+    for_ regs $ \reg ->
         emit_ (Push $ Register reg)
     pure resultReg
 

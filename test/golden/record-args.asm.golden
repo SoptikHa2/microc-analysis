@@ -28,10 +28,10 @@
 26		SUB SP, 2 # ↑Int
 27		MOV R11, SP + -1 # ↑{bar:Int,baz:Int,foo:Int}
 28		MOV R12, 2 # Int
-29		PUSH R12
-30		MOV R13, 3 # Int
-31		PUSH R13
-32		MOV R14, 1 # Int
+29		MOV R13, 3 # Int
+30		MOV R14, 1 # Int
+31		PUSH R12
+32		PUSH R13
 33		PUSH R14
 34		MOV [BP + -1], R11 # {bar:Int,baz:Int,foo:Int}
 35		MOV R15, [BP + -1] # {bar:Int,baz:Int,foo:Int}
