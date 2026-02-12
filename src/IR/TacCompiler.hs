@@ -7,9 +7,10 @@ import Parse.AST
 import Analysis.Typecheck.Type (Type(..), sizeof)
 import Data.Foldable (traverse_)
 import Data.List (elemIndex, sort)
-import IR.Construct (constructRecord, constructArray)
+import IR.Construct (constructRecord, constructArray, deepCopyRecord)
 import Data.Maybe (fromJust)
 import IR.Alloc (alloc, alloc1)
+import Debug.Trace (traceM)
 
 entrypoint :: ExtendedTAC
 entrypoint = TAC $
@@ -100,7 +101,17 @@ emitStmt (IfStmt _ cond tru fals) = mdo
 
 emitStmt (Block _ stmx) = traverse_ emitStmt stmx
 
-emitStmt (AssignmentStmt _ lhs rhs) = do
+-- For record assignments (non-literal RHS), deep copy
+-- For everything else, use the default (?pointer) copy.
+emitStmt (AssignmentStmt _ lhs rhs)
+    | Analysis.Typecheck.Type.Record _ <- exprData rhs
+    , not (isRecordLiteral rhs)
+    = _deepCopyAssignment (exprData rhs) lhs rhs
+emitStmt (AssignmentStmt _t lhs rhs) = _defaultAssignment lhs rhs
+
+-- Emit rhs to register and copy
+_defaultAssignment :: Expr Type -> Expr Type -> Emitter ()
+_defaultAssignment lhs rhs = do
     let rhsType = exprData rhs
     target <- emitLAddrExpr lhs
     rval <- emitExpr rhs
@@ -109,6 +120,24 @@ emitStmt (AssignmentStmt _ lhs rhs) = do
         Fun _ _ -> emit_ $ MovFunPtr rhsType target (dreg rval)
         -- Fallback (ints and stuff)
         _ -> emit_ $ Mov rhsType target (dreg rval)
+
+_deepCopyAssignment :: Type -> Expr Type -> Expr Type -> Emitter ()
+_deepCopyAssignment t@(Analysis.Typecheck.Type.Record rx) lhs rhs = do
+    let size = length rx
+    -- Allocate stack space for the copy
+    emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm size)
+    dstPtr <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (size - 1))))
+    -- Get pointer to source record
+    srcPtr <- emitExpr rhs
+    deepCopyRecord t (Register srcPtr) (Register dstPtr)
+    -- Store the new pointer into the LHS variable
+    target <- emitLAddrExpr lhs
+    emit_ $ Mov (Ptr t) target (dreg dstPtr)
+_deepCopyAssignment t _ _ = error $ "Deep copy not supported for " <> show t
+
+isRecordLiteral :: Expr a -> Bool
+isRecordLiteral (Parse.AST.Record _ _) = True
+isRecordLiteral _ = False
 
 -- Emit an expression, but we don't care about the result - just about the flags.
 -- Returns the jump that should be used to get to False branch (NOT successful (it's more convenient))

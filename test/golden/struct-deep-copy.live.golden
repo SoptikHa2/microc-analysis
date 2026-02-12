@@ -1,0 +1,7 @@
+Function: main
+ 0: [ fun entry main () ; var x, y ]: 
+ 1: [ x = {"foo": 1};              ]: 
+ 2: [ x."foo" = 2;                 ]: x
+ 3: [ y = x;                       ]: x
+ 4: [ x."foo" = 3;                 ]: x, y
+ 5: [ return y."foo";              ]: y

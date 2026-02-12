@@ -1,0 +1,3 @@
+[main() :: "examples/struct-deep-copy.mc" (line 1, column 1)] = () -> Int
+[x :: main:"examples/struct-deep-copy.mc" (line 1, column 1)] = {foo:Int}
+[y :: main:"examples/struct-deep-copy.mc" (line 1, column 1)] = {foo:Int}

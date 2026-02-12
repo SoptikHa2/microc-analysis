@@ -1,0 +1,23 @@
+digraph main {
+n_0[label="Fun main entry"]
+n_1var[label="var x;"]
+
+n_2var[label="var y;"]
+
+n_0 -> n_1var
+
+n_1var -> n_2var
+
+n_2var -> n_1
+n_1[label="x = {"foo": 1};"]
+n_2[label="x."foo" = 2;"]
+n_3[label="y = x;"]
+n_4[label="x."foo" = 3;"]
+n_5[label="return y."foo";"]
+n_exit[label="Fun main exit"]
+n_5 -> n_exit
+n_4 -> n_5
+n_3 -> n_4
+n_2 -> n_3
+n_1 -> n_2
+}
