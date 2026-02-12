@@ -1,0 +1,21 @@
+.text
+0		CALL 3
+1		PUTNUM R0
+2		HALT
+3		PUSH BP
+4		MOV BP, SP # ↑Int
+5		SUB SP, 1 # ↑Int
+6		MOV R1, 0 # Int
+7		GETCHAR R2
+8		SUB R2, 48 # Int
+9		CMP R2, -38
+10		JZ 14
+11		MUL R1, 10 # Int
+12		ADD R1, R2 # Int
+13		JMP 7
+14		MOV [BP + -1], R1 # Int
+15		MOV R3, [BP + -1] # Int
+16		MOV SP, BP # ↑Int
+17		POP BP # ↑Int
+18		MOV R0, R3 # ◇
+19		RET

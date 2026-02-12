@@ -1,0 +1,4 @@
+Function: main
+ 0: [ fun entry main () ; var x ]: 
+ 1: [ x = input;                ]: 
+ 2: [ return x;                 ]: x

@@ -231,6 +231,39 @@ emitExpr (Parse.AST.Call t target args) = mdo
     emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm (length args))
     pure (R 0)
 
+emitExpr (Input Int) = mdo
+    -- the user will input numbers and then enter
+    result <- emit (\r -> Mov Int (dreg r) (Direct0 $ Imm 0))
+    tmpReg <- emit (const Nop)
+
+    loopStart <- emitL Nop
+
+    -- get one new digit
+    getDigit tmpReg
+
+    -- check if it was a newline (10) (after subbing 48 - so now -38)
+    emit_ $ Cmp tmpReg (Direct0 $ Imm (-38))
+
+    -- if so, jump to the end
+    emit_ $ Jz loopEnd
+
+    -- Otherwise: a digit.
+    -- Shift result
+    emit_ $ IR.Tac.Mul Int result (Direct0 $ Imm 10)
+    -- Add it to the result
+    emit_ $ Add Int result (dreg tmpReg)
+    -- And start again
+    emit_ $ Jmp loopStart
+
+    loopEnd <- emitL Nop
+
+    pure result
+    where
+        getDigit :: Reg -> Emitter ()
+        getDigit reg = do
+            emit_ $ GetChar reg
+            emit_ $ Sub Int reg (Direct0 $ Imm 48)
+
 emitExpr (Number t i) = do
     emit (\r -> Mov t (Direct0 $ Register r) (Direct0 $ Imm i))
 
