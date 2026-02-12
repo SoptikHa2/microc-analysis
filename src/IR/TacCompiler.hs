@@ -4,12 +4,11 @@ import IR.Tac
 import IR.CompilerState
 import IR.Emit
 import Parse.AST
-import Analysis.Typecheck.Type (Type(..), sizeof, innerSizeOf, isSimpleType)
+import Analysis.Typecheck.Type (Type(..), sizeof)
 import Data.Foldable (traverse_)
 import Data.List (elemIndex, sort)
 import IR.Construct (constructRecord, constructArray)
 import Data.Maybe (fromJust)
-import Debug.Trace (traceM)
 import IR.Alloc (alloc, alloc1)
 
 entrypoint :: ExtendedTAC
@@ -104,7 +103,7 @@ emitStmt (Block _ stmx) = traverse_ emitStmt stmx
 emitStmt (AssignmentStmt _ lhs rhs) = do
     let rhsType = exprData rhs
     target <- emitLAddrExpr lhs
-    rval <- emitRValExpr rhs
+    rval <- emitExpr rhs
     case rhsType of
         -- If we are storing function pointer, we need to make sure to mark it; as we are relocating functions later
         Fun _ _ -> emit_ $ MovFunPtr rhsType target (dreg rval)
@@ -183,12 +182,12 @@ emitExpr (UnOp t Ref rhs) = do
 emitExpr (UnOp _t Alloc (Parse.AST.Array _ ex)) = do
     let size = length ex
     targetPtr <- alloc size
-    constructArray emitRValExpr targetPtr ex
+    constructArray emitExpr targetPtr ex
     pure targetPtr
 emitExpr (UnOp _t Alloc (Parse.AST.Record _ (Fields fx))) = do
     let size = length fx
     targetPtr <- alloc size
-    constructRecord emitRValExpr targetPtr (Fields fx)
+    constructRecord emitExpr targetPtr (Fields fx)
     pure targetPtr
 emitExpr (UnOp t Alloc e) = do
     r <- emitExpr e
@@ -209,7 +208,7 @@ emitExpr (UnOp t Parse.AST.Not rhs) = mdo
     pure result
 
 emitExpr (Parse.AST.Call t (EIdentifier targetT target) args) = mdo
-    ex <- traverse emitRValExpr args
+    ex <- traverse emitExpr args
 
     -- if the target is a variable, treat it as a function pointer instead
     funPtr <- run $ getVarMaybe target
@@ -224,6 +223,14 @@ emitExpr (Parse.AST.Call t (EIdentifier targetT target) args) = mdo
 
     pure (R 0)
 
+emitExpr (Parse.AST.Call t target args) = mdo
+    ex <- traverse emitExpr args
+    targetPtr <- emitExpr target
+    emit_ $ IR.Tac.RegCall t targetPtr (Register <$> ex) 
+    -- remove pushed parameters to the function
+    emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm (length args))
+    pure (R 0)
+
 emitExpr (Number t i) = do
     emit (\r -> Mov t (Direct0 $ Register r) (Direct0 $ Imm i))
 
@@ -234,14 +241,14 @@ emitExpr (Parse.AST.Record t (Fields fx)) = do
     let size = length fx
     emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm size)
     resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (size - 1))))
-    constructRecord emitRValExpr resultReg (Fields fx)
+    constructRecord emitExpr resultReg (Fields fx)
     pure resultReg
 
 emitExpr (Parse.AST.Array t exprx) = do
     let size = length exprx
     emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm size)
     resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (size - 1))))
-    constructArray emitRValExpr resultReg exprx
+    constructArray emitExpr resultReg exprx
     pure resultReg
 
 emitExpr fa@(FieldAccess t _ _) = do
@@ -252,18 +259,15 @@ emitExpr aa@(ArrayAccess t _ _) = do
     access <- emitLAddrExpr aa
     emit (\r -> Mov t (dreg r) access)
 
-emitExpr expr@(EIdentifier t _) = do
-    -- get the variable address
-    var <- emitLAddrExpr expr
-    -- save it to a new register
-    emit (\r -> Mov t (dreg r) var)
+emitExpr (EIdentifier t e) = do
+    varMaybe <- run $ getVarMaybe e
+    case varMaybe of
+        Just _ -> do
+            var <- emitLAddrExpr (EIdentifier t e)
+            emit (\r -> Mov t (dreg r) var)
+        Nothing -> emit $ \r -> GetFunPtr t r e
 
 emitExpr e = error $ "Compiling expr " <> show e <> " is not defined"
-
-emitRValExpr :: Expr Type -> Emitter Reg
-emitRValExpr (EIdentifier t@(Fun _ _) e) = do
-    emit $ \r -> GetFunPtr t r e
-emitRValExpr e = emitExpr e
 
 -- Get address of the target expression to write into
 emitLAddrExpr :: Expr Type -> Emitter AnyTarget

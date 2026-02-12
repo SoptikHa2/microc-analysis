@@ -68,10 +68,8 @@ data ExtendedInstr
     = Native TinyCInstr
     | Call Type Identifier [AnySource]
     | RegCall Type Reg [AnySource]
-    | GetNthArg Type Int AnyTarget
     | GetFunPtr Type Reg Identifier
     | Return Reg
-    | Immediate Type Int Reg
     deriving (Eq)
 
 data TinyCInstr

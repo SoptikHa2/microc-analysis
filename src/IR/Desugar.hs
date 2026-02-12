@@ -23,4 +23,3 @@ desugar funmap (GetFunPtr t reg name) =
     [
         MovFunPtr t (dreg reg) (Direct0 $ Imm (funmap M.! name))
     ]
-desugar _ i = error $ "Unknown instruction to desugar: " <> show i

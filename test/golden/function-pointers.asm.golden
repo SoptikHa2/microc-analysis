@@ -1,0 +1,49 @@
+.text
+0		CALL 13
+1		PUTNUM R0
+2		HALT
+3		PUSH BP
+4		MOV BP, SP # ↑Int
+5		SUB SP, 0 # ↑Int
+6		MOV R1, 1 # Int
+7		PUTNUM R1
+8		MOV R2, 3 # μ t0 . () -> μ t0 . () -> t0 # fun ptr
+9		MOV SP, BP # ↑Int
+10		POP BP # ↑Int
+11		MOV R0, R2 # ◇
+12		RET
+13		PUSH BP
+14		MOV BP, SP # ↑Int
+15		SUB SP, 3 # ↑Int
+16		MOV R3, 3 # () -> μ t0 . () -> t0 # fun ptr
+17		MOV [BP + -1], R3 # () -> μ t0 . () -> t0 # fun ptr
+18		CALL 3
+19		SUB SP, 0 # ↑Int
+20		MOV [BP + -3], R0 # μ t0 . () -> t0
+21		MOV R4, [BP + -1] # () -> μ t0 . () -> t0
+22		CALL R4
+23		SUB SP, 0 # ↑Int
+24		MOV [BP + -3], R0 # μ t0 . () -> t0
+25		LEA R5, [BP + -1] # ↑() -> μ t0 . () -> t0
+26		MOV [BP + -2], R5 # ↑() -> μ t0 . () -> t0
+27		MOV R6, [BP + -2] # ↑() -> () -> μ t15 . () -> t15
+28		MOV R7, [R6] # () -> () -> μ t15 . () -> t15
+29		CALL R7
+30		SUB SP, 0 # ↑Int
+31		MOV [BP + -3], R0 # () -> μ t15 . () -> t15 # fun ptr
+32		MOV R8, [BP + -3] # () -> μ t15 . () -> t15
+33		CALL R8
+34		SUB SP, 0 # ↑Int
+35		MOV [BP + -3], R0 # μ t15 . () -> t15
+36		MOV R9, [BP + -2] # ↑() -> () -> μ t15 . () -> t15
+37		MOV R10, [0] # Int
+38		MOV [0], R10 + 1 # Int
+39		MOV [R10], R9 # ↑↑() -> () -> μ t15 . () -> t15
+40		MOV R11, [R10] # ↑() -> () -> μ t15 . () -> t15
+41		MOV R12, [R11] # () -> () -> μ t15 . () -> t15
+42		CALL R12
+43		SUB SP, 0 # ↑Int
+44		MOV SP, BP # ↑Int
+45		POP BP # ↑Int
+46		MOV R0, R0 # ◇
+47		RET

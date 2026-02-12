@@ -59,5 +59,10 @@ instance Show ExtendedInstr where
         "CALL " <> show n <> " (" <> 
             intercalate ", " (show <$> argx)
             <> ") # " <> show t
+    show (RegCall t _ argx) =
+        "REGCALL (" <>
+            intercalate ", " (show <$> argx)
+            <> ") # " <> show t
+    show (GetFunPtr t reg name) =
+        "GETFUNPTR " <> show name <> " -> " <> show (Register reg) <> " # " <> show t
     show (Return reg) = "RET " <> show (Register reg)
-    show (Immediate t i r) = showBinInstr "MOV" t (Imm i) (Register r)

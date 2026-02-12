@@ -1,0 +1,5 @@
+[foo() :: "examples/function-pointers.mc" (line 1, column 1)] = () -> μ t0 . () -> t0
+[main() :: "examples/function-pointers.mc" (line 4, column 2)] = () -> () -> μ t15 . () -> t15
+[f :: main:"examples/function-pointers.mc" (line 4, column 2)] = () -> μ t0 . () -> t0
+[pf :: main:"examples/function-pointers.mc" (line 4, column 2)] = ↑() -> () -> μ t15 . () -> t15
+[xf :: main:"examples/function-pointers.mc" (line 4, column 2)] = () -> μ t15 . () -> t15

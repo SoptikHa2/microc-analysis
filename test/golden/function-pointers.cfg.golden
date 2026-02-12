@@ -1,0 +1,41 @@
+digraph foo {
+n_0[label="Fun foo entry"]
+n_0 -> n_1
+n_1[label="output 1;"]
+n_2[label="return foo;"]
+n_exit[label="Fun foo exit"]
+n_2 -> n_exit
+n_1 -> n_2
+}
+
+digraph main {
+n_0[label="Fun main entry"]
+n_1var[label="var f;"]
+
+n_2var[label="var pf;"]
+
+n_3var[label="var xf;"]
+
+n_0 -> n_1var
+
+n_1var -> n_2var
+
+n_2var -> n_3var
+
+n_3var -> n_1
+n_1[label="f = foo;"]
+n_2[label="xf = foo();"]
+n_3[label="xf = f();"]
+n_4[label="pf = & f;"]
+n_5[label="xf = * pf();"]
+n_6[label="xf = xf();"]
+n_7[label="return * * alloc pf();"]
+n_exit[label="Fun main exit"]
+n_7 -> n_exit
+n_6 -> n_7
+n_5 -> n_6
+n_4 -> n_5
+n_3 -> n_4
+n_2 -> n_3
+n_1 -> n_2
+}

@@ -1,0 +1,14 @@
+Function: foo
+ 0: [ fun entry foo () ]: 1, foo
+ 1: [ output 1;        ]: 1, foo
+ 2: [ return foo;      ]: foo
+
+Function: main
+ 0: [ fun entry main () ; var f, pf, xf ]: foo(), foo
+ 1: [ f = foo;                          ]: foo(), foo
+ 2: [ xf = foo();                       ]: & f, foo(), f()
+ 3: [ xf = f();                         ]: & f, f()
+ 4: [ pf = & f;                         ]: & f
+ 5: [ xf = * pf();                      ]: * pf(), * * alloc pf()
+ 6: [ xf = xf();                        ]: xf(), * * alloc pf()
+ 7: [ return * * alloc pf();            ]: * * alloc pf()

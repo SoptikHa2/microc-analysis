@@ -1,0 +1,14 @@
+Function: foo
+ 0: [ fun entry foo () ]: {  }
+ 1: [ output 1;        ]: {  }
+ 2: [ return foo;      ]: {  }
+
+Function: main
+ 0: [ fun entry main () ; var f, pf, xf ]: { f -> ⊥, pf -> ⊥, xf -> ⊥ }
+ 1: [ f = foo;                          ]: { f -> ⊥, pf -> ⊥, xf -> ⊥ }
+ 2: [ xf = foo();                       ]: { f -> ⊥, pf -> ⊥, xf -> T }
+ 3: [ xf = f();                         ]: { f -> ⊥, pf -> ⊥, xf -> T }
+ 4: [ pf = & f;                         ]: { f -> ⊥, pf -> ⊥, xf -> T }
+ 5: [ xf = * pf();                      ]: { f -> ⊥, pf -> ⊥, xf -> T }
+ 6: [ xf = xf();                        ]: { f -> ⊥, pf -> ⊥, xf -> T }
+ 7: [ return * * alloc pf();            ]: { f -> ⊥, pf -> ⊥, xf -> T }
