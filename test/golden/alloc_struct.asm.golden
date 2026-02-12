@@ -1,0 +1,31 @@
+.text
+0		CALL 17
+1		PUTNUM R0
+2		HALT
+3		PUSH BP
+4		MOV BP, SP # ↑Int
+5		SUB SP, 0 # ↑Int
+6		MOV R1, [0] # Int
+7		ADD R1, 2 # Int
+8		MOV [0], R1 + 1 # Int
+9		MOV R2, 2 # Int
+10		MOV R3, 1 # Int
+11		MOV [R1], R2 # Int
+12		MOV [R1 + -1], R3 # Int
+13		MOV SP, BP # ↑Int
+14		POP BP # ↑Int
+15		MOV R0, R1 # ◇
+16		RET
+17		PUSH BP
+18		MOV BP, SP # ↑Int
+19		SUB SP, 2 # ↑Int
+20		CALL 3
+21		SUB SP, 0 # ↑Int
+22		MOV [BP + -1], R0 # ↑{bar:Int,foo:Int}
+23		MOV R4, [BP + -1] # ↑{bar:Int,foo:Int}
+24		MOV R5, [R4] # {bar:Int,foo:Int}
+25		MOV R6, [R5 + -1] # Int
+26		MOV SP, BP # ↑Int
+27		POP BP # ↑Int
+28		MOV R0, R6 # ◇
+29		RET

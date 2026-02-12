@@ -1,0 +1,4 @@
+[ctor() :: "examples/alloc_struct.mc" (line 1, column 1)] = () -> ↑{bar:Int,foo:Int}
+[main() :: "examples/alloc_struct.mc" (line 3, column 2)] = () -> Int
+[a :: main:"examples/alloc_struct.mc" (line 3, column 2)] = ↑{bar:Int,foo:Int}
+[b :: main:"examples/alloc_struct.mc" (line 3, column 2)] = [Int]

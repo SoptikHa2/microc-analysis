@@ -5,26 +5,28 @@
 3		PUSH BP
 4		MOV BP, SP # ↑Int
 5		SUB SP, 2 # ↑Int
-6		MOV R1, SP + -1 # ↑{next:↑{next:↑?9,value:Int},value:Int}
-7		MOV R2, 0 # ↑{next:↑?9,value:Int}
-8		MOV R3, 42 # Int
-9		PUSH R2
-10		PUSH R3
-11		MOV [BP + -1], R1 # {next:↑{next:↑?9,value:Int},value:Int}
-12		MOV R4, SP + -1 # ↑{next:↑?9,value:Int}
-13		MOV R5, 0 # ↑?9
-14		MOV R6, 84 # Int
-15		PUSH R5
-16		PUSH R6
-17		MOV [BP + -2], R4 # {next:↑?9,value:Int}
-18		MOV R7, [BP + -1] # {next:↑{next:↑?9,value:Int},value:Int}
-19		LEA R8, [BP + -2] # ↑{next:↑?9,value:Int}
-20		MOV [R7], R8 # ↑{next:↑?9,value:Int}
-21		MOV R9, [BP + -1] # {next:↑{next:↑?9,value:Int},value:Int}
-22		MOV R10, [R9] # ↑{next:↑?9,value:Int}
-23		MOV R11, [R10] # {next:↑?9,value:Int}
-24		MOV R12, [R11 + -1] # Int
-25		MOV SP, BP # ↑Int
-26		POP BP # ↑Int
-27		MOV R0, R12 # ◇
-28		RET
+6		SUB SP, 2 # ↑Int
+7		MOV R1, SP + 1 # ↑{next:↑{next:↑?9,value:Int},value:Int}
+8		MOV R2, 0 # ↑{next:↑?9,value:Int}
+9		MOV R3, 42 # Int
+10		MOV [R1], R2 # Int
+11		MOV [R1 + -1], R3 # Int
+12		MOV [BP + -1], R1 # {next:↑{next:↑?9,value:Int},value:Int}
+13		SUB SP, 2 # ↑Int
+14		MOV R4, SP + 1 # ↑{next:↑?9,value:Int}
+15		MOV R5, 0 # ↑?9
+16		MOV R6, 84 # Int
+17		MOV [R4], R5 # Int
+18		MOV [R4 + -1], R6 # Int
+19		MOV [BP + -2], R4 # {next:↑?9,value:Int}
+20		MOV R7, [BP + -1] # {next:↑{next:↑?9,value:Int},value:Int}
+21		LEA R8, [BP + -2] # ↑{next:↑?9,value:Int}
+22		MOV [R7], R8 # ↑{next:↑?9,value:Int}
+23		MOV R9, [BP + -1] # {next:↑{next:↑?9,value:Int},value:Int}
+24		MOV R10, [R9] # ↑{next:↑?9,value:Int}
+25		MOV R11, [R10] # {next:↑?9,value:Int}
+26		MOV R12, [R11 + -1] # Int
+27		MOV SP, BP # ↑Int
+28		POP BP # ↑Int
+29		MOV R0, R12 # ◇
+30		RET

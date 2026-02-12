@@ -1,0 +1,9 @@
+Function: ctor
+ 0: [ fun entry ctor ()                  ]: {  }
+ 1: [ return alloc {"foo": 1, "bar": 2}; ]: {  }
+
+Function: main
+ 0: [ fun entry main () ; var a, b                                                                                           ]: { a -> ⊥, b -> ⊥ }
+ 1: [ a = ctor();                                                                                                            ]: { a -> T, b -> ⊥ }
+ 2: [ b = [4, 3, 34, 2, 21, 312, 312, 31, 321, 312, 312, 3, 1223, 12, 31, 23, 123, 1, 23, 13, 21, 312, 3, 123, 123, 1, 231]; ]: { a -> T, b -> ⊥ }
+ 3: [ return * a."foo";                                                                                                      ]: { a -> T, b -> ⊥ }

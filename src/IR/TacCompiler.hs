@@ -5,9 +5,9 @@ import IR.CompilerState
 import IR.Emit
 import Parse.AST
 import Analysis.Typecheck.Type (Type(..), sizeof, innerSizeOf, isSimpleType)
-import Data.Foldable (traverse_, for_)
-import Data.Traversable
-import Data.List (elemIndex, sort, sortBy)
+import Data.Foldable (traverse_)
+import Data.List (elemIndex, sort)
+import IR.Construct (constructRecord, constructArray)
 import Data.Maybe (fromJust)
 import Debug.Trace (traceM)
 import IR.Alloc (alloc, alloc1)
@@ -180,10 +180,16 @@ emitExpr (UnOp t Ref rhs) = do
 --      since those are represented via pointers, we can't just take and mov
 --      them, we need to *construct* them on the heap.
 -- 2) it is something else - we can just evaluate it and copy the reg
-emitExpr (UnOp t Alloc (Parse.AST.Array _ ex)) = do
-    undefined
-emitExpr (UnOp t Alloc (Parse.AST.Record _ rx)) = do
-    undefined
+emitExpr (UnOp _t Alloc (Parse.AST.Array _ ex)) = do
+    let size = length ex
+    targetPtr <- alloc size
+    constructArray emitRValExpr targetPtr ex
+    pure targetPtr
+emitExpr (UnOp _t Alloc (Parse.AST.Record _ (Fields fx))) = do
+    let size = length fx
+    targetPtr <- alloc size
+    constructRecord emitRValExpr targetPtr (Fields fx)
+    pure targetPtr
 emitExpr (UnOp t Alloc e) = do
     r <- emitExpr e
     target <- alloc1
@@ -225,22 +231,17 @@ emitExpr (Null t) = do
     emit (\r -> Mov t (dreg r) (Direct0 $ Imm 0))
 
 emitExpr (Parse.AST.Record t (Fields fx)) = do
-    -- Copy ptr to stack top (== ptr to record)
-    resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (-1))))
-    -- Write the record into memory
-    let exprs = snd <$> sortBy (\a b -> compare (fst a) (fst b)) fx
-    regs <- traverse emitRValExpr exprs
-    for_ regs $ \reg ->
-        emit_ (Push $ Register reg)
+    let size = length fx
+    emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm size)
+    resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (size - 1))))
+    constructRecord emitRValExpr resultReg (Fields fx)
     pure resultReg
 
 emitExpr (Parse.AST.Array t exprx) = do
-    -- Compile all elements first (inner exprs like records may push data)
-    regs <- traverse emitRValExpr exprx
-    -- Now capture ptr — the following pushes will be contiguous
-    resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (-1))))
-    for_ regs $ \reg ->
-        emit_ (Push $ Register reg)
+    let size = length exprx
+    emit_ $ Sub (Ptr Int) SP (Direct0 $ Imm size)
+    resultReg <- emit (\r -> Mov (Ptr t) (dreg r) (Direct (Register SP) (Imm (size - 1))))
+    constructArray emitRValExpr resultReg exprx
     pure resultReg
 
 emitExpr fa@(FieldAccess t _ _) = do

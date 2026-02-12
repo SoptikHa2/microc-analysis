@@ -26,33 +26,34 @@
 24		PUSH BP
 25		MOV BP, SP # ↑Int
 26		SUB SP, 2 # ↑Int
-27		MOV R11, SP + -1 # ↑{bar:Int,baz:Int,foo:Int}
-28		MOV R12, 2 # Int
-29		MOV R13, 3 # Int
-30		MOV R14, 1 # Int
-31		PUSH R12
-32		PUSH R13
-33		PUSH R14
-34		MOV [BP + -1], R11 # {bar:Int,baz:Int,foo:Int}
-35		MOV R15, [BP + -1] # {bar:Int,baz:Int,foo:Int}
-36		MOV R16, [R15 + -2] # Int
-37		PUTNUM R16
-38		MOV R17, [BP + -1] # {bar:Int,baz:Int,foo:Int}
-39		MOV R18, [R17] # Int
-40		PUTNUM R18
-41		MOV R19, [BP + -1] # {bar:Int,baz:Int,foo:Int}
-42		MOV R20, [R19 + -1] # Int
-43		PUTNUM R20
-44		MOV R21, [BP + -1] # {bar:Int,baz:Int,foo:Int}
-45		MOV R22, 42 # Int
-46		MOV [R21 + -1], R22 # Int
-47		MOV R23, [BP + -1] # {bar:Int,baz:Int,foo:Int}
-48		PUSH R23
-49		CALL 3
-50		SUB SP, 1 # ↑Int
-51		MOV [BP + -2], R0 # Int
-52		MOV R24, [BP + -2] # Int
-53		MOV SP, BP # ↑Int
-54		POP BP # ↑Int
-55		MOV R0, R24 # ◇
-56		RET
+27		SUB SP, 3 # ↑Int
+28		MOV R11, SP + 2 # ↑{bar:Int,baz:Int,foo:Int}
+29		MOV R12, 2 # Int
+30		MOV R13, 3 # Int
+31		MOV R14, 1 # Int
+32		MOV [R11], R12 # Int
+33		MOV [R11 + -1], R13 # Int
+34		MOV [R11 + -2], R14 # Int
+35		MOV [BP + -1], R11 # {bar:Int,baz:Int,foo:Int}
+36		MOV R15, [BP + -1] # {bar:Int,baz:Int,foo:Int}
+37		MOV R16, [R15 + -2] # Int
+38		PUTNUM R16
+39		MOV R17, [BP + -1] # {bar:Int,baz:Int,foo:Int}
+40		MOV R18, [R17] # Int
+41		PUTNUM R18
+42		MOV R19, [BP + -1] # {bar:Int,baz:Int,foo:Int}
+43		MOV R20, [R19 + -1] # Int
+44		PUTNUM R20
+45		MOV R21, [BP + -1] # {bar:Int,baz:Int,foo:Int}
+46		MOV R22, 42 # Int
+47		MOV [R21 + -1], R22 # Int
+48		MOV R23, [BP + -1] # {bar:Int,baz:Int,foo:Int}
+49		PUSH R23
+50		CALL 3
+51		SUB SP, 1 # ↑Int
+52		MOV [BP + -2], R0 # Int
+53		MOV R24, [BP + -2] # Int
+54		MOV SP, BP # ↑Int
+55		POP BP # ↑Int
+56		MOV R0, R24 # ◇
+57		RET

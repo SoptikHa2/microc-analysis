@@ -1,0 +1,27 @@
+digraph ctor {
+n_0[label="Fun ctor entry"]
+n_0 -> n_1
+n_1[label="return alloc {"foo": 1, "bar": 2};"]
+n_exit[label="Fun ctor exit"]
+n_1 -> n_exit
+}
+
+digraph main {
+n_0[label="Fun main entry"]
+n_1var[label="var a;"]
+
+n_2var[label="var b;"]
+
+n_0 -> n_1var
+
+n_1var -> n_2var
+
+n_2var -> n_1
+n_1[label="a = ctor();"]
+n_2[label="b = [4, 3, 34, 2, 21, 312, 312, 31, 321, 312, 312, 3, 1223, 12, 31, 23, 123, 1, 23, 13, 21, 312, 3, 123, 123, 1, 231];"]
+n_3[label="return * a."foo";"]
+n_exit[label="Fun main exit"]
+n_3 -> n_exit
+n_2 -> n_3
+n_1 -> n_2
+}

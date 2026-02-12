@@ -57,6 +57,7 @@ library
       IR.Desugar
       IR.Emit
       IR.Alloc
+      IR.Construct
       IR.Tac
       IR.TacCompiler
       IR.TacPrint

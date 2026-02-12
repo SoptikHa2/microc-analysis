@@ -17,11 +17,11 @@ allocInit :: Emitter ()
 allocInit = emit_ $ Mov Int (Deref0 $ Imm 0) (Direct0 $ Imm 1)
 
 -- Allocate memory, return the address
-alloc :: Reg -> Emitter Reg
-alloc requiredBytesReg = do
+alloc :: Int -> Emitter Reg
+alloc requiredBytes = do
     addrToAssign <- emit (\r -> Mov Int (dreg r) (Deref0 $ Imm 0))
     -- add the offset
-    emit_ $ Add Int addrToAssign (dreg requiredBytesReg)
+    emit_ $ Add Int addrToAssign (Direct0 $ Imm requiredBytes)
     -- save the value + 1 into next free address
     emit_ $ Mov Int (Deref0 $ Imm 0) (Direct (Register addrToAssign) (Imm 1)) 
     pure addrToAssign
